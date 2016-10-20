@@ -10,10 +10,10 @@
 TangoJavaRos/.catkin_workspace
 TangoJavaRos/build/
 TangoJavaRos/devel/
-TangoJavaRos/src/android_remocons/.idea/misc.xml
-TangoJavaRos/src/android_remocons/.idea/workspace.xml
-TangoJavaRos/src/android_remocons/TangoTalker/build/
-TangoJavaRos/src/android_remocons/build/
-TangoJavaRos/src/android_remocons/common_tools/build/
-TangoJavaRos/src/android_remocons/opencv/build/
+TangoJavaRos/src/android_ros/.idea/misc.xml
+TangoJavaRos/src/android_ros/.idea/workspace.xml
+TangoJavaRos/src/android_ros/TangoTalker/build/
+TangoJavaRos/src/android_ros/build/
+TangoJavaRos/src/android_ros/common_tools/build/
+TangoJavaRos/src/android_ros/opencv/build/
 TangoRos/roscpp_android_ndk/
