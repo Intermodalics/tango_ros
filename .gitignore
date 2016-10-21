@@ -10,8 +10,7 @@
 TangoJavaRos/.catkin_workspace
 TangoJavaRos/build/
 TangoJavaRos/devel/
-TangoJavaRos/src/android_ros/.idea/misc.xml
-TangoJavaRos/src/android_ros/.idea/workspace.xml
+TangoJavaRos/src/android_ros/.idea/
 TangoJavaRos/src/android_ros/TangoTalker/build/
 TangoJavaRos/src/android_ros/build/
 TangoJavaRos/src/android_ros/common_tools/build/
