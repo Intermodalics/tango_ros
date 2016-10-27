@@ -16,8 +16,8 @@ TangoJavaRos/src/android_ros/build/
 TangoJavaRos/src/android_ros/common_tools/build/
 TangoJavaRos/src/android_ros/opencv/build/
 TangoRos/roscpp_android_ndk/
-TangoRos/sample_app/bin/
-TangoRos/sample_app/libs/armeabi-v7a/
-TangoRos/sample_app/obj/
+TangoRos/tango_ros_native_app/bin/
+TangoRos/tango_ros_native_app/libs/armeabi-v7a/
+TangoRos/tango_ros_native_app/obj/
 TangoRos/OpenCV_sdk_native/
 TangoRos/.project
