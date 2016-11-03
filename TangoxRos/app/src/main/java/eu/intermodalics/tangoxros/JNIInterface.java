@@ -1,4 +1,4 @@
-package com.intermodalics.tangoxros;
+package eu.intermodalics.tangoxros;
 
 import android.app.Activity;
 import android.os.IBinder;

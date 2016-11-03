@@ -5,7 +5,7 @@ android {
     buildToolsVersion "21.1.2"
 
     defaultConfig {
-        applicationId "com.intermodalics.tangoxros"
+        applicationId "eu.intermodalics.tangoxros"
         minSdkVersion 14
         targetSdkVersion 19
     }

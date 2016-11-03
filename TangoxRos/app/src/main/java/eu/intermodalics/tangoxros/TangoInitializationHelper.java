@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.intermodalics.tangoxros;
+package eu.intermodalics.tangoxros;
 
 import android.content.Context;
 import android.content.Intent;

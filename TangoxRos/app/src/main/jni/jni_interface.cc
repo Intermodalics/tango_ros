@@ -8,7 +8,7 @@ static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
 extern "C" {
 #endif
 JNIEXPORT jboolean JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*/,
+Java_eu_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*/,
     jstring master_uri_value, jstring ip_address_value) {
   const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
   const char* ip_address = env->GetStringUTFChars(ip_address_value, NULL);
@@ -16,29 +16,29 @@ Java_com_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_isRosOk(JNIEnv* env, jobject /*obj*/) {
+Java_eu_intermodalics_tangoxros_JNIInterface_isRosOk(JNIEnv* env, jobject /*obj*/) {
   return tango_ros_util::IsRosOK();
 }
 
 JNIEXPORT void JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_onCreate(JNIEnv* env, jobject, jobject activity) {
+Java_eu_intermodalics_tangoxros_JNIInterface_onCreate(JNIEnv* env, jobject, jobject activity) {
   tango_ros.reset(new tango_ros_node::TangoRosNode());
   tango_ros->OnCreate(env, activity);
 }
 
 JNIEXPORT void JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
+Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
     JNIEnv* env, jobject, jobject iBinder) {
   tango_ros->OnTangoServiceConnected(env, iBinder);
 }
 
 JNIEXPORT void JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv*, jobject) {
+Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv*, jobject) {
   tango_ros->TangoDisconnect();
 }
 
 JNIEXPORT void JNICALL
-Java_com_intermodalics_tangoxros_JNIInterface_publish(JNIEnv* /*env*/, jobject /*obj*/) {
+Java_eu_intermodalics_tangoxros_JNIInterface_publish(JNIEnv* /*env*/, jobject /*obj*/) {
   tango_ros->Publish();
 }
 
