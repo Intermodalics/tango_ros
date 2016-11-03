@@ -21,3 +21,15 @@ TangoRos/tango_ros_native_app/libs/armeabi-v7a/
 TangoRos/tango_ros_native_app/obj/
 TangoRos/OpenCV_sdk_native/
 TangoRos/.project
+TangoxRos/build/
+TangoxRos/.gradle/
+TangoxRos/.idea/
+TangoxRos/local.properties
+TangoxRos/OpenCV_sdk_native/
+TangoxRos/roscpp_android_ndk/
+TangoxRos/TangoxRos.iml
+TangoxRos/app/.externalNativeBuild/
+TangoxRos/app/src/main/libs/
+TangoxRos/app/src/main/obj/
+TangoxRos/tango_client_api/
+TangoxRos/tango_support_api/
