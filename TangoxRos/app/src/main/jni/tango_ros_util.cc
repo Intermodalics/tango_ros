@@ -39,7 +39,6 @@ bool InitRos(const char* master_uri, const char* slave_ip) {
   char* slave_ip_copy = strdup(slave_ip);
   char* argv[] = {"nothing_important" , master_uri_copy, slave_ip_copy};
   ros::init(argc, &argv[0], "tango_x_ros");
-  LOGI("Ros is initialized");
   LOGI("Master URI: %s", ros::master::getURI().c_str());
   free(master_uri_copy);
   free(slave_ip_copy);

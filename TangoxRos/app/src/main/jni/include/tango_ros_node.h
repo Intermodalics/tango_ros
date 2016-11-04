@@ -44,7 +44,7 @@ class TangoRosNode {
  public:
   TangoRosNode();
   ~TangoRosNode();
-  void OnCreate(JNIEnv* env, jobject activity);
+  void CheckTangoVersion(JNIEnv* env, jobject activity);
   void OnTangoServiceConnected(JNIEnv* env, jobject binder);
   void TangoDisconnect();
   void Publish();

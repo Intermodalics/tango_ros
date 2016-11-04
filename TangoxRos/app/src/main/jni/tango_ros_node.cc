@@ -109,13 +109,13 @@ TangoRosNode::~TangoRosNode() {
   }
 }
 
-void TangoRosNode::OnCreate(JNIEnv* env, jobject activity) {
+void TangoRosNode::CheckTangoVersion(JNIEnv* env, jobject activity) {
   // Check the installed version of the TangoCore.  If it is too old, then
   // it will not support the most up to date features.
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
   if (err != TANGO_SUCCESS || version < kTangoCoreMinimumVersion) {
-    tango_ros_util::LOGE("TangoRosNode::OnCreate, Tango Core version is out of date.");
+    tango_ros_util::LOGE("TangoRosNode::CheckTangoVersion, Tango Core version is out of date.");
     std::exit(EXIT_SUCCESS);
   }
 }

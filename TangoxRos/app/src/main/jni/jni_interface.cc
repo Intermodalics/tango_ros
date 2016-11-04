@@ -21,9 +21,9 @@ Java_eu_intermodalics_tangoxros_JNIInterface_isRosOk(JNIEnv* env, jobject /*obj*
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_JNIInterface_onCreate(JNIEnv* env, jobject, jobject activity) {
+Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject, jobject activity) {
   tango_ros.reset(new tango_ros_node::TangoRosNode());
-  tango_ros->OnCreate(env, activity);
+  tango_ros->CheckTangoVersion(env, activity);
 }
 
 JNIEXPORT void JNICALL

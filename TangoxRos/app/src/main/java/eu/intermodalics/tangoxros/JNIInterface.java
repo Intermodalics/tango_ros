@@ -25,7 +25,7 @@ public class JNIInterface {
      *
      * @param callerActivity the caller activity of this function.
      */
-    public static native void onCreate(Activity callerActivity);
+    public static native void initNode(Activity callerActivity);
 
     /**
      * Called when the Tango service is connected successfully.
