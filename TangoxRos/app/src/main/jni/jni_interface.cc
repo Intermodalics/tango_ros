@@ -21,19 +21,29 @@ Java_eu_intermodalics_tangoxros_JNIInterface_isRosOk(JNIEnv* env, jobject /*obj*
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject, jobject activity) {
-  tango_ros.reset(new tango_ros_node::TangoRosNode());
+Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj*/, jobject activity,
+    bool publish_device_pose, bool publish_pointcloud, jstring publish_camera_value) {
+  const char* publish_camera_cstr = env->GetStringUTFChars(publish_camera_value, NULL);
+  tango_ros_node::CameraType camera_type;
+  if (std::strcmp(publish_camera_cstr, "Fisheye") == 0) {
+    camera_type = tango_ros_node::CameraType::FISHEYE;
+  } else if (std::strcmp(publish_camera_cstr, "Color") == 0) {
+    camera_type = tango_ros_node::CameraType::COLOR;
+  } else {
+    camera_type = tango_ros_node::CameraType::NONE;
+  }
+  tango_ros.reset(new tango_ros_node::TangoRosNode(publish_device_pose, publish_pointcloud, camera_type));
   tango_ros->CheckTangoVersion(env, activity);
 }
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
-    JNIEnv* env, jobject, jobject iBinder) {
+    JNIEnv* env, jobject /*obj*/, jobject iBinder) {
   tango_ros->OnTangoServiceConnected(env, iBinder);
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv*, jobject) {
+Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv* /*env*/, jobject /*obj*/) {
   tango_ros->TangoDisconnect();
 }
 

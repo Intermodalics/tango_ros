@@ -25,7 +25,8 @@ public class JNIInterface {
      *
      * @param callerActivity the caller activity of this function.
      */
-    public static native void initNode(Activity callerActivity);
+    public static native void initNode(Activity callerActivity, boolean publishDevicePose,
+                                       boolean publishPointCloud, String publishCamera);
 
     /**
      * Called when the Tango service is connected successfully.
