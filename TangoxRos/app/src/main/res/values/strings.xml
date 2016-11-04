@@ -4,4 +4,6 @@
     <string name="set_master_uri_dialogTitle">Set the Master URI</string>
     <string name="connect">Connect</string>
     <string name="uri_hint">http://</string>
+    <string name="saved_uri_default">http://local-desktop:11311</string>
+    <string name="saved_uri">saved_uri</string>
 </resources>

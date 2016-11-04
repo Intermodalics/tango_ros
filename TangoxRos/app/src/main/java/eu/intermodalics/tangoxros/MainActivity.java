@@ -3,7 +3,9 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -25,6 +27,12 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     public void onMasterUriConnect(String uri) {
         mMasterUri = uri;
+        // Save URI preference.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.saved_uri), mMasterUri);
+        editor.commit();
+        
         init();
         onResume();
     }
@@ -33,9 +41,13 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      * Shows a dialog for setting the Master URI.
      */
     private void showSetMasterUriDialog() {
-        Bundle bundle = new Bundle();
-        bundle.putString("URI", "");
+        // Get URI preference or default value if does not exist.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String defaultUriValue = getResources().getString(R.string.saved_uri_default);
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri), defaultUriValue);
 
+        Bundle bundle = new Bundle();
+        bundle.putString(getString(R.string.saved_uri), uriValue);
         FragmentManager manager = getFragmentManager();
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);

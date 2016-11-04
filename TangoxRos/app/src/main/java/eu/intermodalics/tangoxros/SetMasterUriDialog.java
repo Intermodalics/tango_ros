@@ -14,7 +14,7 @@ import android.widget.EditText;
  */
 public class SetMasterUriDialog extends DialogFragment implements OnClickListener {
 
-    EditText mNameEditText;
+    EditText mUriEditText;
     CallbackListener mCallbackListener;
 
     interface CallbackListener {
@@ -32,9 +32,13 @@ public class SetMasterUriDialog extends DialogFragment implements OnClickListene
                              Bundle savedInstanceState) {
         View dialogView = inflator.inflate(R.layout.set_master_uri_dialog, null);
         getDialog().setTitle(R.string.set_master_uri_dialogTitle);
-        mNameEditText = (EditText) dialogView.findViewById(R.id.uri);
+        mUriEditText = (EditText) dialogView.findViewById(R.id.uri);
         dialogView.findViewById(R.id.connect).setOnClickListener(this);
         setCancelable(false);
+        String uri = this.getArguments().getString(getString(R.string.saved_uri));
+        if (uri != null) {
+            mUriEditText.setText(uri);
+        }
         return dialogView;
     }
 
@@ -43,7 +47,7 @@ public class SetMasterUriDialog extends DialogFragment implements OnClickListene
         switch (v.getId()) {
             case R.id.connect:
                 mCallbackListener.onMasterUriConnect(
-                        mNameEditText.getText().toString());
+                        mUriEditText.getText().toString());
                 dismiss();
                 break;
         }
