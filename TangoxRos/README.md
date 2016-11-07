@@ -26,7 +26,11 @@ Example:
 ndk.dir=/opt/android-ndk-r10b  
 sdk.dir=/opt/android-sdk-linux  
 
-* Plug an android device to your desktop and press the green arrow in Android Studio to build and install the app on the device.
+* Plug an android device to your desktop.
+
+* Check the TangoCore version of your device (Settings->Apps->Tango Core). This app was tested on the Sirius release.
+
+* Press the green arrow in Android Studio to build and install the app on the device.
 
 ### Running the app
 
