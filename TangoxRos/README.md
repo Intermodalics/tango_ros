@@ -1,32 +1,43 @@
 ## TangoRos App
 
-### Installing the roscpp\_android\_ndk
+### The roscpp\_android\_ndk
 
-* Follow the tutorial here: http://wiki.ros.org/android_ndk/Tutorials/BuildingNativeROSPackages to install the roscpp\_android\_ndk.
+* Download the roscpp\_android\_ndk [here](http://wiki.ros.org/android_ndk/Tutorials/Building%20The%20Example%20Applications%20using%20the%20Binary%20Distribution).
+(See the second section *Get the files*)
 
-* The roscpp\_android\_ndk should be inside the TangoRos directory.
+* The roscpp\_android\_ndk should be placed inside the TangoxRos directory.
 
-* In `TangoRos/sample_app/custom_rules.xml`, set the path to the roscpp\_android\_ndk.  
-By default it is set to:  
-`<env key="NDK_MODULE_PATH" path="/home/intermodalics/TangoApps/TangoRos/" />`
+* Replace the original Android.mk file of the roscpp\_android\_ndk by the one present in the Github repository under TangoxRos/roscpp_android_ndk/.
 
-* In `TangoRos/sample_app/local.properties`, set the path to the Android SDK.  
-By default it is set to:  
-`sdk.dir=/opt/android-sdk-linux`
+### The OpenCV sdk
 
-### Building the app
+* Download the OpenCV sdk [here](http://docs.opencv.org/2.4/doc/tutorials/introduction/android_binary_package/O4A_SDK.html#get-the-opencv4android-sdk).
 
-* Run the following command inside the sample\_app directory:  
-`ant debug`
+* Unpack it and copy the content of OpenCV-android-sdk/sdk/native/ into TangoxRos/OpenCV_sdk_native.
 
+### The tango api
 
-### Installing the app
+* Download the tango client and tango support APIs [here](https://developers.google.com/tango/downloads).
 
-* Run the following command inside the sample\_app directory:  
-`adb install -r bin/sample_app-debug.apk`
+* Place them inside the TangoxRos directory.
 
+### Building the app with android studio
 
-### More Help
-This page http://wiki.ros.org/android_ndk contains several tutorials on how to use native ros code for Android.  
-This page https://developer.android.com/reference/android/app/NativeActivity.html explains how to write a Native Activity for Android.  
-Enjoy!
+* Download Android Studio (version 2.2 seems to not work properly with this project, you can download previous versions [here](http://tools.android.com/system/app/pages/subPages?path=/download/studio/builds)).
+
+* When starting Android Studio import the project by selecting the TangoxRos directory.
+
+* In your local properties check that the paths to your android sdk and ndk are set properly.
+Example:
+ndk.dir=/opt/android-ndk-r10b
+sdk.dir=/opt/android-sdk-linux  
+
+* Plug an android device to your desktop and press the green arrow in Android Studio to build and install the app on the device.
+
+### Running the app
+
+* Launch a roscore on your desktop.
+
+* Enter the ros master URI when the application is asking and press connect.
+
+* Open rviz with the config file located at TangoxRos/tango_ros.rviz to visualize the different tango data (device pose, point cloud, image).
