@@ -21,7 +21,7 @@
 
 * When starting Android Studio import the project by selecting the TangoxRos directory.
 
-* In your local properties check that the paths to your android sdk and ndk are set properly.  
+* In your local.properties file check that the paths to your android sdk and ndk are set properly.  
 Example:  
 ndk.dir=/opt/android-ndk-r10b  
 sdk.dir=/opt/android-sdk-linux  
