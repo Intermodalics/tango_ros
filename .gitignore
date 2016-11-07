@@ -31,5 +31,3 @@ TangoxRos/TangoxRos.iml
 TangoxRos/app/.externalNativeBuild/
 TangoxRos/app/src/main/libs/
 TangoxRos/app/src/main/obj/
-TangoxRos/tango_client_api/
-TangoxRos/tango_support_api/
