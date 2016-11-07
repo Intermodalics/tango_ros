@@ -7,7 +7,7 @@ OPENCV_INSTALL_MODULES:=on
 OPENCV_CAMERA_MODULES:=off
 OPENCV_LIB_TYPE:=STATIC
 
-include /home/intermodalics/TangoApps/TangoxRos/OpenCV_sdk_native/jni/OpenCV.mk
+include $(PROJECT_ROOT)/OpenCV_sdk_native/jni/OpenCV.mk
 LOCAL_MODULE    := tango_ros_native
 LOCAL_SRC_FILES := tango_ros_node.cc tango_ros_util.cc jni_interface.cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
