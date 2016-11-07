@@ -15,12 +15,6 @@
 
 * Unpack it and copy the content of OpenCV-android-sdk/sdk/native/ into TangoxRos/OpenCV_sdk_native.
 
-### The tango api
-
-* Download the tango client and tango support APIs [here](https://developers.google.com/tango/downloads).
-
-* Place them inside the TangoxRos directory.
-
 ### Building the app with android studio
 
 * Download Android Studio (version 2.2 seems to not work properly with this project, you can download previous versions [here](http://tools.android.com/system/app/pages/subPages?path=/download/studio/builds)).
