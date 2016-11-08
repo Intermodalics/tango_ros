@@ -21,27 +21,13 @@ static void set_native_publisher_configuration_from_java_publisher_configuration
   jboolean publishPointCloud = env->GetBooleanField(jpublisherConfiguration, fidPublishPointCloud);
   publisher_configuration->publish_point_cloud = publishPointCloud;
 
-  jfieldID fidPublishCamera = env->GetFieldID(cls, "publishCamera",
-    "Leu/intermodalics/tangoxros/PublisherConfiguration$CameraType;");
-  jobject publishCamera = env->GetObjectField(jpublisherConfiguration, fidPublishCamera);
-  jmethodID publishCameraGetValueMethod = env->GetMethodID(
-    env->FindClass("eu/intermodalics/tangoxros/PublisherConfiguration$CameraType"),
-    "ordinal", "()I");
-  jint publishCameraValue = env->CallIntMethod(publishCamera, publishCameraGetValueMethod);
-  switch (publishCameraValue) {
-    case 0:
-      publisher_configuration->publish_camera = tango_ros_node::CameraType::NONE;
-      break;
-    case 1:
-      publisher_configuration->publish_camera = tango_ros_node::CameraType::FISHEYE;
-      break;
-    case 2:
-      publisher_configuration->publish_camera = tango_ros_node::CameraType::COLOR;
-      break;
-    default:
-      publisher_configuration->publish_camera = tango_ros_node::CameraType::NONE;
-      break;
-  }
+  jfieldID fidPublishFisheyeCamera = env->GetFieldID(cls, "publishFisheyeCamera", "Z");
+  jboolean publishFisheyeCamera = env->GetBooleanField(jpublisherConfiguration, fidPublishFisheyeCamera);
+  publisher_configuration->publish_fisheye_camera = publishFisheyeCamera;
+
+  jfieldID fidPublishColorCamera = env->GetFieldID(cls, "publishColorCamera", "Z");
+  jboolean publishColorCamera = env->GetBooleanField(jpublisherConfiguration, fidPublishColorCamera);
+  publisher_configuration->publish_color_camera = publishColorCamera;
 }
 
 JNIEXPORT jboolean JNICALL

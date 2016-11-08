@@ -28,16 +28,18 @@ enum CameraType {
 struct PublisherConfiguration {
   bool publish_device_pose = false;
   bool publish_point_cloud = false;
-  CameraType publish_camera = NONE;
+  bool publish_fisheye_camera = false;
+  bool publish_color_camera = false;
 
   std::string point_cloud_topic = "tango/point_cloud";
-  std::string camera_topic = "tango/image_raw/compressed";
+  std::string fisheye_camera_topic = "tango/fisheye_camera/image_raw/compressed";
+  std::string color_camera_topic = "tango/color_camera/image_raw/compressed";
 
   std::string parent_frame_id = "start_of_service";
   std::string device_frame_id = "device";
   std::string point_cloud_frame_id = "camera_depth";
-  std::string camera_fisheye_frame_id = "camera_fisheye";
-  std::string camera_color_frame_id = "camera_color";
+  std::string fisheye_camera_frame_id = "camera_fisheye";
+  std::string color_camera_frame_id = "camera_color";
 };
 
 class TangoRosNode {
@@ -51,7 +53,7 @@ class TangoRosNode {
 
   void OnPoseAvailable(const TangoPoseData* pose);
   void OnPointCloudAvailable(const TangoPointCloud* point_cloud);
-  void OnFrameAvailable(const TangoImageBuffer* buffer);
+  void OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer);
 
  private:
   bool TangoSetupConfig();
@@ -62,22 +64,29 @@ class TangoRosNode {
   PublisherConfiguration publisher_config_;
   bool pose_lock_ = false;
   bool point_cloud_lock_ = false;
-  bool image_lock_ = false;
+  bool fisheye_image_lock_ = false;
+  bool color_image_lock_ = false;
   bool new_pose_available_ = false;
   bool new_point_cloud_available_ = false;
-  bool new_image_available_ = false;
+  bool new_fisheye_image_available_ = false;
+  bool new_color_image_available_ = false;
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped device_frame_;
   geometry_msgs::TransformStamped point_cloud_frame_;
-  geometry_msgs::TransformStamped camera_frame_;
+  geometry_msgs::TransformStamped fisheye_camera_frame_;
+  geometry_msgs::TransformStamped color_camera_frame_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
 
-  ros::Publisher image_publisher_;
-  sensor_msgs::CompressedImage compressed_image_;
-  cv::Mat image_;
+  ros::Publisher fisheye_image_publisher_;
+  sensor_msgs::CompressedImage fisheye_compressed_image_;
+  cv::Mat fisheye_image_;
+
+  ros::Publisher color_image_publisher_;
+  sensor_msgs::CompressedImage color_compressed_image_;
+  cv::Mat color_image_;
 };
 }  // namespace tango_ros_node
 #endif  // TANGO_ROS_NODE_H_
