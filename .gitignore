@@ -9,7 +9,7 @@
 *.project
 
 # Android Studio project files
-*captures/
+*captures
 *.iml
 *.idea/
 *local.properties
@@ -36,6 +36,7 @@
 # OS generated files #
 ######################
 .DS_Store
+<<<<<<< HEAD
 
 ######################
 # Specific packages #
