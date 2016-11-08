@@ -26,10 +26,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private JNIInterface mJniInterface;
     private String mMasterUri;
     private boolean mIsInitialised = false;
-
-    private boolean mPublishDevicePose = false;
-    private boolean mPublishPointCloud = false;
-    private String mPublishCamera = "None";
+    private PublisherConfiguration mPublishConfig;
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -69,8 +66,24 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {
-        mPublishCamera = parent.getItemAtPosition(pos).toString();
-        Log.w(TAG, "Publish camera is " + mPublishCamera);
+        switch (pos) {
+            case 0:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
+                Log.i(TAG, "Published camera is None");
+                break;
+            case 1:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Fisheye;
+                Log.i(TAG, "Published camera is Fisheye");
+                break;
+            case 2:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Color;
+                Log.i(TAG, "Published camera is Color");
+                break;
+            default:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
+                Log.w(TAG, "Unknown camera type: " + pos);
+                break;
+        }
     }
 
     public void onNothingSelected(AdapterView<?> parent) {
@@ -82,7 +95,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     public void applySettings(View view) {
         onPause();
-        mJniInterface.initNode(this, mPublishDevicePose, mPublishPointCloud, mPublishCamera);
+        mJniInterface.initNode(this, mPublishConfig);
         mIsInitialised = true;
         onResume();
     }
@@ -108,7 +121,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                mJniInterface.initNode(this, mPublishDevicePose, mPublishPointCloud, mPublishCamera);
+                mJniInterface.initNode(this, mPublishConfig);
                 mIsInitialised = true;
             } else {
                 Log.e(TAG, "Unable to init ROS!");
@@ -122,15 +135,16 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+        mPublishConfig = new PublisherConfiguration();
         // Set callback for device pose switch.
         Switch switchDevicePose = (Switch) findViewById(R.id.switch_device_pose);
         switchDevicePose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    mPublishDevicePose = true;
+                    mPublishConfig.publishDevicePose = true;
                     Log.i(TAG, "Publish device pose is switched on");
                 } else {
-                    mPublishDevicePose = false;
+                    mPublishConfig.publishDevicePose = false;
                     Log.i(TAG, "Publish device pose i switched off");
                 }
             }
@@ -140,10 +154,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         switchPointCloud.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    mPublishPointCloud = true;
+                    mPublishConfig.publishPointCloud = true;
                     Log.i(TAG, "Publish point cloud is switched on");
                 } else {
-                    mPublishPointCloud = false;
+                    mPublishConfig.publishPointCloud = false;
                     Log.i(TAG, "Publish point cloud is switched off");
                 }
             }

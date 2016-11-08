@@ -42,7 +42,7 @@ struct PublisherConfiguration {
 
 class TangoRosNode {
  public:
-  TangoRosNode(bool publish_device_pose, bool publish_pointcloud, CameraType publish_camera);
+  TangoRosNode(PublisherConfiguration publisher_config);
   ~TangoRosNode();
   void CheckTangoVersion(JNIEnv* env, jobject activity);
   void OnTangoServiceConnected(JNIEnv* env, jobject binder);

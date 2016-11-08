@@ -80,19 +80,17 @@ void TangoPointCloudToRosPointCloud(const TangoPointCloud& tango_point_cloud,
 }  // namespace
 
 namespace tango_ros_node {
-TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_pointcloud, CameraType publish_camera) {
-  publisher_config_.publish_device_pose = publish_device_pose;
+TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
+    publisher_config_(publisher_config) {
   device_frame_.header.frame_id = publisher_config_.parent_frame_id;
   device_frame_.child_frame_id = publisher_config_.device_frame_id;
 
-  publisher_config_.publish_point_cloud = publish_pointcloud;
   point_cloud_frame_.header.frame_id = publisher_config_.parent_frame_id;
   point_cloud_frame_.child_frame_id = publisher_config_.point_cloud_frame_id;
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(publisher_config_.point_cloud_topic, 1, true);
   point_cloud_.header.frame_id = point_cloud_frame_.child_frame_id;
 
-  publisher_config_.publish_camera = publish_camera;
   camera_frame_.header.frame_id = publisher_config_.parent_frame_id;
   if (publisher_config_.publish_camera == CameraType::FISHEYE)
     camera_frame_.child_frame_id = publisher_config_.camera_fisheye_frame_id;
