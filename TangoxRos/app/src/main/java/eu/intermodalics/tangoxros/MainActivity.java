@@ -59,7 +59,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
-            // Synchronization around MeshBuilderActivity object is to avoid
+            // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
             mJniInterface.onTangoServiceConnected(service);
         }

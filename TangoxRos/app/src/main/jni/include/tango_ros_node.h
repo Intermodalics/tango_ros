@@ -16,7 +16,7 @@
 #include <tf/transform_broadcaster.h>
 
 namespace tango_ros_node {
-static int kNumberOfFieldInPointCloud = 4;
+static int kNumberOfFieldsInPointCloud = 4;
 static int kImageCompressingQuality = 50;
 
 enum CameraType {
@@ -32,12 +32,6 @@ struct PublisherConfiguration {
 
   std::string point_cloud_topic = "tango/point_cloud";
   std::string camera_topic = "tango/image_raw/compressed";
-
-  std::string parent_frame_id = "start_of_service";
-  std::string device_frame_id = "device";
-  std::string point_cloud_frame_id = "camera_depth";
-  std::string camera_fisheye_frame_id = "camera_fisheye";
-  std::string camera_color_frame_id = "camera_color";
 };
 
 class TangoRosNode {
@@ -68,9 +62,9 @@ class TangoRosNode {
   bool new_image_available_ = false;
 
   tf::TransformBroadcaster tf_broadcaster_;
-  geometry_msgs::TransformStamped device_frame_;
-  geometry_msgs::TransformStamped point_cloud_frame_;
-  geometry_msgs::TransformStamped camera_frame_;
+  geometry_msgs::TransformStamped start_of_service_T_device_;
+  geometry_msgs::TransformStamped start_of_service_T_camera_depth_;
+  geometry_msgs::TransformStamped start_of_service_T_camera_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
