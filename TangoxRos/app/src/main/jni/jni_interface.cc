@@ -21,13 +21,9 @@ static void set_native_publisher_configuration_from_java_publisher_configuration
   jboolean publishPointCloud = env->GetBooleanField(jpublisherConfiguration, fidPublishPointCloud);
   publisher_configuration->publish_point_cloud = publishPointCloud;
 
-  jfieldID fidPublishFisheyeCamera = env->GetFieldID(cls, "publishFisheyeCamera", "Z");
-  jboolean publishFisheyeCamera = env->GetBooleanField(jpublisherConfiguration, fidPublishFisheyeCamera);
-  publisher_configuration->publish_fisheye_camera = publishFisheyeCamera;
-
-  jfieldID fidPublishColorCamera = env->GetFieldID(cls, "publishColorCamera", "Z");
-  jboolean publishColorCamera = env->GetBooleanField(jpublisherConfiguration, fidPublishColorCamera);
-  publisher_configuration->publish_color_camera = publishColorCamera;
+  jfieldID fidPublishCamera = env->GetFieldID(cls, "publishCamera", "I");
+  int publishCamera = env->GetIntField(jpublisherConfiguration, fidPublishCamera);
+  publisher_configuration->publish_camera = publishCamera;
 }
 
 JNIEXPORT jboolean JNICALL

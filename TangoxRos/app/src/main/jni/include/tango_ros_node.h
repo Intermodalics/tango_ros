@@ -16,20 +16,20 @@
 #include <tf/transform_broadcaster.h>
 
 namespace tango_ros_node {
-static int kNumberOfFieldsInPointCloud = 4;
-static int kImageCompressingQuality = 50;
+const int kNumberOfFieldsInPointCloud = 4;
+constexpr char kCvImageCompressingFormat[] = ".jpg";
+constexpr char kRosImageCompressingFormat[] = "jpeg";
+const int kImageCompressingQuality = 50;
 
-enum CameraType {
-  NONE,
-  FISHEYE,
-  COLOR
-};
+// Camera bitfield values.
+const uint32_t CAMERA_NONE = 0;
+const uint32_t CAMERA_FISHEYE = (1 << 1);
+const uint32_t CAMERA_COLOR = (1 << 2);
 
 struct PublisherConfiguration {
   bool publish_device_pose = false;
   bool publish_point_cloud = false;
-  bool publish_fisheye_camera = false;
-  bool publish_color_camera = false;
+  uint32_t publish_camera = CAMERA_NONE;
 
   std::string point_cloud_topic = "tango/point_cloud";
   std::string fisheye_camera_topic = "tango/fisheye_camera/image_raw/compressed";
