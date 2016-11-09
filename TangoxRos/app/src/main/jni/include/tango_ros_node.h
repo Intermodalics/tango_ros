@@ -60,11 +60,15 @@ class TangoRosNode {
   bool new_pose_available_ = false;
   bool new_point_cloud_available_ = false;
   bool new_image_available_ = false;
+  bool is_device_T_camera_depth_set_ = false;
+  bool is_device_T_camera_set_ = false;
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_device_;
   geometry_msgs::TransformStamped start_of_service_T_camera_depth_;
+  geometry_msgs::TransformStamped device_T_camera_depth_;
   geometry_msgs::TransformStamped start_of_service_T_camera_;
+  geometry_msgs::TransformStamped device_T_camera_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
