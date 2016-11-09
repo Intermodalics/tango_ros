@@ -36,7 +36,7 @@ struct PublisherConfiguration {
 
 class TangoRosNode {
  public:
-  TangoRosNode();
+  TangoRosNode(PublisherConfiguration publisher_config);
   ~TangoRosNode();
   void CheckTangoVersion(JNIEnv* env, jobject activity);
   void OnTangoServiceConnected(JNIEnv* env, jobject binder);

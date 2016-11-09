@@ -153,14 +153,10 @@ std::string TangoCoordinateFrameTypeToFrameId(const TangoCoordinateFrameType& ta
 }  // namespace
 
 namespace tango_ros_node {
-TangoRosNode::TangoRosNode() {
-  publisher_config_.publish_device_pose = true;
-
-  publisher_config_.publish_point_cloud = true;
+TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
+    publisher_config_(publisher_config) {
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(publisher_config_.point_cloud_topic, 1, true);
-
-  publisher_config_.publish_camera = CameraType::COLOR;
   image_publisher_ =
       node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.camera_topic, 1, true);
 }

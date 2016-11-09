@@ -11,15 +11,22 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.text.format.Formatter;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
+import android.widget.Spinner;
+import android.widget.Switch;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
+public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener, AdapterView.OnItemSelectedListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
 
     private JNIInterface mJniInterface;
     private String mMasterUri;
-    private boolean isInitialised = false;
+    private boolean mIsInitialised = false;
+    private PublisherConfiguration mPublishConfig;
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -32,7 +39,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(getString(R.string.saved_uri), mMasterUri);
         editor.commit();
-        
+        // Start ROS and node.
         init();
         onResume();
     }
@@ -52,6 +59,45 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
         setMasterUriDialog.show(manager, "MatserUriDialog");
+    }
+
+    /**
+     * Implements AdapterView.OnItemSelectedListener callbacks.
+     */
+    public void onItemSelected(AdapterView<?> parent, View view,
+                               int pos, long id) {
+        switch (pos) {
+            case 0:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
+                Log.i(TAG, "Published camera is None");
+                break;
+            case 1:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Fisheye;
+                Log.i(TAG, "Published camera is Fisheye");
+                break;
+            case 2:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Color;
+                Log.i(TAG, "Published camera is Color");
+                break;
+            default:
+                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
+                Log.w(TAG, "Unknown camera type: " + pos);
+                break;
+        }
+    }
+
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Another interface callback
+    }
+
+    /**
+     * Implements callback for Apply button.
+     */
+    public void applySettings(View view) {
+        onPause();
+        mJniInterface.initNode(this, mPublishConfig);
+        mIsInitialised = true;
+        onResume();
     }
 
     /**
@@ -75,8 +121,8 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                mJniInterface.initNode(this);
-                isInitialised = true;
+                mJniInterface.initNode(this, mPublishConfig);
+                mIsInitialised = true;
             } else {
                 Log.e(TAG, "Unable to init ROS!");
             }
@@ -88,13 +134,51 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.main_activity);
+        mPublishConfig = new PublisherConfiguration();
+        // Set callback for device pose switch.
+        Switch switchDevicePose = (Switch) findViewById(R.id.switch_device_pose);
+        switchDevicePose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mPublishConfig.publishDevicePose = true;
+                    Log.i(TAG, "Publish device pose is switched on");
+                } else {
+                    mPublishConfig.publishDevicePose = false;
+                    Log.i(TAG, "Publish device pose i switched off");
+                }
+            }
+        });
+        // Set callback for point cloud switch.
+        Switch switchPointCloud = (Switch) findViewById(R.id.switch_pointcloud);
+        switchPointCloud.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mPublishConfig.publishPointCloud = true;
+                    Log.i(TAG, "Publish point cloud is switched on");
+                } else {
+                    mPublishConfig.publishPointCloud = false;
+                    Log.i(TAG, "Publish point cloud is switched off");
+                }
+            }
+        });
+        // Set list of choices and callback for camera spinner.
+        Spinner spinner = (Spinner) findViewById(R.id.cameras_spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.cameras, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
+        // Request master URI from user.
         showSetMasterUriDialog();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (isInitialised) {
+        if (mIsInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             new Thread(new Runnable() {
                 @Override
@@ -110,7 +194,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onPause() {
         super.onPause();
-        if (isInitialised) {
+        if (mIsInitialised) {
             mJniInterface.tangoDisconnect();
             unbindService(mTangoServiceConnection);
         }

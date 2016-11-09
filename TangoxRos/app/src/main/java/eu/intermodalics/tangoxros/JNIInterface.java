@@ -36,7 +36,7 @@ public class JNIInterface {
      * initRos should always be called before.
      * @param callerActivity the caller activity of this function.
      */
-    public static native void initNode(Activity callerActivity);
+    public static native void initNode(Activity callerActivity, PublisherConfiguration publisherConfiguration);
 
     /**
      * Called when the Tango service is connected successfully.
