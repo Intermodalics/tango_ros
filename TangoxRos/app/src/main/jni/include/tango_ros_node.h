@@ -62,6 +62,7 @@ class TangoRosNode {
   bool new_image_available_ = false;
   bool is_device_T_camera_depth_set_ = false;
   bool is_device_T_camera_set_ = false;
+  double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_device_;

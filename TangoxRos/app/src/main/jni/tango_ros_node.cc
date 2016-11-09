@@ -1,5 +1,7 @@
 #include "tango_ros_node.h"
 
+#include <math.h>
+
 #include <Eigen/Geometry>
 
 #include <opencv2/highgui/highgui.hpp>
@@ -40,7 +42,8 @@ void onFrameAvailableRouter(void* context, TangoCameraId,
 }
 
 void TangoPoseDataToTransformStamped(const TangoPoseData& pose,
-                                 geometry_msgs::TransformStamped* transform) {
+                                     double time_offset,
+                                     geometry_msgs::TransformStamped* transform) {
   transform->transform.translation.x = pose.translation[0];
   transform->transform.translation.y = pose.translation[1];
   transform->transform.translation.z = pose.translation[2];
@@ -48,7 +51,7 @@ void TangoPoseDataToTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.y = pose.orientation[1];
   transform->transform.rotation.z = pose.orientation[2];
   transform->transform.rotation.w = pose.orientation[3];
-  transform->header.stamp = ros::Time::now();
+  transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
 }
 
 Eigen::Affine3d TransformStampedToEigenAffine(const geometry_msgs::TransformStamped& t) {
@@ -74,8 +77,8 @@ geometry_msgs::TransformStamped EigenAffineToTransformStamped(const Eigen::Affin
 }
 
 void TangoPointCloudToPointCloud2(const TangoPointCloud& tango_point_cloud,
-                                    sensor_msgs::PointCloud2* point_cloud) {
-  point_cloud->header.stamp = ros::Time::now();
+                                  double time_offset,
+                                  sensor_msgs::PointCloud2* point_cloud) {
   point_cloud->width = tango_point_cloud.num_points;
   point_cloud->height = 1;
   point_cloud->point_step = (sizeof(float) * tango_ros_node::kNumberOfFieldsInPointCloud);
@@ -101,9 +104,10 @@ void TangoPointCloudToPointCloud2(const TangoPointCloud& tango_point_cloud,
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
   }
+  point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
 
-std::string ConvertTangoCoordinateFrameTypeToFrameId(const TangoCoordinateFrameType& tango_frame_type) {
+std::string TangoCoordinateFrameTypeToFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   std::string string_frame_type;
   switch(tango_frame_type) {
     case TANGO_COORDINATE_FRAME_AREA_DESCRIPTION:
@@ -191,6 +195,15 @@ void TangoRosNode::OnTangoServiceConnected(JNIEnv* env, jobject binder) {
       std::exit(EXIT_SUCCESS);
   }
   TangoConnect();
+
+  TangoCoordinateFramePair pair;
+  pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
+  pair.target = TANGO_COORDINATE_FRAME_DEVICE;
+  TangoPoseData pose;
+  do {
+    TangoService_getPoseAtTime(0.0, pair, &pose);
+  } while (pose.status_code != TANGO_POSE_VALID);
+  time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
 }
 
 bool TangoRosNode::TangoSetupConfig() {
@@ -325,11 +338,11 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
     if (pose->status_code == TANGO_POSE_VALID) {
       if (!pose_lock_) {
         pose_lock_ = true;
-        TangoPoseDataToTransformStamped(*pose, &start_of_service_T_device_);
+        TangoPoseDataToTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
         start_of_service_T_device_.header.frame_id =
-          ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+          TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         start_of_service_T_device_.child_frame_id =
-          ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+          TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_DEVICE);
         new_pose_available_ = true;
         pose_lock_ = false;
       }
@@ -341,7 +354,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
   if (publisher_config_.publish_point_cloud && point_cloud->num_points > 0) {
     if (!point_cloud_lock_) {
       point_cloud_lock_= true;
-      TangoPointCloudToPointCloud2(*point_cloud, &point_cloud_);
+      TangoPointCloudToPointCloud2(*point_cloud, time_offset_, &point_cloud_);
       if (!is_device_T_camera_depth_set_) {
         TangoCoordinateFramePair pair;
         pair.base = TANGO_COORDINATE_FRAME_DEVICE;
@@ -349,7 +362,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
         TangoPoseData pose;
         TangoService_getPoseAtTime(0.0, pair, &pose);
         if (pose.status_code == TANGO_POSE_VALID) {
-          TangoPoseDataToTransformStamped(pose, &device_T_camera_depth_);
+          TangoPoseDataToTransformStamped(pose, time_offset_, &device_T_camera_depth_);
           is_device_T_camera_depth_set_ = true;
         }
       }
@@ -359,10 +372,10 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
         Eigen::Affine3d start_of_service_T_camera_depth_eigen = start_of_service_T_device_eigen * device_T_camera_depth_eigen;
         start_of_service_T_camera_depth_ = EigenAffineToTransformStamped(start_of_service_T_camera_depth_eigen);
         start_of_service_T_camera_depth_.header.frame_id =
-          ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+          TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         start_of_service_T_camera_depth_.child_frame_id =
-          ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-        start_of_service_T_camera_depth_.header.stamp = start_of_service_T_device_.header.stamp;
+          TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+        start_of_service_T_camera_depth_.header.stamp = point_cloud_.header.stamp;
         point_cloud_.header.frame_id = start_of_service_T_camera_depth_.child_frame_id;
       }
       new_point_cloud_available_ = true;
@@ -377,7 +390,7 @@ void TangoRosNode::OnFrameAvailable(const TangoImageBuffer* buffer) {
       image_lock_ = true;
       image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                        CV_8UC1, buffer->data, buffer->stride);
-      compressed_image_.header.stamp = ros::Time::now();
+      compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
       compressed_image_.header.seq = buffer->frame_number;
       compressed_image_.format = "jpeg";
       if (!is_device_T_camera_set_) {
@@ -390,7 +403,7 @@ void TangoRosNode::OnFrameAvailable(const TangoImageBuffer* buffer) {
         TangoPoseData pose;
         TangoService_getPoseAtTime(0.0, pair, &pose);
         if (pose.status_code == TANGO_POSE_VALID) {
-          TangoPoseDataToTransformStamped(pose, &device_T_camera_);
+          TangoPoseDataToTransformStamped(pose, time_offset_, &device_T_camera_);
           is_device_T_camera_set_ = true;
         }
       }
@@ -400,14 +413,14 @@ void TangoRosNode::OnFrameAvailable(const TangoImageBuffer* buffer) {
         Eigen::Affine3d start_of_service_T_camera_eigen = start_of_service_T_device_eigen * device_T_camera_eigen;
         start_of_service_T_camera_ = EigenAffineToTransformStamped(start_of_service_T_camera_eigen);
         start_of_service_T_camera_.header.frame_id =
-          ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+          TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         if (publisher_config_.publish_camera == CameraType::FISHEYE)
           start_of_service_T_camera_.child_frame_id =
-            ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
+            TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
         if (publisher_config_.publish_camera == CameraType::COLOR)
           start_of_service_T_camera_.child_frame_id =
-            ConvertTangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-        start_of_service_T_camera_.header.stamp = start_of_service_T_device_.header.stamp;
+            TangoCoordinateFrameTypeToFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
+        start_of_service_T_camera_.header.stamp = compressed_image_.header.stamp;
         compressed_image_.header.frame_id = start_of_service_T_camera_.child_frame_id;
       }
       new_image_available_ = true;
