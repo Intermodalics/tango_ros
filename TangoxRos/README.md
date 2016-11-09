@@ -21,12 +21,16 @@
 
 * When starting Android Studio import the project by selecting the TangoxRos directory.
 
-* In your local properties check that the paths to your android sdk and ndk are set properly.
-Example:
-ndk.dir=/opt/android-ndk-r10b
+* In your local.properties file check that the paths to your android sdk and ndk are set properly.  
+Example:  
+ndk.dir=/opt/android-ndk-r10b  
 sdk.dir=/opt/android-sdk-linux  
 
-* Plug an android device to your desktop and press the green arrow in Android Studio to build and install the app on the device.
+* Plug an android device to your desktop.
+
+* Check the TangoCore version of your device (Settings->Apps->Tango Core). The app was tested on Sirius and Yildun releases.
+
+* Press the green arrow in Android Studio to build and install the app on the device.
 
 ### Running the app
 
