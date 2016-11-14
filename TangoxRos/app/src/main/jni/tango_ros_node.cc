@@ -385,7 +385,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     if (!fisheye_image_lock_) {
       fisheye_image_lock_ = true;
       fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
-                       CV_8UC1, buffer->data, buffer->stride);
+                       CV_8UC1, buffer->data, buffer->stride); // No deep copy.
       fisheye_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
       fisheye_compressed_image_.header.seq = buffer->frame_number;
       fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
@@ -412,7 +412,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     if (!color_image_lock_) {
       color_image_lock_ = true;
       color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
-                       CV_8UC1, buffer->data, buffer->stride);
+                       CV_8UC1, buffer->data, buffer->stride); // No deep copy.
       color_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
       color_compressed_image_.header.seq = buffer->frame_number;
       fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
