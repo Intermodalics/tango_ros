@@ -14,12 +14,13 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 namespace tango_ros_node {
-const int kNumberOfFieldsInPointCloud = 4;
-constexpr char kCvImageCompressingFormat[] = ".jpg";
-constexpr char kRosImageCompressingFormat[] = "jpeg";
-const int kImageCompressingQuality = 50;
+const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
+constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
+constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
+const int IMAGE_COMPRESSING_QUALITY = 50;
 
 // Camera bitfield values.
 const uint32_t CAMERA_NONE = 0;
@@ -68,18 +69,16 @@ class TangoRosNode {
   bool new_color_image_available_ = false;
 
   bool is_device_T_camera_depth_set_ = false;
-  bool is_device_T_fisheye_camera_set_ = false;
-  bool is_device_T_color_camera_set_ = false;
+  bool is_device_T_camera_fisheye_set_ = false;
+  bool is_device_T_camera_color_set_ = false;
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_device_;
-  geometry_msgs::TransformStamped start_of_service_T_camera_depth_;
+  tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;
   geometry_msgs::TransformStamped device_T_camera_depth_;
-  geometry_msgs::TransformStamped start_of_service_T_fisheye_camera_;
-  geometry_msgs::TransformStamped device_T_fisheye_camera_;
-  geometry_msgs::TransformStamped start_of_service_T_color_camera_;
-  geometry_msgs::TransformStamped device_T_color_camera_;
+  geometry_msgs::TransformStamped device_T_camera_fisheye_;
+  geometry_msgs::TransformStamped device_T_camera_color_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
