@@ -1,33 +1,44 @@
-*.iml
+####################
+# Editors and IDEs #
+####################
+
+# Backups
 *~
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+
+# Eclipse project files
+*.project
+
+# Android Studio project files
+*captures
+*.iml
+*.idea/
+*local.properties
+
+########################
+# Build system outputs #
+########################
+*.catkin_workspace
+*devel/
+
+# Gradle generated files
+*build/
+*.gradle/
+*.externalNativeBuild/
+
+# ant generated files
+*bin/
+
+# ndk-build generated files
+*obj/
+*libs/
+
+######################
+# OS generated files #
+######################
 .DS_Store
-/build
-/captures
-TangoJavaRos/.catkin_workspace
-TangoJavaRos/build/
-TangoJavaRos/devel/
-TangoJavaRos/src/android_ros/.idea/
-TangoJavaRos/src/android_ros/TangoTalker/build/
-TangoJavaRos/src/android_ros/build/
-TangoJavaRos/src/android_ros/common_tools/build/
-TangoJavaRos/src/android_ros/opencv/build/
-TangoRos/roscpp_android_ndk/
-TangoRos/tango_ros_native_app/bin/
-TangoRos/tango_ros_native_app/libs/armeabi-v7a/
-TangoRos/tango_ros_native_app/obj/
-TangoRos/OpenCV_sdk_native/
-TangoRos/.project
-TangoxRos/build/
-TangoxRos/.gradle/
-TangoxRos/.idea/
-TangoxRos/local.properties
-TangoxRos/OpenCV_sdk_native/
-TangoxRos/roscpp_android_ndk/
-TangoxRos/TangoxRos.iml
-TangoxRos/app/.externalNativeBuild/
-TangoxRos/app/src/main/libs/
-TangoxRos/app/src/main/obj/
+
+######################
+# Specific packages #
+######################
+*OpenCV_sdk_native/
+*roscpp_android_ndk/

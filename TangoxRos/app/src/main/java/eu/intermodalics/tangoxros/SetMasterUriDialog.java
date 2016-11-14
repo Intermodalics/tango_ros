@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 
 /**
- * Queries the user for an Master URI.
+ * Queries the user for a Master URI.
  */
 public class SetMasterUriDialog extends DialogFragment implements OnClickListener {
 
