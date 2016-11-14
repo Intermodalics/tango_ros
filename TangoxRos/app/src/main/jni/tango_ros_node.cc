@@ -85,7 +85,7 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
 
-void toCompressedImage(const cv::Mat& image, const char* compressing_format,
+void compressImage(const cv::Mat& image, const char* compressing_format,
                        int compressing_quality,
                        sensor_msgs::CompressedImage* compressed_image) {
   cv::Mat image_good_endcoding = cv::Mat();
@@ -316,7 +316,7 @@ void TangoRosNode::Publish() {
   if (new_fisheye_image_available_ && !fisheye_image_lock_ && is_device_T_camera_fisheye_set_ &&
       (publisher_config_.publish_camera & CAMERA_FISHEYE) && !fisheye_image_.empty()) {
     fisheye_image_lock_ = true;
-    toCompressedImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
+    compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &fisheye_compressed_image_);
     fisheye_image_publisher_.publish(fisheye_compressed_image_);
     tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
@@ -327,7 +327,7 @@ void TangoRosNode::Publish() {
   if (new_color_image_available_ && !color_image_lock_ && is_device_T_camera_color_set_ &&
       (publisher_config_.publish_camera & CAMERA_COLOR) && !color_image_.empty()) {
     color_image_lock_ = true;
-    toCompressedImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
+    compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &color_compressed_image_);
     color_image_publisher_.publish(color_compressed_image_);
     tf_static_broadcaster_.sendTransform(device_T_camera_color_);

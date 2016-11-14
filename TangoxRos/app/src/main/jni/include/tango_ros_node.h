@@ -33,8 +33,8 @@ struct PublisherConfiguration {
   uint32_t publish_camera = CAMERA_NONE;
 
   std::string point_cloud_topic = "tango/point_cloud";
-  std::string fisheye_camera_topic = "tango/fisheye_camera/image_raw/compressed";
-  std::string color_camera_topic = "tango/color_camera/image_raw/compressed";
+  std::string fisheye_camera_topic = "tango/camera/fisheye/image_raw/compressed";
+  std::string color_camera_topic = "tango/camera/color/image_raw/compressed";
 };
 
 class TangoRosNode {

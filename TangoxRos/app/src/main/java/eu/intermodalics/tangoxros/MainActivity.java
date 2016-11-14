@@ -135,10 +135,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         switchFisheyeCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CameraFlag.FISHEYE;
+                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
                     Log.i(TAG, "Publish fisheye camera is switched on");
                 } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CameraFlag.FISHEYE;
+                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
                     Log.i(TAG, "Publish fisheye camera is switched off");
                 }
             }
@@ -149,10 +149,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         switchColorCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CameraFlag.COLOR;
+                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
                     Log.i(TAG, "Publish color camera is switched on");
                 } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CameraFlag.COLOR;
+                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
                     Log.i(TAG, "Publish color camera is switched off");
                 }
             }
