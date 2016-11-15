@@ -6,4 +6,10 @@
     <string name="uri_hint">http://</string>
     <string name="saved_uri_default">http://local-desktop:11311</string>
     <string name="saved_uri">saved_uri</string>
+
+    <string name="publish_device_pose">Publish device pose</string>
+    <string name="publish_pointcloud">Publish point cloud</string>
+    <string name="publish_fisheye_camera">Publish fisheye camera</string>
+    <string name="publish_color_camera">Publish color camera</string>
+    <string name="apply">Apply</string>
 </resources>
