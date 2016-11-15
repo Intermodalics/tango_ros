@@ -81,9 +81,6 @@ class TangoRosNode {
   bool new_fisheye_image_available_ = false;
   bool new_color_image_available_ = false;
 
-  bool is_device_T_camera_depth_set_ = false;
-  bool is_device_T_camera_fisheye_set_ = false;
-  bool is_device_T_camera_color_set_ = false;
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
   tf::TransformBroadcaster tf_broadcaster_;
