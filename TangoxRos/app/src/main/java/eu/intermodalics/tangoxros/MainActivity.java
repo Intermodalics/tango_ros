@@ -12,13 +12,10 @@ import android.os.IBinder;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
-import android.widget.Spinner;
 import android.widget.Switch;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener, AdapterView.OnItemSelectedListener {
+public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
@@ -59,35 +56,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
         setMasterUriDialog.show(manager, "MatserUriDialog");
-    }
-
-    /**
-     * Implements AdapterView.OnItemSelectedListener callbacks.
-     */
-    public void onItemSelected(AdapterView<?> parent, View view,
-                               int pos, long id) {
-        switch (pos) {
-            case 0:
-                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
-                Log.i(TAG, "Published camera is None");
-                break;
-            case 1:
-                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Fisheye;
-                Log.i(TAG, "Published camera is Fisheye");
-                break;
-            case 2:
-                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.Color;
-                Log.i(TAG, "Published camera is Color");
-                break;
-            default:
-                mPublishConfig.publishCamera = PublisherConfiguration.CameraType.None;
-                Log.w(TAG, "Unknown camera type: " + pos);
-                break;
-        }
-    }
-
-    public void onNothingSelected(AdapterView<?> parent) {
-        // Another interface callback
     }
 
     /**
@@ -162,15 +130,33 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
-        // Set list of choices and callback for camera spinner.
-        Spinner spinner = (Spinner) findViewById(R.id.cameras_spinner);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.cameras, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        spinner.setOnItemSelectedListener(this);
+        // Set callback for fisheye camera switch.
+        Switch switchFisheyeCamera = (Switch) findViewById(R.id.switch_fisheye_camera);
+        switchFisheyeCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
+                    Log.i(TAG, "Publish fisheye camera is switched on");
+                } else {
+                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
+                    Log.i(TAG, "Publish fisheye camera is switched off");
+                }
+            }
+        });
+
+        // Set callback for color camera switch.
+        Switch switchColorCamera = (Switch) findViewById(R.id.switch_color_camera);
+        switchColorCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
+                    Log.i(TAG, "Publish color camera is switched on");
+                } else {
+                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
+                    Log.i(TAG, "Publish color camera is switched off");
+                }
+            }
+        });
         // Request master URI from user.
         showSetMasterUriDialog();
     }

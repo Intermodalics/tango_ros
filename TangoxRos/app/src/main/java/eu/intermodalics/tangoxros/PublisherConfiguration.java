@@ -1,13 +1,11 @@
 package eu.intermodalics.tangoxros;
 
 public class PublisherConfiguration {
-    public enum CameraType {
-        None,
-        Fisheye,
-        Color
-    };
+    public static final int CAMERA_NONE = 0;
+    public static final int CAMERA_FISHEYE = 1 << 1;
+    public static final int CAMERA_COLOR = 1 << 2;
 
     public boolean publishDevicePose = false;
     public boolean publishPointCloud = false;
-    public CameraType publishCamera = CameraType.None;
+    public int publishCamera = CAMERA_NONE;
 }

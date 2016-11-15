@@ -21,19 +21,19 @@
             android:layout_alignParentTop="true"
             android:text="@string/publish_pointcloud" />
 
-        <TextView android:id="@+id/text_camera_type"
-            android:layout_width="match_parent"
+        <Switch android:id="@+id/switch_fisheye_camera"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:textColor="@android:color/white"
-             android:textSize="16dp"
-            android:text="@string/publish_camera" />
+            android:text="@string/publish_fisheye_camera" />
 
-        <Spinner
-            android:id="@+id/cameras_spinner"
+        <Switch android:id="@+id/switch_color_camera"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/publish_color_camera" />
 
         <Button
             android:id="@+id/apply"
