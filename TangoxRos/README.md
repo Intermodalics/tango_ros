@@ -5,15 +5,22 @@
 * Download the roscpp\_android\_ndk [here](http://wiki.ros.org/android_ndk/Tutorials/Building%20The%20Example%20Applications%20using%20the%20Binary%20Distribution).
 (See the second section *Get the files*)
 
-* The roscpp\_android\_ndk should be placed inside the TangoxRos directory.
+* The roscpp\_android\_ndk should be placed inside the TangoApps directory.
 
-* Replace the original Android.mk file of the roscpp\_android\_ndk by the one present in the Github repository under TangoxRos/roscpp_android_ndk/.
+* Replace the original Android.mk file of the roscpp\_android\_ndk by the one present in the Github repository under TangoApps/roscpp_android_ndk/.
 
 ### The OpenCV sdk
 
 * Download the OpenCV sdk [here](http://docs.opencv.org/2.4/doc/tutorials/introduction/android_binary_package/O4A_SDK.html#get-the-opencv4android-sdk).
 
-* Unpack it and copy the content of OpenCV-android-sdk/sdk/native/ into TangoxRos/OpenCV_sdk_native.
+* Unpack it and copy the content of OpenCV-android-sdk/sdk/native/ into TangoApps/OpenCV_sdk_native.
+
+### Miniglog
+
+* From the TangoApps repository:  
+```$ git clone https://github.com/tzutalin/miniglog.git```  
+```$ cd miniglog```  
+```$ ./build.sh```  
 
 ### Building the app with android studio
 

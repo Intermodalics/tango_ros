@@ -7,6 +7,7 @@
 
 # Eclipse project files
 *.project
+*.cproject
 
 # Android Studio project files
 *captures
@@ -38,7 +39,8 @@
 .DS_Store
 
 ######################
-# Specific packages #
+# External lib #
 ######################
 *OpenCV_sdk_native/
 *roscpp_android_ndk/
+*miniglog/
