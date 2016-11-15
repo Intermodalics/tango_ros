@@ -364,7 +364,7 @@ void TangoRosNode::Publish() {
   }
 
   if ((publisher_config_.publish_camera & CAMERA_FISHEYE) && new_fisheye_image_available_ &&
-       !fisheye_image_lock_ && !fisheye_image_.empty()) {
+       !fisheye_image_lock_) {
     fisheye_image_lock_ = true;
     compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &fisheye_compressed_image_);
@@ -374,7 +374,7 @@ void TangoRosNode::Publish() {
   }
 
   if ((publisher_config_.publish_camera & CAMERA_COLOR) && new_color_image_available_ &&
-       !color_image_lock_ && !color_image_.empty()) {
+       !color_image_lock_) {
     color_image_lock_ = true;
     compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &color_compressed_image_);
