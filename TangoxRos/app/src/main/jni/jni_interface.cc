@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "tango_ros_node.h"
+#include "tango_ros_native/tango_ros_node.h"
 #include "tango_ros_util.h"
 
 static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
