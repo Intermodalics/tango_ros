@@ -20,6 +20,7 @@
 ########################
 *.catkin_workspace
 *devel/
+*install/
 
 # Gradle generated files
 *build/
