@@ -18,23 +18,18 @@
 
 class TangoRosTest : public ::testing::Test {
  public:
-  char* MASTER_URI = "__master:=http://im-desktop-005:11311";
-  char* DEVICE_IP = "__ip:=192.168.168.184";
+  const std::string MASTER_URI = "__master:=http://im-desktop-005:11311";
+  const std::string DEVICE_IP = "__ip:=192.168.168.184";
+  std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
 
  protected:
   virtual void SetUp() {
-    tango_ros_util::InitRos(MASTER_URI, DEVICE_IP);
-
+    tango_ros_util::InitRos(MASTER_URI.c_str(), DEVICE_IP.c_str());
     publisher_config_.publish_device_pose = true;
     publisher_config_.publish_point_cloud = true;
     publisher_config_.publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
-
     tango_ros_node_.reset(new tango_ros_node::TangoRosNode(publisher_config_));
     tango_ros_node_->OnTangoServiceConnected();
-
-    while(tango_ros_util::IsRosOK()) {
-      tango_ros_node_->Publish();
-    }
   }
 
   virtual void TearDown() {
@@ -43,11 +38,12 @@ class TangoRosTest : public ::testing::Test {
 
  private:
   tango_ros_node::PublisherConfiguration publisher_config_;
-  std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
 };
 
 TEST_F(TangoRosTest, Test1) {
-
+  while(tango_ros_util::IsRosOK()) {
+    tango_ros_node_->Publish();
+  }
 }
 
 // Run all the tests that were declared with TEST()
@@ -55,4 +51,3 @@ int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
