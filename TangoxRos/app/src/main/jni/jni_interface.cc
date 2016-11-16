@@ -11,9 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <jni.h>
 #include "tango_ros_native/tango_ros_node.h"
 #include "tango_ros_native/tango_ros_util.h"
+
+#include <jni.h>
 
 static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
 
