@@ -113,7 +113,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                     Log.i(TAG, "Publish device pose is switched on");
                 } else {
                     mPublishConfig.publishDevicePose = false;
-                    Log.i(TAG, "Publish device pose i switched off");
+                    Log.i(TAG, "Publish device pose is switched off");
                 }
             }
         });

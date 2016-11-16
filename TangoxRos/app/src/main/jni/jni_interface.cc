@@ -66,7 +66,8 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
     JNIEnv* env, jobject /*obj*/, jobject iBinder) {
-  tango_ros->OnTangoServiceConnected(env, iBinder);
+  tango_ros->SetBinder(env, iBinder);
+  tango_ros->OnTangoServiceConnected();
 }
 
 JNIEXPORT void JNICALL
