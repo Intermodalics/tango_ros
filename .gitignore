@@ -7,6 +7,7 @@
 
 # Eclipse project files
 *.project
+*.cproject
 
 # Android Studio project files
 *captures
@@ -19,6 +20,7 @@
 ########################
 *.catkin_workspace
 *devel/
+*install/
 
 # Gradle generated files
 *build/
@@ -38,7 +40,8 @@
 .DS_Store
 
 ######################
-# Specific packages #
+# External lib #
 ######################
 *OpenCV_sdk_native/
 *roscpp_android_ndk/
+*miniglog/
