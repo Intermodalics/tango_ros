@@ -11,20 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <time.h>
+
+#include <gtest/gtest.h>
 #include <tango_ros_native/tango_ros_node.h>
 #include <tango_ros_native/tango_ros_util.h>
 
-#include <gtest/gtest.h>
+std::string master_uri;
+std::string device_ip;
 
 class TangoRosTest : public ::testing::Test {
  public:
-  const std::string MASTER_URI = "__master:=http://im-desktop-005:11311";
-  const std::string DEVICE_IP = "__ip:=192.168.168.184";
+  const int TEST_DURATION = 10; // in second.
   std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
+  tango_ros_node::PublisherConfiguration publisher_config_;
 
  protected:
   virtual void SetUp() {
-    ASSERT_TRUE(tango_ros_util::InitRos(MASTER_URI.c_str(), DEVICE_IP.c_str()));
+    ASSERT_TRUE(tango_ros_util::InitRos(master_uri.c_str(), device_ip.c_str()));
     publisher_config_.publish_device_pose = true;
     publisher_config_.publish_point_cloud = true;
     publisher_config_.publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
@@ -35,19 +39,21 @@ class TangoRosTest : public ::testing::Test {
   virtual void TearDown() {
     tango_ros_node_->TangoDisconnect();
   }
-
- private:
-  tango_ros_node::PublisherConfiguration publisher_config_;
 };
 
-TEST_F(TangoRosTest, Test1) {
-  while(tango_ros_util::IsRosOK()) {
+TEST_F(TangoRosTest, TestApi) {
+  time_t current_time = time(NULL);
+  time_t end = current_time + TEST_DURATION;
+  while(tango_ros_util::IsRosOK() && current_time < end) {
     tango_ros_node_->Publish();
+    current_time = time(NULL);
   }
 }
 
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
+  master_uri = argv[1];
+  device_ip = argv[2];
   return RUN_ALL_TESTS();
 }
