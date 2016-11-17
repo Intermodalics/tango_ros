@@ -24,12 +24,12 @@ class TangoRosTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
-    tango_ros_util::InitRos(MASTER_URI.c_str(), DEVICE_IP.c_str());
+    ASSERT_TRUE(tango_ros_util::InitRos(MASTER_URI.c_str(), DEVICE_IP.c_str()));
     publisher_config_.publish_device_pose = true;
     publisher_config_.publish_point_cloud = true;
     publisher_config_.publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
     tango_ros_node_.reset(new tango_ros_node::TangoRosNode(publisher_config_));
-    tango_ros_node_->OnTangoServiceConnected();
+    ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
   }
 
   virtual void TearDown() {

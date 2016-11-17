@@ -63,7 +63,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     public void applySettings(View view) {
         onPause();
-        mJniInterface.initNode(this, mPublishConfig);
+        if(!mJniInterface.initNode(this, mPublishConfig)) {
+            Log.e(TAG, "Unable to init Tango Ros node");
+            return;
+        }
         mIsInitialised = true;
         onResume();
     }
@@ -75,7 +78,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            mJniInterface.onTangoServiceConnected(service);
+            if(!mJniInterface.onTangoServiceConnected(service)) {
+                Log.e(TAG, "Unable to connect to Tango Service");
+            }
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -89,7 +94,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                mJniInterface.initNode(this, mPublishConfig);
+                if(!mJniInterface.initNode(this, mPublishConfig)) {
+                    Log.e(TAG, "Unable to init Tango Ros node");
+                    return;
+                }
                 mIsInitialised = true;
             } else {
                 Log.e(TAG, "Unable to init ROS!");
