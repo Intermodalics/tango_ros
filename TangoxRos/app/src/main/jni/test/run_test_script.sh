@@ -27,4 +27,13 @@ $CMD
 
 CMD="adb shell LD_LIBRARY_PATH=$DEST_DIR $DEST_DIR/test_tango_ros_native __master:=http://$MASTER_URI __ip:=$DEVICE_IP"
 echo $CMD
-$CMD
+$CMD & DEVICE_TEST=&!
+sleep 3
+
+DESKTOP_TEST_DIR="$HOME/TangoApps/tango_ros_catkin/devel/lib/tango_ros_native"
+CMD="$DESKTOP_TEST_DIR/tango_ros_native-test_tango_ros"
+echo $CMD
+$CMD & DESKTOP_TEST=$!
+
+wait $DEVICE_TEST
+wait $DESKTOP_TEST
