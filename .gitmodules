@@ -1,0 +1,9 @@
+[submodule "miniglog"]
+	path = miniglog
+	url = https://github.com/tzutalin/miniglog
+[submodule "third_party/glog_catkin"]
+	path = third_party/glog_catkin
+	url = https://github.com/ethz-asl/glog_catkin
+[submodule "third_party/catkin_simple"]
+	path = third_party/catkin_simple
+	url = https://github.com/catkin/catkin_simple

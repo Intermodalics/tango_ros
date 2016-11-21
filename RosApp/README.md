@@ -18,7 +18,6 @@
 ### Miniglog
 
 * From the TangoApps repository:  
-```$ git clone https://github.com/tzutalin/miniglog.git```  
 ```$ cd miniglog```  
 ```$ ./build.sh```  
 
