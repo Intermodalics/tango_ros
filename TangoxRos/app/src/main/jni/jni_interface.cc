@@ -60,17 +60,13 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publisher_configuration);
   tango_ros.reset(new tango_ros_node::TangoRosNode(publisher_configuration));
-  return tango_ros->CheckTangoVersion(env, activity);
+  return tango_ros->isTangoVersionOk(env, activity);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
     JNIEnv* env, jobject /*obj*/, jobject iBinder) {
-  jboolean result = tango_ros->SetBinder(env, iBinder);
-  if (result) {
-    result = tango_ros->OnTangoServiceConnected();
-  }
-  return result;
+  return tango_ros->SetBinder(env, iBinder) && tango_ros->OnTangoServiceConnected();
 }
 
 JNIEXPORT void JNICALL

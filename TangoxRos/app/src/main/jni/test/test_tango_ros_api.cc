@@ -41,7 +41,7 @@ class TangoRosTest : public ::testing::Test {
   }
 };
 
-TEST_F(TangoRosTest, TestApi) {
+TEST_F(TangoRosTest, TestPublishingForFixedTime) {
   time_t current_time = time(NULL);
   time_t end = current_time + TEST_DURATION;
   while(tango_ros_util::IsRosOK() && current_time < end) {

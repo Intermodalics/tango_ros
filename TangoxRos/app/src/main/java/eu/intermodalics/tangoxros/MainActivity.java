@@ -12,8 +12,10 @@ import android.os.IBinder;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.Toast;
 
 public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -22,7 +24,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
 
     private JNIInterface mJniInterface;
     private String mMasterUri;
-    private boolean mIsInitialised = false;
+    private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
 
     /**
@@ -58,17 +60,16 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         setMasterUriDialog.show(manager, "MatserUriDialog");
     }
 
-    /**
-     * Implements callback for Apply button.
-     */
-    public void applySettings(View view) {
+    public boolean applySettings() {
         onPause();
-        if(!mJniInterface.initNode(this, mPublishConfig)) {
+        if(mJniInterface.initNode(this, mPublishConfig)) {
+            mIsNodeInitialised = true;
+            onResume();
+        } else {
             Log.e(TAG, "Unable to init Tango Ros node");
-            return;
+            return false;
         }
-        mIsInitialised = true;
-        onResume();
+        return true;
     }
 
     /**
@@ -79,7 +80,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
             if(!mJniInterface.onTangoServiceConnected(service)) {
-                Log.e(TAG, "Unable to connect to Tango Service");
+                Log.e(TAG, getResources().getString(R.string.tango_service_error));
+                Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                onDestroy();
             }
         }
 
@@ -94,13 +97,15 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                if(!mJniInterface.initNode(this, mPublishConfig)) {
-                    Log.e(TAG, "Unable to init Tango Ros node");
-                    return;
+                if(mJniInterface.initNode(this, mPublishConfig)) {
+                    mIsNodeInitialised = true;
+                } else {
+                    Log.e(TAG, getResources().getString(R.string.tango_node_error));
+                     Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
                 }
-                mIsInitialised = true;
             } else {
-                Log.e(TAG, "Unable to init ROS!");
+                Log.e(TAG, getResources().getString(R.string.tango_ros_error));
+                 Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
             }
         } else {
             Log.e(TAG, "Master URI is null");
@@ -165,6 +170,14 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
+        // Set callback for apply button.
+        Button buttonApply = (Button)findViewById(R.id.apply);
+        buttonApply.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                applySettings();
+            }
+        });
         // Request master URI from user.
         showSetMasterUriDialog();
     }
@@ -172,7 +185,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onResume() {
         super.onResume();
-        if (mIsInitialised) {
+        if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             new Thread(new Runnable() {
                 @Override
@@ -188,9 +201,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onPause() {
         super.onPause();
-        if (mIsInitialised) {
-            mJniInterface.tangoDisconnect();
-            unbindService(mTangoServiceConnection);
-        }
+        mJniInterface.tangoDisconnect();
+        unbindService(mTangoServiceConnection);
     }
 }
