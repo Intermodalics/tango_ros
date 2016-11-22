@@ -75,6 +75,7 @@ TEST_F(TangoRosTest, TestMessages) {
   EXPECT_FALSE(fisheye_image_received_);
   EXPECT_FALSE(color_image_received_);
 
+  // Sleep some time to be sure that data is published.
   sleep(2);
   ros::spinOnce();
 
