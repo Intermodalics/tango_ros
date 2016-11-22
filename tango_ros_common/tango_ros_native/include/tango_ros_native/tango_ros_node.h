@@ -33,6 +33,8 @@ namespace tango_ros_node {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
+// Compressing quality for OpenCV to compress an image to JPEG format,
+// can take a value from 0 to 100 (the higher is the better).
 const int IMAGE_COMPRESSING_QUALITY = 50;
 
 // Camera bitfield values.
@@ -41,32 +43,56 @@ const uint32_t CAMERA_FISHEYE = (1 << 1);
 const uint32_t CAMERA_COLOR = (1 << 2);
 
 struct PublisherConfiguration {
+  // True if pose needs to be published.
   bool publish_device_pose = false;
+  // True if point cloud needs to be published.
   bool publish_point_cloud = false;
+  // Flag corresponding to which cameras need to be published.
   uint32_t publish_camera = CAMERA_NONE;
 
+  // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
+  // Topic name for the fisheye image publisher.
   std::string fisheye_camera_topic = "tango/camera/fisheye/image_raw/compressed";
+  // Topic name for the color image publisher.
   std::string color_camera_topic = "tango/camera/color/image_raw/compressed";
 };
 
+// Node collecting tango data and publishing it on ros topic.
 class TangoRosNode {
  public:
   TangoRosNode(PublisherConfiguration publisher_config);
   ~TangoRosNode();
+  // Checks the installed version of the TangoCore. If it is too old, then
+  // it will not support the most up to date features.
+  // @return returns true if tango version if supported.
   bool isTangoVersionOk(JNIEnv* env, jobject activity);
+  // Binds to the tango service.
+  // @return returns true if setting the binder ended successfully.
   bool SetBinder(JNIEnv* env, jobject binder);
+  // Sets the tango config and connects to the tango service.
+  // It also publishes the necessary static transforms (device_T_camera_*).
+  // @return returns true if it ended successfully.
   bool OnTangoServiceConnected();
+  // Disconnects from the tango service.
   void TangoDisconnect();
+  // Publishes the available data (device pose, point cloud, images).
   void Publish();
 
+  // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
+  // Function called when a new point cloud is available.
   void OnPointCloudAvailable(const TangoPointCloud* point_cloud);
+  // Function called when a new camera image is available.
   void OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer);
 
  private:
+  // Sets the tango config to be able to collect all necessary data from tango.
+  // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
+  // Connects to the tango service and to the necessary callbacks.
   TangoErrorType TangoConnect();
+  // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;

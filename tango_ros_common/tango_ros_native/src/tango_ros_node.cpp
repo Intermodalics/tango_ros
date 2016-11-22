@@ -26,31 +26,46 @@
 namespace {
 // The minimum Tango Core version required from this application.
 constexpr int kTangoCoreMinimumVersion = 9377;
-// This function routes onPoseAvailable callbacks to the application object for
+// This function routes onPoseAvailable callback to the application object for
 // handling.
-//
-// @param context, context will be a pointer to a AreaLearningApp
-//        instance on which to call callbacks.
+// @param context, context will be a pointer to a TangoRosNode
+//        instance on which to call the callback.
 // @param pose, pose data to route to onPoseAvailable function.
 void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
   tango_ros_node::TangoRosNode* app =
       static_cast<tango_ros_node::TangoRosNode*>(context);
   app->OnPoseAvailable(pose);
 }
-
-void onPointCloudAvailableRouter(void* context, const TangoPointCloud* point_cloud) {
+// This function routes onPointCloudAvailable callback to the application
+// object for handling.
+// @param context, context will be a pointer to a TangoRosNode
+//        instance on which to call the callback.
+// @param point_cloud, point cloud data to route to OnPointCloudAvailable
+//        function.
+void onPointCloudAvailableRouter(void* context,
+                                 const TangoPointCloud* point_cloud) {
   tango_ros_node::TangoRosNode* app =
       static_cast<tango_ros_node::TangoRosNode*>(context);
   app->OnPointCloudAvailable(point_cloud);
 }
-
+// This function routes OnFrameAvailable callback to the application
+// object for handling.
+// @param context, context will be a pointer to a TangoRosNode
+//        instance on which to call the callback.
+// @param camera_id, the ID of the camera. Only TANGO_CAMERA_COLOR and
+//        TANGO_CAMERA_FISHEYE are supported.
+// @param buffer, image data to route to OnFrameAvailable function.
 void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
                             const TangoImageBuffer* buffer) {
   tango_ros_node::TangoRosNode* app =
       static_cast<tango_ros_node::TangoRosNode*>(context);
   app->OnFrameAvailable(camera_id, buffer);
 }
-
+// Converts a TangoPoseData to a geometry_msgs::TransformStamped.
+// @param pose, TangoPoseData to convert.
+// @param time_offset, offset in ms between pose (tango time) and
+//        transform (ros time).
+// @param transform, the output TransformStamped.
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
                         geometry_msgs::TransformStamped* transform) {
@@ -63,7 +78,11 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.w = pose.orientation[3];
   transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
 }
-
+// Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
+// @param tango_point_cloud, TangoPointCloud to convert.
+// @param time_offset, offset in ms between tango_point_cloud (tango time) and
+//        point_cloud (ros time).
+// @param point_cloud, the output PointCloud2.
 void toPointCloud2(const TangoPointCloud& tango_point_cloud,
                    double time_offset,
                    sensor_msgs::PointCloud2* point_cloud) {
@@ -94,7 +113,10 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   }
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
-
+// Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
+// @param image, cv::Mat to compress.
+// @param compressing_quality, value from 0 to 100 (the higher is the better).
+// @param compressed_image, the output CompressedImage.
 void compressImage(const cv::Mat& image, const char* compressing_format,
                        int compressing_quality,
                        sensor_msgs::CompressedImage* compressed_image) {
@@ -103,7 +125,9 @@ void compressImage(const cv::Mat& image, const char* compressing_format,
   std::vector<int> params {CV_IMWRITE_JPEG_QUALITY, compressing_quality};
   cv::imencode(compressing_format, image_good_endcoding, compressed_image->data, params);
 }
-
+// Converts a TangoCoordinateFrameType to a ros frame ID i.e. a string.
+// @param tango_frame_type, TangoCoordinateFrameType to convert.
+// @return returns the corresponding frame id.
 std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   std::string string_frame_type;
   switch(tango_frame_type) {
@@ -175,8 +199,6 @@ TangoRosNode::~TangoRosNode() {
 }
 
 bool TangoRosNode::isTangoVersionOk(JNIEnv* env, jobject activity) {
-  // Check the installed version of the TangoCore.  If it is too old, then
-  // it will not support the most up to date features.
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
   if (err != TANGO_SUCCESS || version < kTangoCoreMinimumVersion) {
