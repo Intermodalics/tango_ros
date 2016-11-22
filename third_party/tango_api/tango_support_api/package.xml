@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>tango_support_api</name>
+  <version>0.0.0</version>
+  <description>Single-header tango_support_api library.</description>
+  <license>Apache</license>
+  
+  <maintainer email="tango-help@google.com"> </maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>tango_client_api</build_depend>
+  
+  <run_depend>tango_client_api</run_depend>
+  
+  <export>
+    <!-- You can specify that this package is a metapackage here: -->
+    <!-- <metapackage/> -->
+
+    <!-- Other tools can request additional information be placed here -->
+  </export>
+  
+</package>
