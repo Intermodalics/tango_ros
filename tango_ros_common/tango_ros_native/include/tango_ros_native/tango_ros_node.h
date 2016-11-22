@@ -54,7 +54,7 @@ class TangoRosNode {
  public:
   TangoRosNode(PublisherConfiguration publisher_config);
   ~TangoRosNode();
-  bool isTangoVersionOk(JNIEnv* env, jobject activity);
+  bool IsTangoVersionOk(JNIEnv* env, jobject activity);
   bool SetBinder(JNIEnv* env, jobject binder);
   bool OnTangoServiceConnected();
   void TangoDisconnect();

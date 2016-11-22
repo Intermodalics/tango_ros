@@ -60,18 +60,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         setMasterUriDialog.show(manager, "MatserUriDialog");
     }
 
-    public boolean applySettings() {
-        onPause();
-        if(mJniInterface.initNode(this, mPublishConfig)) {
-            mIsNodeInitialised = true;
-            onResume();
-        } else {
-            Log.e(TAG, "Unable to init Tango Ros node");
-            return false;
-        }
-        return true;
-    }
-
     /**
      * Tango Service connection.
      */
@@ -92,24 +80,34 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     };
 
+    public boolean initNode() {
+        if(!mJniInterface.initNode(this, mPublishConfig)) {
+            Log.e(TAG, getResources().getString(R.string.tango_node_error));
+            Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
     public void init() {
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                if(mJniInterface.initNode(this, mPublishConfig)) {
-                    mIsNodeInitialised = true;
-                } else {
-                    Log.e(TAG, getResources().getString(R.string.tango_node_error));
-                     Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
-                }
+                mIsNodeInitialised = initNode();
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_ros_error));
-                 Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
             }
         } else {
             Log.e(TAG, "Master URI is null");
         }
+    }
+
+    public void applySettings() {
+        onPause();
+        mIsNodeInitialised = initNode();
+        onResume();
     }
 
     @Override
@@ -201,7 +199,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onPause() {
         super.onPause();
-        mJniInterface.tangoDisconnect();
-        unbindService(mTangoServiceConnection);
+        if (mIsNodeInitialised) {
+            mJniInterface.tangoDisconnect();
+            unbindService(mTangoServiceConnection);
+        }
     }
 }
