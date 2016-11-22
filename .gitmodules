@@ -1,5 +1,5 @@
 [submodule "miniglog"]
-	path = miniglog
+	path = third_party/miniglog
 	url = https://github.com/tzutalin/miniglog
 [submodule "third_party/glog_catkin"]
 	path = third_party/glog_catkin
