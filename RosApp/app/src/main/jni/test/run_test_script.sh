@@ -1,4 +1,6 @@
 #! /bin/bash -x
+adb root
+adb remount
 
 LIB_DIR="$HOME/tango_apps_ws/src/TangoApps/RosApp/app/src/main/libs/armeabi-v7a"
 DEST_DIR="/data/local/tmp"
@@ -16,9 +18,10 @@ adb shell chmod 775 $DEST_DIR/test_tango_ros_native
 # Start the test on device.
 adb shell LD_LIBRARY_PATH=$DEST_DIR $DEST_DIR/test_tango_ros_native __master:=http://$MASTER_URI __ip:=$DEVICE_IP & DEVICE_TEST=&!
 
-# Sleep some time and start the test on desktop.
+# Sleep some time to be sure that the test on device is running.
 sleep 5
-$DESKTOP_TEST_DIR/tango_ros_native-test_tango_ros & DESKTOP_TEST=$!
+# Start the test on desktop.
+$DESKTOP_TEST_DIR/tango_ros_native_test_tango_ros & DESKTOP_TEST=$!
 
 # Wait till both tests are finished.
 wait $DEVICE_TEST

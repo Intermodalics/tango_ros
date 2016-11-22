@@ -25,6 +25,7 @@ class TangoRosTest : public ::testing::Test {
   const int TEST_DURATION = 5; // in second.
   std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
   tango_ros_node::PublisherConfiguration publisher_config_;
+  bool connected_to_tango = false;
 
  protected:
   virtual void SetUp() {
@@ -34,10 +35,13 @@ class TangoRosTest : public ::testing::Test {
     publisher_config_.publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
     tango_ros_node_.reset(new tango_ros_node::TangoRosNode(publisher_config_));
     ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
+    connected_to_tango = true;
   }
 
   virtual void TearDown() {
-    tango_ros_node_->TangoDisconnect();
+    if(connected_to_tango) {
+      tango_ros_node_->TangoDisconnect();
+    }
   }
 };
 

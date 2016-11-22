@@ -198,11 +198,11 @@ TangoRosNode::~TangoRosNode() {
   }
 }
 
-bool TangoRosNode::isTangoVersionOk(JNIEnv* env, jobject activity) {
+bool TangoRosNode::IsTangoVersionOk(JNIEnv* env, jobject activity) {
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
   if (err != TANGO_SUCCESS || version < kTangoCoreMinimumVersion) {
-    LOG(ERROR) << "TangoRosNode::isTangoVersionOk, Tango Core version is out of date.";
+    LOG(ERROR) << "TangoRosNode::IsTangoVersionOk, Tango Core version is out of date.";
     return false;
   }
   return true;

@@ -60,7 +60,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publisher_configuration);
   tango_ros.reset(new tango_ros_node::TangoRosNode(publisher_configuration));
-  return tango_ros->isTangoVersionOk(env, activity);
+  return tango_ros->IsTangoVersionOk(env, activity);
 }
 
 JNIEXPORT jboolean JNICALL

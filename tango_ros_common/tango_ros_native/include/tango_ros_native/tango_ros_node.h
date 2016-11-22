@@ -66,7 +66,7 @@ class TangoRosNode {
   // Checks the installed version of the TangoCore. If it is too old, then
   // it will not support the most up to date features.
   // @return returns true if tango version if supported.
-  bool isTangoVersionOk(JNIEnv* env, jobject activity);
+  bool IsTangoVersionOk(JNIEnv* env, jobject activity);
   // Binds to the tango service.
   // @return returns true if setting the binder ended successfully.
   bool SetBinder(JNIEnv* env, jobject binder);
