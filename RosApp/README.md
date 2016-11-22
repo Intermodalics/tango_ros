@@ -18,7 +18,6 @@
 ### Miniglog
 
 * From the TangoApps repository:  
-```$ git clone https://github.com/tzutalin/miniglog.git```  
 ```$ cd miniglog```  
 ```$ ./build.sh```  
 
@@ -26,7 +25,7 @@
 
 * Download Android Studio (version 2.2 seems to not work properly with this project, you can download previous versions [here](http://tools.android.com/system/app/pages/subPages?path=/download/studio/builds)).
 
-* When starting Android Studio import the project by selecting the TangoxRos directory.
+* When starting Android Studio import the project by selecting the RosApp directory.
 
 * In your local.properties file check that the paths to your android sdk and ndk are set properly.  
 Example:  
@@ -45,4 +44,4 @@ sdk.dir=/opt/android-sdk-linux
 
 * Enter the ros master URI when the application is asking and press connect.
 
-* Open rviz with the config file located at TangoxRos/tango_ros.rviz to visualize the different tango data (device pose, point cloud, image).
+* Open rviz with the config file located at RosApp/tango_ros.rviz to visualize the different tango data (device pose, point cloud, image).

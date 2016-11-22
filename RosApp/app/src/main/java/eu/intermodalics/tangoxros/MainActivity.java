@@ -12,8 +12,10 @@ import android.os.IBinder;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.Toast;
 
 public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -22,7 +24,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
 
     private JNIInterface mJniInterface;
     private String mMasterUri;
-    private boolean mIsInitialised = false;
+    private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
 
     /**
@@ -59,23 +61,17 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     /**
-     * Implements callback for Apply button.
-     */
-    public void applySettings(View view) {
-        onPause();
-        mJniInterface.initNode(this, mPublishConfig);
-        mIsInitialised = true;
-        onResume();
-    }
-
-    /**
      * Tango Service connection.
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            mJniInterface.onTangoServiceConnected(service);
+            if(!mJniInterface.onTangoServiceConnected(service)) {
+                Log.e(TAG, getResources().getString(R.string.tango_service_error));
+                Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                onDestroy();
+            }
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -84,18 +80,35 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     };
 
+    public boolean initNode() {
+        if(!mJniInterface.initNode(this, mPublishConfig)) {
+            Log.e(TAG, getResources().getString(R.string.tango_node_error));
+            Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
     public void init() {
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                mJniInterface.initNode(this, mPublishConfig);
-                mIsInitialised = true;
+                mIsNodeInitialised = initNode();
             } else {
-                Log.e(TAG, "Unable to init ROS!");
+                Log.e(TAG, getResources().getString(R.string.tango_ros_error));
+                Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
             }
         } else {
             Log.e(TAG, "Master URI is null");
+        }
+    }
+
+    public void applySettings() {
+        onPause();
+        mIsNodeInitialised = initNode();
+        if (mIsNodeInitialised) {
+            onResume();
         }
     }
 
@@ -113,7 +126,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                     Log.i(TAG, "Publish device pose is switched on");
                 } else {
                     mPublishConfig.publishDevicePose = false;
-                    Log.i(TAG, "Publish device pose i switched off");
+                    Log.i(TAG, "Publish device pose is switched off");
                 }
             }
         });
@@ -157,6 +170,14 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
+        // Set callback for apply button.
+        Button buttonApply = (Button)findViewById(R.id.apply);
+        buttonApply.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                applySettings();
+            }
+        });
         // Request master URI from user.
         showSetMasterUriDialog();
     }
@@ -164,7 +185,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onResume() {
         super.onResume();
-        if (mIsInitialised) {
+        if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             new Thread(new Runnable() {
                 @Override
@@ -180,7 +201,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     protected void onPause() {
         super.onPause();
-        if (mIsInitialised) {
+        if (mIsNodeInitialised) {
             mJniInterface.tangoDisconnect();
             unbindService(mTangoServiceConnection);
         }

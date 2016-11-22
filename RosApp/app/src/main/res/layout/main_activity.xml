@@ -42,7 +42,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_below="@+id/checkbox_pointcloud"
-            android:text="@string/apply"
-            android:onClick="applySettings" />
+            android:text="@string/apply" />
     </LinearLayout>
 </FrameLayout>
