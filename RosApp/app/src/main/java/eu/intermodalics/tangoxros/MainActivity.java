@@ -107,7 +107,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     public void applySettings() {
         onPause();
         mIsNodeInitialised = initNode();
-        onResume();
+        if (mIsNodeInitialised) {
+            onResume();
+        }
     }
 
     @Override
