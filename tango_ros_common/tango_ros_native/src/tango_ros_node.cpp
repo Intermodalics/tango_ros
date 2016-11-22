@@ -25,7 +25,7 @@
 
 namespace {
 // The minimum Tango Core version required from this application.
-constexpr int kTangoCoreMinimumVersion = 9377;
+constexpr int TANGO_CORE_MINIMUM_VERSION = 12314;
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode
@@ -201,8 +201,10 @@ TangoRosNode::~TangoRosNode() {
 bool TangoRosNode::IsTangoVersionOk(JNIEnv* env, jobject activity) {
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
-  if (err != TANGO_SUCCESS || version < kTangoCoreMinimumVersion) {
-    LOG(ERROR) << "TangoRosNode::IsTangoVersionOk, Tango Core version is out of date.";
+  if (err != TANGO_SUCCESS || version < TANGO_CORE_MINIMUM_VERSION) {
+    LOG(ERROR) << "TangoRosNode::IsTangoVersionOk, Tango Core version is out of"
+        "date, minimum version required: " << TANGO_CORE_MINIMUM_VERSION <<
+        ", version used: " << version;
     return false;
   }
   return true;
