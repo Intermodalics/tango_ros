@@ -18,7 +18,12 @@
 #include <ros/ros.h>
 
 namespace tango_ros_util {
+// Initializes ros with the correct arguments.
+// @param master_uri, URI of the ros master.
+// @param slave_ip, IP address of the device.
+// @return returns true if the ros master was found.
 bool InitRos(const char* master_uri, const char* slave_ip);
+// Returns true if ROS is OK, false if it has shut down.
 bool IsRosOK();
 } // namespace tango_ros_util
 #endif  // TANGO_ROS_UTIL_H_
