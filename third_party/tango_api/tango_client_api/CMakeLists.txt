@@ -5,6 +5,7 @@ find_package(catkin REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
+  LIBRARIES tango_client_api
   )
 
 include_directories(

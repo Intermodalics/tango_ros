@@ -6,6 +6,8 @@ find_package(JNI REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
+  CATKIN_DEPENDS tango_client_api
+  LIBRARIES tango_support_api
   )
 
 include_directories(
@@ -20,7 +22,6 @@ add_library(tango_support_api
 
 target_link_libraries(tango_support_api
   ${catkin_LIBRARIES}
-  tango_client_api
   )
 
 install(TARGETS tango_support_api

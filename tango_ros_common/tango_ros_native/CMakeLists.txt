@@ -18,7 +18,7 @@ find_package(JNI REQUIRED)
 find_package(OpenCV 2 REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp sensor_msgs
+  CATKIN_DEPENDS roscpp sensor_msgs glog_catkin tango_client_api tango_support_api tf tf2_ros
   DEPENDS Eigen OpenCV
   )
   
@@ -39,8 +39,6 @@ target_link_libraries(tango_ros_native
   ${catkin_LIBRARIES}
   ${Eigen_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  tango_client_api
-  tango_support_api
   )
 
 install(TARGETS tango_ros_native
