@@ -25,7 +25,7 @@
 
 namespace {
 // The minimum Tango Core version required from this application.
-constexpr int TANGO_CORE_MINIMUM_VERSION = 12314;
+constexpr int TANGO_CORE_MINIMUM_VERSION = 11926; // Yildun release.
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode

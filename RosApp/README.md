@@ -34,7 +34,7 @@ sdk.dir=/opt/android-sdk-linux
 
 * Plug an android device to your desktop.
 
-* Check the TangoCore version of your device (Settings->Apps->Tango Core). The app was tested on Sirius and Yildun releases.
+* Check the TangoCore version of your device (Settings->Apps->Tango Core). The app was tested on Yildun release.
 
 * Press the green arrow in Android Studio to build and install the app on the device.
 
