@@ -2,11 +2,11 @@
 adb root
 adb remount
 
-LIB_DIR="$HOME/tango_apps_ws/src/TangoApps/RosApp/app/src/main/libs/armeabi-v7a"
+LIB_DIR="$HOME/tango_ros_ws/src/tango_ros/RosApp/app/src/main/libs/armeabi-v7a"
 DEST_DIR="/data/local/tmp"
 MASTER_URI="im-desktop-005:11311"
 DEVICE_IP="192.168.168.185"
-DESKTOP_TEST_DIR="$HOME/tango_apps_ws/devel/lib/tango_ros_native"
+DESKTOP_TEST_DIR="$HOME/tango_ros_ws/devel/lib/tango_ros_native"
 
 # Push libs and test executable to the device.
 adb push $LIB_DIR/libtango_ros_android.so $DEST_DIR/
