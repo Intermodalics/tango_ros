@@ -79,6 +79,15 @@ Java_eu_intermodalics_tangoxros_JNIInterface_stopPublishing(JNIEnv* /*env*/, job
   tango_ros->StopPublishingThreads();
 }
 
+JNIEXPORT void JNICALL
+Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv* env, jobject /*obj*/,
+    jobject jpublisherConfiguration) {
+  tango_ros_node::PublisherConfiguration publisher_configuration;
+  set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
+    &publisher_configuration);
+  tango_ros->UpdatePublisherConfiguration(publisher_configuration);
+}
+
 #ifdef __cplusplus
 }
 #endif

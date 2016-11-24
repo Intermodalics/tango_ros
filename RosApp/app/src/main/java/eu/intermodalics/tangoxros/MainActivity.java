@@ -121,11 +121,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     public void applySettings() {
-        onPause();
-        mIsNodeInitialised = initNode();
-        if (mIsNodeInitialised) {
-            onResume();
-        }
+        mJniInterface.stopPublishing();
+        mJniInterface.updatePublisherConfiguration(mPublishConfig);
+        mJniInterface.startPublishing();
     }
 
     @Override

@@ -67,7 +67,7 @@ struct PublisherConfiguration {
 // Node collecting tango data and publishing it on ros topic.
 class TangoRosNode {
  public:
-  TangoRosNode(PublisherConfiguration publisher_config);
+  TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
   // Checks the installed version of the TangoCore. If it is too old, then
   // it will not support the most up to date features.
@@ -87,6 +87,9 @@ class TangoRosNode {
   // Stop the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishingThreads();
+  // Sets a new PublisherConfiguration and calls PublishStaticTransforms with
+  // the new publisher_config.
+  void UpdatePublisherConfiguration(const PublisherConfiguration& publisher_config);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -102,27 +105,32 @@ class TangoRosNode {
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
   TangoErrorType TangoConnect();
+  // Publishes the necessary static transforms (device_T_camera_*).
+  void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, images).
-  void PublishPose();
+  void PublishDevicePose();
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  void publish_pose_thread();
+  // Thread methods for publishing data.
+  void publish_device_pose_thread();
   void publish_pointcloud_thread();
   void publish_fisheye_image_thread();
   void publish_color_image_thread();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
-  PublisherConfiguration publisher_config_;
 
-  std::thread publish_pose_thread_;
+  PublisherConfiguration publisher_config_;
+  std::mutex publisher_config_mutex_;
+  std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
-  std::atomic<bool> run_publish_thread_;
+  bool run_threads_ = false;
+  std::mutex run_threads_mutex_;
 
-  bool pose_lock_ = false;
+  bool device_pose_lock_ = false;
   bool point_cloud_lock_ = false;
   bool fisheye_image_lock_ = false;
   bool color_image_lock_ = false;

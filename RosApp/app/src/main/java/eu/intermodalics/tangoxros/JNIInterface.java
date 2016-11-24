@@ -34,6 +34,7 @@ public class JNIInterface {
 
     /**
      * Initializes ROS given the ros master URI and the device IP address.
+     *
      * @param masterUri URI of the ROS master, format is __master:=http://local-desktop:11311.
      * @param ipAddress IP address of the device, format is __ip:=192.168.168.185.
      * @return true is initialization was successful.
@@ -45,7 +46,9 @@ public class JNIInterface {
      *   * creates the node and its publishers.
      *   * check that the tango version is correct.
      * initRos should always be called before.
+     *
      * @param callerActivity the caller activity of this function.
+     * @param publisherConfiguration configuration representing which data need to be published.
      * @return true if the version of tango is ok.
      */
     public static native boolean initNode(Activity callerActivity, PublisherConfiguration publisherConfiguration);
@@ -72,4 +75,11 @@ public class JNIInterface {
      * Stop publishing the available tango data.
      */
     public static native void stopPublishing();
+
+    /**
+     * Update the publisher configuration of the tango-ros node.
+     *
+     * @param publisherConfiguration the new publisher configuration.
+     */
+    public static native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }
