@@ -176,6 +176,15 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 namespace tango_ros_node {
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
     publisher_config_(publisher_config) {
+  device_pose_lock_ = false;
+  point_cloud_lock_ = false;
+  fisheye_image_lock_ = false;
+  color_image_lock_ = false;
+  new_pose_available_ = false;
+  new_point_cloud_available_ = false;
+  new_fisheye_image_available_ = false;
+  new_color_image_available_ = false;
+
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =

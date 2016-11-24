@@ -130,15 +130,15 @@ class TangoRosNode {
   bool run_threads_ = false;
   std::mutex run_threads_mutex_;
 
-  bool device_pose_lock_ = false;
-  bool point_cloud_lock_ = false;
-  bool fisheye_image_lock_ = false;
-  bool color_image_lock_ = false;
+  std::atomic_bool device_pose_lock_;
+  std::atomic_bool point_cloud_lock_;
+  std::atomic_bool fisheye_image_lock_;
+  std::atomic_bool color_image_lock_;
 
-  bool new_pose_available_ = false;
-  bool new_point_cloud_available_ = false;
-  bool new_fisheye_image_available_ = false;
-  bool new_color_image_available_ = false;
+  std::atomic_bool new_pose_available_;
+  std::atomic_bool new_point_cloud_available_;
+  std::atomic_bool new_fisheye_image_available_;
+  std::atomic_bool new_color_image_available_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
