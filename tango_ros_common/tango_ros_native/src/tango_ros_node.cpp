@@ -171,12 +171,12 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   }
   return string_frame_type;
 }
-
 }  // namespace
 
 namespace tango_ros_node {
 TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
     publisher_config_(publisher_config) {
+  run_publish_thread_ = false;
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -193,6 +193,7 @@ TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
 }
 
 TangoRosNode::~TangoRosNode() {
+  StopPublishingThread();
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
   }
@@ -492,5 +493,25 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
       color_image_lock_ = false;
     }
   }
+}
+
+void TangoRosNode::StartPublishingThread() {
+  publish_thread_ = std::thread(&TangoRosNode::publish_thread_method, this);
+  run_publish_thread_ = true;
+}
+
+void TangoRosNode::StopPublishingThread() {
+  if (run_publish_thread_) {
+    run_publish_thread_ = false;
+    publish_thread_.join();
+  }
+}
+
+void TangoRosNode::publish_thread_method() {
+  while(ros::ok() && run_publish_thread_) {
+    Publish();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return;
 }
 }

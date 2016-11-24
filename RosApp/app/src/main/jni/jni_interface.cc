@@ -49,11 +49,6 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*
 }
 
 JNIEXPORT jboolean JNICALL
-Java_eu_intermodalics_tangoxros_JNIInterface_isRosOk(JNIEnv* env, jobject /*obj*/) {
-  return tango_ros_util::IsRosOK();
-}
-
-JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj*/, jobject activity,
     jobject jpublisherConfiguration) {
   tango_ros_node::PublisherConfiguration publisher_configuration;
@@ -75,8 +70,13 @@ Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv* /*env*/, jo
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_JNIInterface_publish(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->Publish();
+Java_eu_intermodalics_tangoxros_JNIInterface_startPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
+  tango_ros->StartPublishingThread();
+}
+
+JNIEXPORT void JNICALL
+Java_eu_intermodalics_tangoxros_JNIInterface_stopPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
+  tango_ros->StopPublishingThread();
 }
 
 #ifdef __cplusplus

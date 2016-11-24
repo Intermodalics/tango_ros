@@ -13,8 +13,14 @@
 // limitations under the License.
 #ifndef TANGO_ROS_NODE_H_
 #define TANGO_ROS_NODE_H_
-#include <jni.h>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #include <string>
+
+#include <jni.h>
 
 #include <tango_client_api/tango_client_api.h>
 #include <tango_support_api/tango_support_api.h>
@@ -76,8 +82,11 @@ class TangoRosNode {
   bool OnTangoServiceConnected();
   // Disconnects from the tango service.
   void TangoDisconnect();
-  // Publishes the available data (device pose, point cloud, images).
-  void Publish();
+  // Start the thread which publishes data.
+  void StartPublishingThread();
+  // Stop the thread which publishes data.
+  // Will not return until the internal thread has exited.
+  void StopPublishingThread();
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -91,12 +100,18 @@ class TangoRosNode {
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
   // Connects to the tango service and to the necessary callbacks.
-  TangoErrorType TangoConnect();
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
+  TangoErrorType TangoConnect();
+  // Publishes the available data (device pose, point cloud, images).
+  void Publish();
+  void publish_thread_method();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
   PublisherConfiguration publisher_config_;
+
+  std::thread publish_thread_;
+  std::atomic<bool> run_publish_thread_;
 
   bool pose_lock_ = false;
   bool point_cloud_lock_ = false;

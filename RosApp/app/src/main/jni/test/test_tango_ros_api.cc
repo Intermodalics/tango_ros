@@ -48,10 +48,11 @@ class TangoRosTest : public ::testing::Test {
 TEST_F(TangoRosTest, TestPublishingForFixedTime) {
   time_t current_time = time(NULL);
   time_t end = current_time + TEST_DURATION;
-  while(tango_ros_util::IsRosOK() && current_time < end) {
-    tango_ros_node_->Publish();
+  while(current_time < end) {
+     tango_ros_node_->StartPublishingThread();
     current_time = time(NULL);
   }
+  tango_ros_node_->StopPublishingThread();
 }
 
 // Run all the tests that were declared with TEST()
