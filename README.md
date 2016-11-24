@@ -7,4 +7,5 @@ mkdir -p ~/tango_ros_ws/src
 cd ~/tango_ros_ws/src
 git clone --recursive git@github.com:Intermodalics/tango_ros.git
 cd ~/tango_ros_ws
-catkin build```  
+catkin build
+```  
