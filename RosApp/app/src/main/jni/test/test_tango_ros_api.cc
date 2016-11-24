@@ -49,10 +49,10 @@ TEST_F(TangoRosTest, TestPublishingForFixedTime) {
   time_t current_time = time(NULL);
   time_t end = current_time + TEST_DURATION;
   while(current_time < end) {
-     tango_ros_node_->StartPublishingThread();
+     tango_ros_node_->StartPublishingThreads();
     current_time = time(NULL);
   }
-  tango_ros_node_->StopPublishingThread();
+  tango_ros_node_->StopPublishingThreads();
 }
 
 // Run all the tests that were declared with TEST()

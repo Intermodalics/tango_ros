@@ -71,12 +71,12 @@ Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv* /*env*/, jo
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_startPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->StartPublishingThread();
+  tango_ros->StartPublishingThreads();
 }
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_stopPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->StopPublishingThread();
+  tango_ros->StopPublishingThreads();
 }
 
 #ifdef __cplusplus

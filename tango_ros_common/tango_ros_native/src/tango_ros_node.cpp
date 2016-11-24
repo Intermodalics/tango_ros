@@ -193,7 +193,7 @@ TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
 }
 
 TangoRosNode::~TangoRosNode() {
-  StopPublishingThread();
+  StopPublishingThreads();
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
   }
@@ -396,42 +396,6 @@ void TangoRosNode::TangoDisconnect() {
   TangoService_disconnect();
 }
 
-void TangoRosNode::Publish() {
-  if (new_pose_available_ && !pose_lock_ && publisher_config_.publish_device_pose) {
-    pose_lock_ = true;
-    tf_broadcaster_.sendTransform(start_of_service_T_device_);
-    new_pose_available_ = false;
-    pose_lock_ = false;
-  }
-
-  if (publisher_config_.publish_point_cloud && new_point_cloud_available_ && !point_cloud_lock_) {
-    point_cloud_lock_ = true;
-    point_cloud_publisher_.publish(point_cloud_);
-    new_point_cloud_available_ = false;
-    point_cloud_lock_ = false;
-  }
-
-  if ((publisher_config_.publish_camera & CAMERA_FISHEYE) && new_fisheye_image_available_ &&
-       !fisheye_image_lock_) {
-    fisheye_image_lock_ = true;
-    compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
-      &fisheye_compressed_image_);
-    fisheye_image_publisher_.publish(fisheye_compressed_image_);
-    new_fisheye_image_available_ = false;
-    fisheye_image_lock_ = false;
-  }
-
-  if ((publisher_config_.publish_camera & CAMERA_COLOR) && new_color_image_available_ &&
-       !color_image_lock_) {
-    color_image_lock_ = true;
-    compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
-      &color_compressed_image_);
-    color_image_publisher_.publish(color_compressed_image_);
-    new_color_image_available_ = false;
-    color_image_lock_ = false;
-  }
-}
-
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
   if (publisher_config_.publish_device_pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
@@ -495,21 +459,93 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
   }
 }
 
-void TangoRosNode::StartPublishingThread() {
-  publish_thread_ = std::thread(&TangoRosNode::publish_thread_method, this);
-  run_publish_thread_ = true;
-}
-
-void TangoRosNode::StopPublishingThread() {
-  if (run_publish_thread_) {
-    run_publish_thread_ = false;
-    publish_thread_.join();
+void TangoRosNode::PublishPose() {
+  if (new_pose_available_ && !pose_lock_ && publisher_config_.publish_device_pose) {
+    pose_lock_ = true;
+    tf_broadcaster_.sendTransform(start_of_service_T_device_);
+    new_pose_available_ = false;
+    pose_lock_ = false;
   }
 }
 
-void TangoRosNode::publish_thread_method() {
+void TangoRosNode::PublishPointCloud() {
+  if (publisher_config_.publish_point_cloud && new_point_cloud_available_ && !point_cloud_lock_) {
+    point_cloud_lock_ = true;
+    point_cloud_publisher_.publish(point_cloud_);
+    new_point_cloud_available_ = false;
+    point_cloud_lock_ = false;
+  }
+}
+
+void TangoRosNode::PublishFisheyeImage() {
+  if ((publisher_config_.publish_camera & CAMERA_FISHEYE) && new_fisheye_image_available_ &&
+       !fisheye_image_lock_) {
+    fisheye_image_lock_ = true;
+    compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
+      &fisheye_compressed_image_);
+    fisheye_image_publisher_.publish(fisheye_compressed_image_);
+    new_fisheye_image_available_ = false;
+    fisheye_image_lock_ = false;
+  }
+}
+
+void TangoRosNode::PublishColorImage() {
+  if ((publisher_config_.publish_camera & CAMERA_COLOR) && new_color_image_available_ &&
+       !color_image_lock_) {
+    color_image_lock_ = true;
+    compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
+      &color_compressed_image_);
+    color_image_publisher_.publish(color_compressed_image_);
+    new_color_image_available_ = false;
+    color_image_lock_ = false;
+  }
+}
+
+void TangoRosNode::StartPublishingThreads() {
+  publish_pose_thread_ = std::thread(&TangoRosNode::publish_pose_thread, this);
+  publish_pointcloud_thread_ = std::thread(&TangoRosNode::publish_pointcloud_thread, this);
+  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::publish_fisheye_image_thread, this);
+  publish_color_image_thread_ = std::thread(&TangoRosNode::publish_color_image_thread, this);
+  run_publish_thread_ = true;
+}
+
+void TangoRosNode::StopPublishingThreads() {
+  if (run_publish_thread_) {
+    run_publish_thread_ = false;
+    publish_pose_thread_.join();
+    publish_pointcloud_thread_.join();
+    publish_fisheye_image_thread_.join();
+    publish_color_image_thread_.join();
+  }
+}
+
+void TangoRosNode::publish_pose_thread() {
   while(ros::ok() && run_publish_thread_) {
-    Publish();
+    PublishPose();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return;
+}
+
+void TangoRosNode::publish_pointcloud_thread() {
+  while(ros::ok() && run_publish_thread_) {
+    PublishPointCloud();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return;
+}
+
+void TangoRosNode::publish_fisheye_image_thread() {
+  while(ros::ok() && run_publish_thread_) {
+    PublishFisheyeImage();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return;
+}
+
+void TangoRosNode::publish_color_image_thread() {
+  while(ros::ok() && run_publish_thread_) {
+    PublishColorImage();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   return;

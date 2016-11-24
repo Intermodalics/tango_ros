@@ -82,11 +82,11 @@ class TangoRosNode {
   bool OnTangoServiceConnected();
   // Disconnects from the tango service.
   void TangoDisconnect();
-  // Start the thread which publishes data.
-  void StartPublishingThread();
-  // Stop the thread which publishes data.
-  // Will not return until the internal thread has exited.
-  void StopPublishingThread();
+  // Start the threads that publish data.
+  void StartPublishingThreads();
+  // Stop the threads that publish data.
+  // Will not return until all the internal threads have exited.
+  void StopPublishingThreads();
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -103,14 +103,23 @@ class TangoRosNode {
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
   TangoErrorType TangoConnect();
   // Publishes the available data (device pose, point cloud, images).
-  void Publish();
-  void publish_thread_method();
+  void PublishPose();
+  void PublishPointCloud();
+  void PublishFisheyeImage();
+  void PublishColorImage();
+  void publish_pose_thread();
+  void publish_pointcloud_thread();
+  void publish_fisheye_image_thread();
+  void publish_color_image_thread();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
   PublisherConfiguration publisher_config_;
 
-  std::thread publish_thread_;
+  std::thread publish_pose_thread_;
+  std::thread publish_pointcloud_thread_;
+  std::thread publish_fisheye_image_thread_;
+  std::thread publish_color_image_thread_;
   std::atomic<bool> run_publish_thread_;
 
   bool pose_lock_ = false;
