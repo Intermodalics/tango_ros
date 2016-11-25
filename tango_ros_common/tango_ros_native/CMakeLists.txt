@@ -3,6 +3,7 @@ project(tango_ros_native)
 add_compile_options(-std=c++11)
  
 find_package(catkin REQUIRED COMPONENTS
+   dynamic_reconfigure
    glog_catkin
    roscpp
    sensor_msgs
@@ -16,6 +17,10 @@ find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(JNI REQUIRED)
 find_package(OpenCV 2 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/Publisher.cfg
+)
 
 catkin_package(
   CATKIN_DEPENDS roscpp sensor_msgs glog_catkin tango_client_api tango_support_api tf tf2_ros
@@ -40,6 +45,8 @@ target_link_libraries(tango_ros_native
   ${Eigen_LIBRARIES}
   ${OpenCV_LIBRARIES}
   )
+
+add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg)
 
 install(TARGETS tango_ros_native
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

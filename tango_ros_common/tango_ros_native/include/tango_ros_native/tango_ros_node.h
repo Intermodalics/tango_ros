@@ -35,7 +35,9 @@
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
-namespace tango_ros_node {
+#include "tango_ros_native/PublisherConfig.h"
+
+namespace tango_ros_native {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
@@ -118,11 +120,15 @@ class TangoRosNode {
   void publish_fisheye_image_thread();
   void publish_color_image_thread();
 
+  void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  void ros_spin_thread();
+
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
 
   PublisherConfiguration publisher_config_;
   std::mutex publisher_config_mutex_;
+  std::thread ros_spin_thread_;
   std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
   std::thread publish_fisheye_image_thread_;
@@ -160,5 +166,5 @@ class TangoRosNode {
   sensor_msgs::CompressedImage color_compressed_image_;
   cv::Mat color_image_;
 };
-}  // namespace tango_ros_node
+}  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

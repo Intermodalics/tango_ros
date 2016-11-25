@@ -16,7 +16,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +24,7 @@ extern "C" {
 
 static void set_native_publisher_configuration_from_java_publisher_configuration(
     JNIEnv* env, jobject jpublisherConfiguration,
-    tango_ros_node::PublisherConfiguration* publisher_configuration) {
+    tango_ros_native::PublisherConfiguration* publisher_configuration) {
   jclass cls = env->GetObjectClass(jpublisherConfiguration);
 
   jfieldID fidPublishDevicePose = env->GetFieldID(cls, "publishDevicePose", "Z");
@@ -51,10 +51,10 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj*/, jobject activity,
     jobject jpublisherConfiguration) {
-  tango_ros_node::PublisherConfiguration publisher_configuration;
+  tango_ros_native::PublisherConfiguration publisher_configuration;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publisher_configuration);
-  tango_ros.reset(new tango_ros_node::TangoRosNode(publisher_configuration));
+  tango_ros.reset(new tango_ros_native::TangoRosNode(publisher_configuration));
   return tango_ros->IsTangoVersionOk(env, activity);
 }
 
@@ -82,7 +82,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_stopPublishing(JNIEnv* /*env*/, job
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv* env, jobject /*obj*/,
     jobject jpublisherConfiguration) {
-  tango_ros_node::PublisherConfiguration publisher_configuration;
+  tango_ros_native::PublisherConfiguration publisher_configuration;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publisher_configuration);
   tango_ros->UpdatePublisherConfiguration(publisher_configuration);
