@@ -36,8 +36,4 @@ bool InitRos(const char* master_uri, const char* slave_ip) {
   }
   return true;
 }
-
-bool IsRosOK() {
-  return ros::ok();
-}
 }  // namespace tango_ros_util

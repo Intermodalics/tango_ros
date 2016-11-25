@@ -121,11 +121,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     public void applySettings() {
-        onPause();
-        mIsNodeInitialised = initNode();
-        if (mIsNodeInitialised) {
-            onResume();
-        }
+        mJniInterface.stopPublishing();
+        mJniInterface.updatePublisherConfiguration(mPublishConfig);
+        mJniInterface.startPublishing();
     }
 
     @Override
@@ -203,14 +201,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         super.onResume();
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (mJniInterface.isRosOk()) {
-                        mJniInterface.publish();
-                    }
-                }
-            }).start();
+            mJniInterface.startPublishing();
         }
     }
 
@@ -218,6 +209,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onPause() {
         super.onPause();
         if (mIsNodeInitialised) {
+            mJniInterface.stopPublishing();
             mJniInterface.tangoDisconnect();
             unbindService(mTangoServiceConnection);
         }

@@ -34,6 +34,7 @@ public class JNIInterface {
 
     /**
      * Initializes ROS given the ros master URI and the device IP address.
+     *
      * @param masterUri URI of the ROS master, format is __master:=http://local-desktop:11311.
      * @param ipAddress IP address of the device, format is __ip:=192.168.168.185.
      * @return true is initialization was successful.
@@ -41,16 +42,14 @@ public class JNIInterface {
     public static native boolean initRos(String masterUri, String ipAddress);
 
     /**
-     * @return true if ROS is OK, false if it has shut down.
-     */
-    public static native boolean isRosOk();
-
-    /**
      * Initializes the tango-ros node. Specifically it:
      *   * creates the node and its publishers.
      *   * check that the tango version is correct.
      * initRos should always be called before.
+     *
      * @param callerActivity the caller activity of this function.
+     * @param publisherConfiguration configuration representing which data need to be published.
+     * @return true if the version of tango is ok.
      */
     public static native boolean initNode(Activity callerActivity, PublisherConfiguration publisherConfiguration);
 
@@ -58,6 +57,7 @@ public class JNIInterface {
      * Called when the Tango service is connected successfully.
      *
      * @param nativeTangoServiceBinder The native binder object.
+     * @return true if connecting to the Tango service ended successfully.
      */
     public static native boolean onTangoServiceConnected(IBinder nativeTangoServiceBinder);
 
@@ -67,7 +67,19 @@ public class JNIInterface {
     public static native void tangoDisconnect();
 
     /**
-     * Publishes the available tango data (device pose, point cloud, images).
+     * Start publishing the available tango data (device pose, point cloud, images) on ros topics.
      */
-    public static native void publish();
+    public static native void startPublishing();
+
+    /**
+     * Stop publishing the available tango data.
+     */
+    public static native void stopPublishing();
+
+    /**
+     * Update the publisher configuration of the tango-ros node.
+     *
+     * @param publisherConfiguration the new publisher configuration.
+     */
+    public static native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }
