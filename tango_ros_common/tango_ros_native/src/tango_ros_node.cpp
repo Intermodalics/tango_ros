@@ -175,17 +175,11 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 
 namespace tango_ros_node {
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
-    publisher_config_(publisher_config) {
-  run_threads_ = false
-  device_pose_lock_ = false;
-  point_cloud_lock_ = false;
-  fisheye_image_lock_ = false;
-  color_image_lock_ = false;
-  new_pose_available_ = false;
-  new_point_cloud_available_ = false;
-  new_fisheye_image_available_ = false;
-  new_color_image_available_ = false;
-
+    publisher_config_(publisher_config), run_threads_(false),
+    device_pose_lock_(false), point_cloud_lock_(false),
+    fisheye_image_lock_(false), color_image_lock_(false),
+    new_pose_available_(false), new_point_cloud_available_(false),
+    new_fisheye_image_available_(false), new_color_image_available_(false) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -202,7 +196,7 @@ TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
 }
 
 TangoRosNode::~TangoRosNode() {
-  StopPublishingThreads();
+  StopPublishing();
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
   }
@@ -230,6 +224,7 @@ bool TangoRosNode::SetBinder(JNIEnv* env, jobject binder) {
 }
 
 bool TangoRosNode::OnTangoServiceConnected() {
+  PublishStaticTransforms();
   if (TangoSetupConfig() != TANGO_SUCCESS) {
       LOG(ERROR) << "Error while setting up Tango config.";
       return false;
@@ -247,7 +242,6 @@ bool TangoRosNode::OnTangoServiceConnected() {
     TangoService_getPoseAtTime(0.0, pair, &pose);
   } while (pose.status_code != TANGO_POSE_VALID);
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
-  PublishStaticTransforms();
   return true;
 }
 
@@ -412,17 +406,15 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
   if (publisher_config_.publish_device_pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
         && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-      if (pose->status_code == TANGO_POSE_VALID) {
-        if (!device_pose_lock_) {
-          device_pose_lock_ = true;
-          toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
-          start_of_service_T_device_.header.frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-          start_of_service_T_device_.child_frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-          new_pose_available_ = true;
-          device_pose_lock_ = false;
-        }
+      if (pose->status_code == TANGO_POSE_VALID && !device_pose_lock_) {
+        device_pose_lock_ = true;
+        toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
+        start_of_service_T_device_.header.frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+        start_of_service_T_device_.child_frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+        new_pose_available_ = true;
+        device_pose_lock_ = false;
       }
     }
   }
@@ -525,17 +517,17 @@ void TangoRosNode::PublishColorImage() {
   }
 }
 
-void TangoRosNode::StartPublishingThreads() {
+void TangoRosNode::StartPublishing() {
   run_threads_mutex_.lock();
-  publish_device_pose_thread_ = std::thread(&TangoRosNode::publish_device_pose_thread, this);
-  publish_pointcloud_thread_ = std::thread(&TangoRosNode::publish_pointcloud_thread, this);
-  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::publish_fisheye_image_thread, this);
-  publish_color_image_thread_ = std::thread(&TangoRosNode::publish_color_image_thread, this);
+  publish_device_pose_thread_ = std::thread(&TangoRosNode::RunPublishingPose, this);
+  publish_pointcloud_thread_ = std::thread(&TangoRosNode::RunPublishingPointCloud, this);
+  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::RunPublishingFisheyeImage, this);
+  publish_color_image_thread_ = std::thread(&TangoRosNode::RunPublishingColorImage, this);
   run_threads_ = true;
   run_threads_mutex_.unlock();
 }
 
-void TangoRosNode::StopPublishingThreads() {
+void TangoRosNode::StopPublishing() {
   run_threads_mutex_.lock();
   bool run_threads = run_threads_;
   run_threads_mutex_.unlock();
@@ -550,7 +542,7 @@ void TangoRosNode::StopPublishingThreads() {
   }
 }
 
-void TangoRosNode::publish_device_pose_thread() {
+void TangoRosNode::RunPublishingPose() {
   bool run_threads;
   while(ros::ok()) {
     run_threads_mutex_.lock();
@@ -564,7 +556,7 @@ void TangoRosNode::publish_device_pose_thread() {
   }
 }
 
-void TangoRosNode::publish_pointcloud_thread() {
+void TangoRosNode::RunPublishingPointCloud() {
   bool run_threads;
   while(ros::ok()) {
     run_threads_mutex_.lock();
@@ -578,7 +570,7 @@ void TangoRosNode::publish_pointcloud_thread() {
   }
 }
 
-void TangoRosNode::publish_fisheye_image_thread() {
+void TangoRosNode::RunPublishingFisheyeImage() {
   bool run_threads;
   while(ros::ok()) {
     run_threads_mutex_.lock();
@@ -592,7 +584,7 @@ void TangoRosNode::publish_fisheye_image_thread() {
   }
 }
 
-void TangoRosNode::publish_color_image_thread() {
+void TangoRosNode::RunPublishingColorImage() {
   bool run_threads;
   while(ros::ok()) {
     run_threads_mutex_.lock();

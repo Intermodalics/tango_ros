@@ -113,10 +113,10 @@ class TangoRosNode {
   void PublishFisheyeImage();
   void PublishColorImage();
   // Thread methods for publishing data.
-  void publish_device_pose_thread();
-  void publish_pointcloud_thread();
-  void publish_fisheye_image_thread();
-  void publish_color_image_thread();
+  void RunPublishingPose();
+  void RunPublishingPointCloud();
+  void RunPublishingFisheyeImage();
+  void RunPublishingColorImage();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
