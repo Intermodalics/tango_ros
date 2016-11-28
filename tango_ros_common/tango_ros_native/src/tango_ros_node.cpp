@@ -553,11 +553,6 @@ void TangoRosNode::StopPublishingThreads() {
 }
 
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
-  LOG(WARNING) << "Reconfigure Request: " <<
-            config.publish_device_pose << ", " <<
-            config.publish_point_cloud << ", " <<
-            config.publish_camera_fisheye << ", " <<
-            config.publish_camera_color;
   PublisherConfiguration publisher_config;
   publisher_config.publish_device_pose = config.publish_device_pose;
   publisher_config.publish_point_cloud = config.publish_point_cloud;
@@ -571,11 +566,6 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
   } else {
     publisher_config.publish_camera &= ~CAMERA_COLOR;
   }
-  LOG(WARNING) << "Reconfigure Request: " <<
-      publisher_config.publish_device_pose << ", " <<
-      publisher_config.publish_point_cloud << ", " <<
-      publisher_config.publish_camera;
-
   publisher_config_mutex_.unlock();
   publisher_config_ = publisher_config;
   PublishStaticTransforms();
