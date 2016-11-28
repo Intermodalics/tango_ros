@@ -121,9 +121,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     public void applySettings() {
-        mJniInterface.stopPublishing();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
-        mJniInterface.startPublishing();
     }
 
     @Override

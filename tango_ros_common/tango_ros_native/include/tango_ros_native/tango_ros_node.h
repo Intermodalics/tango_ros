@@ -83,10 +83,10 @@ class TangoRosNode {
   // Disconnects from the tango service.
   void TangoDisconnect();
   // Start the threads that publish data.
-  void StartPublishingThreads();
+  void StartPublishing();
   // Stop the threads that publish data.
   // Will not return until all the internal threads have exited.
-  void StopPublishingThreads();
+  void StopPublishing();
   // Sets a new PublisherConfiguration and calls PublishStaticTransforms with
   // the new publisher_config.
   void UpdatePublisherConfiguration(const PublisherConfiguration& publisher_config);
@@ -127,7 +127,7 @@ class TangoRosNode {
   std::thread publish_pointcloud_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
-  bool run_threads_ = false;
+  bool run_threads_;
   std::mutex run_threads_mutex_;
 
   std::atomic_bool device_pose_lock_;

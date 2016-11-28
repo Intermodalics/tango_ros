@@ -176,6 +176,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 namespace tango_ros_node {
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
     publisher_config_(publisher_config) {
+  run_threads_ = false
   device_pose_lock_ = false;
   point_cloud_lock_ = false;
   fisheye_image_lock_ = false;
