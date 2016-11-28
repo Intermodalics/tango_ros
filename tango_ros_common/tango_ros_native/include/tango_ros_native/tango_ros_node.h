@@ -130,6 +130,15 @@ class TangoRosNode {
   std::thread publish_color_image_thread_;
   std::atomic_bool run_threads_;
 
+  std::mutex pose_available_mutex_;
+  std::condition_variable pose_available_;
+  std::mutex point_cloud_available_mutex_;
+  std::condition_variable point_cloud_available_;
+  std::mutex fisheye_image_available_mutex_;
+  std::condition_variable fisheye_image_available_;
+  std::mutex color_image_available_mutex_;
+  std::condition_variable color_image_available_;
+
   std::atomic_bool device_pose_lock_;
   std::atomic_bool point_cloud_lock_;
   std::atomic_bool fisheye_image_lock_;

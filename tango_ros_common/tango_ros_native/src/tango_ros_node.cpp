@@ -422,6 +422,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
         new_pose_available_ = true;
         device_pose_lock_ = false;
+        pose_available_.notify_all();
       }
     }
   }
@@ -435,6 +436,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
       new_point_cloud_available_ = true;
       point_cloud_lock_ = false;
+      point_cloud_available_.notify_all();
     }
   }
 }
@@ -452,6 +454,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
       fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
       new_fisheye_image_available_ = true;
       fisheye_image_lock_ = false;
+      fisheye_image_available_.notify_all();
     }
   }
   if ((publisher_config_.publish_camera & CAMERA_COLOR) &&
@@ -466,7 +469,74 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
       color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
       new_color_image_available_ = true;
       color_image_lock_ = false;
+      color_image_available_.notify_all();
     }
+  }
+}
+
+void TangoRosNode::StartPublishing() {
+  publish_device_pose_thread_ = std::thread(&TangoRosNode::RunPublishingPose, this);
+  publish_pointcloud_thread_ = std::thread(&TangoRosNode::RunPublishingPointCloud, this);
+  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::RunPublishingFisheyeImage, this);
+  publish_color_image_thread_ = std::thread(&TangoRosNode::RunPublishingColorImage, this);
+  run_threads_ = true;
+}
+
+void TangoRosNode::StopPublishing() {
+  if (run_threads_) {
+    run_threads_ = false;
+    if (publisher_config_.publish_device_pose)
+      publish_device_pose_thread_.join();
+    if (publisher_config_.publish_point_cloud)
+      publish_pointcloud_thread_.join();
+    if (publisher_config_.publish_camera & CAMERA_FISHEYE)
+      publish_fisheye_image_thread_.join();
+    if (publisher_config_.publish_camera & CAMERA_COLOR)
+      publish_color_image_thread_.join();
+  }
+}
+
+void TangoRosNode::RunPublishingPose() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    std::unique_lock<std::mutex> lock(pose_available_mutex_);
+    pose_available_.wait(lock);
+    PublishDevicePose();
+  }
+}
+
+void TangoRosNode::RunPublishingPointCloud() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
+    point_cloud_available_.wait(lock);
+    PublishPointCloud();
+  }
+}
+
+void TangoRosNode::RunPublishingFisheyeImage() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
+    fisheye_image_available_.wait(lock);
+    PublishFisheyeImage();
+  }
+}
+
+void TangoRosNode::RunPublishingColorImage() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    std::unique_lock<std::mutex> lock(color_image_available_mutex_);
+    color_image_available_.wait(lock);
+    PublishColorImage();
   }
 }
 
@@ -512,64 +582,6 @@ void TangoRosNode::PublishColorImage() {
     color_image_publisher_.publish(color_compressed_image_);
     new_color_image_available_ = false;
     color_image_lock_ = false;
-  }
-}
-
-void TangoRosNode::StartPublishing() {
-  publish_device_pose_thread_ = std::thread(&TangoRosNode::RunPublishingPose, this);
-  publish_pointcloud_thread_ = std::thread(&TangoRosNode::RunPublishingPointCloud, this);
-  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::RunPublishingFisheyeImage, this);
-  publish_color_image_thread_ = std::thread(&TangoRosNode::RunPublishingColorImage, this);
-  run_threads_ = true;
-}
-
-void TangoRosNode::StopPublishing() {
-  if (run_threads_) {
-    run_threads_ = false;
-    publish_device_pose_thread_.join();
-    publish_pointcloud_thread_.join();
-    publish_fisheye_image_thread_.join();
-    publish_color_image_thread_.join();
-  }
-}
-
-void TangoRosNode::RunPublishingPose() {
-  while(ros::ok()) {
-    if (!run_threads_) {
-      break;
-    }
-    PublishDevicePose();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-}
-
-void TangoRosNode::RunPublishingPointCloud() {
-  while(ros::ok()) {
-    if (!run_threads_) {
-      break;
-    }
-    PublishPointCloud();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-}
-
-void TangoRosNode::RunPublishingFisheyeImage() {
-  while(ros::ok()) {
-    if (!run_threads_) {
-      break;
-    }
-    PublishFisheyeImage();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-}
-
-void TangoRosNode::RunPublishingColorImage() {
-  while(ros::ok()) {
-    if (!run_threads_) {
-      break;
-    }
-    PublishColorImage();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 }
 }
