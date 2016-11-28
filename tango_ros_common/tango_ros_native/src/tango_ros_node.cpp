@@ -359,14 +359,6 @@ void TangoRosNode::TangoDisconnect() {
 }
 
 void TangoRosNode::UpdatePublisherConfiguration(const PublisherConfiguration& publisher_config) {
-  /*std::system("rosrun dynamic_reconfigure dynparam set_from_parameters tango_x_ros publish_device_pose "
-      + publisher_config.publish_device_pose);
-  std::system("rosrun dynamic_reconfigure dynparam set_from_parameters tango_x_ros publish_point_cloud "
-        + publisher_config.publish_point_cloud);
-  std::system("rosrun dynamic_reconfigure dynparam set_from_parameters tango_x_ros publish_camera_fisheye "
-        + static_cast<bool>(publisher_config.publish_camera & CAMERA_FISHEYE));
-  std::system("rosrun dynamic_reconfigure dynparam set_from_parameters tango_x_ros publish_camera_color "
-        + static_cast<bool>(publisher_config.publish_camera & CAMERA_COLOR));*/
   publisher_config_mutex_.lock();
   publisher_config_ = publisher_config;
   PublishStaticTransforms();
