@@ -174,12 +174,17 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_node {
-TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
-    publisher_config_(publisher_config), run_threads_(false),
+TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
+                           uint32_t publish_camera) :
+    run_threads_(false),
     device_pose_lock_(false), point_cloud_lock_(false),
     fisheye_image_lock_(false), color_image_lock_(false),
     new_pose_available_(false), new_point_cloud_available_(false),
     new_fisheye_image_available_(false), new_color_image_available_(false) {
+  publisher_config_.publish_device_pose = publish_device_pose;
+  publisher_config_.publish_point_cloud = publish_point_cloud;
+  publisher_config_.publish_camera = publish_camera;
+
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -352,11 +357,13 @@ void TangoRosNode::TangoDisconnect() {
   TangoService_disconnect();
 }
 
-void TangoRosNode::UpdatePublisherConfiguration(const PublisherConfiguration& publisher_config) {
-  publisher_config_mutex_.lock();
-  publisher_config_ = publisher_config;
+void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
+                                                bool publish_point_cloud,
+                                                uint32_t publish_camera) {
+  publisher_config_.publish_device_pose = publish_device_pose;
+  publisher_config_.publish_point_cloud = publish_point_cloud;
+  publisher_config_.publish_camera = publish_camera;
   PublishStaticTransforms();
-  publisher_config_mutex_.unlock();
 }
 
 void TangoRosNode::PublishStaticTransforms() {
@@ -464,10 +471,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
 }
 
 void TangoRosNode::PublishDevicePose() {
-  publisher_config_mutex_.lock();
-  bool publish_device_pose = publisher_config_.publish_device_pose;
-  publisher_config_mutex_.unlock();
-  if (publish_device_pose && new_pose_available_ && !device_pose_lock_) {
+  if (publisher_config_.publish_device_pose && new_pose_available_
+      && !device_pose_lock_) {
     device_pose_lock_ = true;
     tf_broadcaster_.sendTransform(start_of_service_T_device_);
     new_pose_available_ = false;
@@ -476,10 +481,8 @@ void TangoRosNode::PublishDevicePose() {
 }
 
 void TangoRosNode::PublishPointCloud() {
-  publisher_config_mutex_.lock();
-  bool publish_point_cloud = publisher_config_.publish_point_cloud;
-  publisher_config_mutex_.unlock();
-  if (publish_point_cloud && new_point_cloud_available_ && !point_cloud_lock_) {
+  if (publisher_config_.publish_point_cloud && new_point_cloud_available_
+      && !point_cloud_lock_) {
     point_cloud_lock_ = true;
     point_cloud_publisher_.publish(point_cloud_);
     new_point_cloud_available_ = false;
@@ -488,11 +491,8 @@ void TangoRosNode::PublishPointCloud() {
 }
 
 void TangoRosNode::PublishFisheyeImage() {
-  publisher_config_mutex_.lock();
-  bool publish_camera = publisher_config_.publish_camera & CAMERA_FISHEYE;
-  publisher_config_mutex_.unlock();
-  if (publish_camera && new_fisheye_image_available_ &&
-       !fisheye_image_lock_) {
+  if ((publisher_config_.publish_camera & CAMERA_FISHEYE) &&
+      new_fisheye_image_available_ && !fisheye_image_lock_) {
     fisheye_image_lock_ = true;
     compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &fisheye_compressed_image_);
@@ -503,11 +503,9 @@ void TangoRosNode::PublishFisheyeImage() {
 }
 
 void TangoRosNode::PublishColorImage() {
-  publisher_config_mutex_.lock();
   bool publish_camera = publisher_config_.publish_camera & CAMERA_COLOR;
-  publisher_config_mutex_.unlock();
-  if (publish_camera && new_color_image_available_ &&
-       !color_image_lock_) {
+  if ((publisher_config_.publish_camera & CAMERA_COLOR) &&
+      new_color_image_available_ && !color_image_lock_) {
     color_image_lock_ = true;
     compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
       &color_compressed_image_);
@@ -518,23 +516,16 @@ void TangoRosNode::PublishColorImage() {
 }
 
 void TangoRosNode::StartPublishing() {
-  run_threads_mutex_.lock();
   publish_device_pose_thread_ = std::thread(&TangoRosNode::RunPublishingPose, this);
   publish_pointcloud_thread_ = std::thread(&TangoRosNode::RunPublishingPointCloud, this);
   publish_fisheye_image_thread_ = std::thread(&TangoRosNode::RunPublishingFisheyeImage, this);
   publish_color_image_thread_ = std::thread(&TangoRosNode::RunPublishingColorImage, this);
   run_threads_ = true;
-  run_threads_mutex_.unlock();
 }
 
 void TangoRosNode::StopPublishing() {
-  run_threads_mutex_.lock();
-  bool run_threads = run_threads_;
-  run_threads_mutex_.unlock();
-  if (run_threads) {
-    run_threads_mutex_.lock();
+  if (run_threads_) {
     run_threads_ = false;
-    run_threads_mutex_.unlock();
     publish_device_pose_thread_.join();
     publish_pointcloud_thread_.join();
     publish_fisheye_image_thread_.join();
@@ -543,12 +534,8 @@ void TangoRosNode::StopPublishing() {
 }
 
 void TangoRosNode::RunPublishingPose() {
-  bool run_threads;
   while(ros::ok()) {
-    run_threads_mutex_.lock();
-    run_threads = run_threads_;
-    run_threads_mutex_.unlock();
-    if (!run_threads) {
+    if (!run_threads_) {
       break;
     }
     PublishDevicePose();
@@ -557,12 +544,8 @@ void TangoRosNode::RunPublishingPose() {
 }
 
 void TangoRosNode::RunPublishingPointCloud() {
-  bool run_threads;
   while(ros::ok()) {
-    run_threads_mutex_.lock();
-    run_threads = run_threads_;
-    run_threads_mutex_.unlock();
-    if (!run_threads) {
+    if (!run_threads_) {
       break;
     }
     PublishPointCloud();
@@ -571,12 +554,8 @@ void TangoRosNode::RunPublishingPointCloud() {
 }
 
 void TangoRosNode::RunPublishingFisheyeImage() {
-  bool run_threads;
   while(ros::ok()) {
-    run_threads_mutex_.lock();
-    run_threads = run_threads_;
-    run_threads_mutex_.unlock();
-    if (!run_threads) {
+    if (!run_threads_) {
       break;
     }
     PublishFisheyeImage();
@@ -585,12 +564,8 @@ void TangoRosNode::RunPublishingFisheyeImage() {
 }
 
 void TangoRosNode::RunPublishingColorImage() {
-  bool run_threads;
   while(ros::ok()) {
-    run_threads_mutex_.lock();
-    run_threads = run_threads_;
-    run_threads_mutex_.unlock();
-    if (!run_threads) {
+    if (!run_threads_) {
       break;
     }
     PublishColorImage();

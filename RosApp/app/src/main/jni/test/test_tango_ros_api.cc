@@ -24,16 +24,16 @@ class TangoRosTest : public ::testing::Test {
  public:
   const int TEST_DURATION = 5; // in second.
   std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
-  tango_ros_node::PublisherConfiguration publisher_config_;
   bool connected_to_tango = false;
 
  protected:
   virtual void SetUp() {
     ASSERT_TRUE(tango_ros_util::InitRos(master_uri.c_str(), device_ip.c_str()));
-    publisher_config_.publish_device_pose = true;
-    publisher_config_.publish_point_cloud = true;
-    publisher_config_.publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
-    tango_ros_node_.reset(new tango_ros_node::TangoRosNode(publisher_config_));
+    bool publish_device_pose = true;
+    bool publish_point_cloud = true;
+    uint32_t publish_camera = tango_ros_node::CAMERA_FISHEYE | tango_ros_node::CAMERA_COLOR;
+    tango_ros_node_.reset(new tango_ros_node::TangoRosNode(publish_device_pose, publish_device_pose,
+      publish_camera));
     ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
     connected_to_tango = true;
   }
