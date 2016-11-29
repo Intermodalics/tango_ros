@@ -614,7 +614,7 @@ void TangoRosNode::RunRosSpin() {
       break;
     }
     ros::spinOnce();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
 } // namespace tango_ros_native
