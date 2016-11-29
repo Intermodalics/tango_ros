@@ -8,18 +8,18 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
 
-    <TextView
-        android:id="@+id/master_uri_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Master URI: "
-        android:textSize="20sp" />
+        <TextView
+            android:id="@+id/master_uri_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Master URI: "
+            android:textSize="20sp" />
 
-    <TextView
-        android:id="@+id/master_uri"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="20sp" />
+        <TextView
+            android:id="@+id/master_uri"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp" />
      </LinearLayout>
 
 

@@ -26,7 +26,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 /**
- * Queries the user for retrying to connect to ros master.
+ * Ask the user to retry connecting to ros master.
  */
 public class TryReconnectingToRosDialog extends DialogFragment implements OnClickListener {
 
