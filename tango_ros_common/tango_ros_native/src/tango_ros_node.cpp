@@ -230,7 +230,6 @@ bool TangoRosNode::SetBinder(JNIEnv* env, jobject binder) {
 }
 
 bool TangoRosNode::OnTangoServiceConnected() {
-  PublishStaticTransforms();
   if (TangoSetupConfig() != TANGO_SUCCESS) {
       LOG(ERROR) << "Error while setting up Tango config.";
       return false;
@@ -240,6 +239,7 @@ bool TangoRosNode::OnTangoServiceConnected() {
     return false;
   }
 
+  PublishStaticTransforms();
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
