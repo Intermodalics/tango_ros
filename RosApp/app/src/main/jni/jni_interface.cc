@@ -23,21 +23,21 @@ extern "C" {
 #endif
 
 static void set_native_publisher_configuration_from_java_publisher_configuration(
-    JNIEnv* env, jobject jpublisherConfiguration,
-    tango_ros_native::PublisherConfiguration* publisher_configuration) {
+    JNIEnv* env, jobject jpublisherConfiguration, bool* publish_device_pose,
+    bool* publish_point_cloud, uint32_t* publish_camera) {
   jclass cls = env->GetObjectClass(jpublisherConfiguration);
 
   jfieldID fidPublishDevicePose = env->GetFieldID(cls, "publishDevicePose", "Z");
   jboolean publishDevicePose = env->GetBooleanField(jpublisherConfiguration, fidPublishDevicePose);
-  publisher_configuration->publish_device_pose = publishDevicePose;
+  *publish_device_pose = publishDevicePose;
 
   jfieldID fidPublishPointCloud = env->GetFieldID(cls, "publishPointCloud", "Z");
   jboolean publishPointCloud = env->GetBooleanField(jpublisherConfiguration, fidPublishPointCloud);
-  publisher_configuration->publish_point_cloud = publishPointCloud;
+  *publish_point_cloud = publishPointCloud;
 
   jfieldID fidPublishCamera = env->GetFieldID(cls, "publishCamera", "I");
   int publishCamera = env->GetIntField(jpublisherConfiguration, fidPublishCamera);
-  publisher_configuration->publish_camera = publishCamera;
+  *publish_camera = publishCamera;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -51,10 +51,13 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj*/, jobject activity,
     jobject jpublisherConfiguration) {
-  tango_ros_native::PublisherConfiguration publisher_configuration;
+  bool publish_device_pose;
+  bool publish_point_cloud;
+  uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
-    &publisher_configuration);
-  tango_ros.reset(new tango_ros_native::TangoRosNode(publisher_configuration));
+    &publish_device_pose, &publish_point_cloud, &publish_camera);
+  tango_ros.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_point_cloud,
+    publish_camera));
   return tango_ros->IsTangoVersionOk(env, activity);
 }
 
@@ -71,21 +74,23 @@ Java_eu_intermodalics_tangoxros_JNIInterface_tangoDisconnect(JNIEnv* /*env*/, jo
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_startPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->StartPublishingThreads();
+  tango_ros->StartPublishing();
 }
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_stopPublishing(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->StopPublishingThreads();
+  tango_ros->StopPublishing();
 }
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv* env, jobject /*obj*/,
     jobject jpublisherConfiguration) {
-  tango_ros_native::PublisherConfiguration publisher_configuration;
+  bool publish_device_pose;
+  bool publish_point_cloud;
+  uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
-    &publisher_configuration);
-  tango_ros->UpdatePublisherConfiguration(publisher_configuration);
+    &publish_device_pose, &publish_point_cloud, &publish_camera);
+  tango_ros->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
 }
 
 #ifdef __cplusplus

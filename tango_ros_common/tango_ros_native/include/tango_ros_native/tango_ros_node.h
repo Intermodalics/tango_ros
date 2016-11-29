@@ -52,11 +52,11 @@ const uint32_t CAMERA_COLOR = (1 << 2);
 
 struct PublisherConfiguration {
   // True if pose needs to be published.
-  bool publish_device_pose = false;
+  std::atomic_bool publish_device_pose;
   // True if point cloud needs to be published.
-  bool publish_point_cloud = false;
+  std::atomic_bool publish_point_cloud;
   // Flag corresponding to which cameras need to be published.
-  uint32_t publish_camera = CAMERA_NONE;
+  std::atomic<uint32_t> publish_camera;
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
@@ -69,7 +69,7 @@ struct PublisherConfiguration {
 // Node collecting tango data and publishing it on ros topic.
 class TangoRosNode {
  public:
-  TangoRosNode(const PublisherConfiguration& publisher_config);
+  TangoRosNode(bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera);
   ~TangoRosNode();
   // Checks the installed version of the TangoCore. If it is too old, then
   // it will not support the most up to date features.
@@ -85,13 +85,15 @@ class TangoRosNode {
   // Disconnects from the tango service.
   void TangoDisconnect();
   // Start the threads that publish data.
-  void StartPublishingThreads();
+  void StartPublishing();
   // Stop the threads that publish data.
   // Will not return until all the internal threads have exited.
-  void StopPublishingThreads();
+  void StopPublishing();
   // Sets a new PublisherConfiguration and calls PublishStaticTransforms with
   // the new publisher_config.
-  void UpdatePublisherConfiguration(const PublisherConfiguration& publisher_config);
+  void UpdatePublisherConfiguration(bool publish_device_pose,
+                                    bool publish_point_cloud,
+                                    uint32_t publish_camera);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -114,11 +116,11 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  // Thread methods for publishing data.
-  void publish_device_pose_thread();
-  void publish_pointcloud_thread();
-  void publish_fisheye_image_thread();
-  void publish_color_image_thread();
+  // Run publish data functions.
+  void RunPublishingPose();
+  void RunPublishingPointCloud();
+  void RunPublishingFisheyeImage();
+  void RunPublishingColorImage();
 
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   void ros_spin_thread();
@@ -127,14 +129,21 @@ class TangoRosNode {
   ros::NodeHandle node_handle_;
 
   PublisherConfiguration publisher_config_;
-  std::mutex publisher_config_mutex_;
-  std::thread ros_spin_thread_;
   std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
-  bool run_threads_ = false;
-  std::mutex run_threads_mutex_;
+  std::thread ros_spin_thread_;
+  std::atomic_bool run_threads_;
+
+  std::mutex pose_available_mutex_;
+  std::condition_variable pose_available_;
+  std::mutex point_cloud_available_mutex_;
+  std::condition_variable point_cloud_available_;
+  std::mutex fisheye_image_available_mutex_;
+  std::condition_variable fisheye_image_available_;
+  std::mutex color_image_available_mutex_;
+  std::condition_variable color_image_available_;
 
   std::atomic_bool device_pose_lock_;
   std::atomic_bool point_cloud_lock_;

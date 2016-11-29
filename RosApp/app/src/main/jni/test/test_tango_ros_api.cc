@@ -24,16 +24,16 @@ class TangoRosTest : public ::testing::Test {
  public:
   const int TEST_DURATION = 5; // in second.
   std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;
-  tango_ros_native::PublisherConfiguration publisher_config_;
   bool connected_to_tango = false;
 
  protected:
   virtual void SetUp() {
     ASSERT_TRUE(tango_ros_util::InitRos(master_uri.c_str(), device_ip.c_str()));
-    publisher_config_.publish_device_pose = true;
-    publisher_config_.publish_point_cloud = true;
-    publisher_config_.publish_camera = tango_ros_native::CAMERA_FISHEYE | tango_ros_native::CAMERA_COLOR;
-    tango_ros_node_.reset(new tango_ros_native::TangoRosNode(publisher_config_));
+    bool publish_device_pose = true;
+    bool publish_point_cloud = true;
+    uint32_t publish_camera = tango_ros_native::CAMERA_FISHEYE | tango_ros_native::CAMERA_COLOR;
+    tango_ros_node_.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_device_pose,
+      publish_camera));
     ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
     connected_to_tango = true;
   }
@@ -48,11 +48,11 @@ class TangoRosTest : public ::testing::Test {
 TEST_F(TangoRosTest, TestPublishingForFixedTime) {
   time_t current_time = time(NULL);
   time_t end = current_time + TEST_DURATION;
-  tango_ros_node_->StartPublishingThreads();
+  tango_ros_node_->StartPublishing();
   while(current_time < end) {
     current_time = time(NULL);
   }
-  tango_ros_node_->StopPublishingThreads();
+  tango_ros_node_->StopPublishing();
 }
 
 // Run all the tests that were declared with TEST()
