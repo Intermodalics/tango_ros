@@ -480,6 +480,7 @@ void TangoRosNode::StartPublishing() {
   publish_pointcloud_thread_ = std::thread(&TangoRosNode::RunPublishingPointCloud, this);
   publish_fisheye_image_thread_ = std::thread(&TangoRosNode::RunPublishingFisheyeImage, this);
   publish_color_image_thread_ = std::thread(&TangoRosNode::RunPublishingColorImage, this);
+  ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
   run_threads_ = true;
 }
 
@@ -494,6 +495,7 @@ void TangoRosNode::StopPublishing() {
       publish_fisheye_image_thread_.join();
     if (publisher_config_.publish_camera & CAMERA_COLOR)
       publish_color_image_thread_.join();
+    ros_spin_thread_.join();
   }
 }
 
@@ -587,36 +589,28 @@ void TangoRosNode::PublishColorImage() {
 }
 
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
-  PublisherConfiguration publisher_config;
-  publisher_config.publish_device_pose = config.publish_device_pose;
-  publisher_config.publish_point_cloud = config.publish_point_cloud;
+  publisher_config_.publish_device_pose = config.publish_device_pose;
+  publisher_config_.publish_point_cloud = config.publish_point_cloud;
   if (config.publish_camera_fisheye) {
-    publisher_config.publish_camera |= CAMERA_FISHEYE;
+    publisher_config_.publish_camera |= CAMERA_FISHEYE;
   } else {
-    publisher_config.publish_camera &= ~CAMERA_FISHEYE;
+    publisher_config_.publish_camera &= ~CAMERA_FISHEYE;
   }
   if (config.publish_camera_color) {
-    publisher_config.publish_camera |= CAMERA_COLOR;
+    publisher_config_.publish_camera |= CAMERA_COLOR;
   } else {
-    publisher_config.publish_camera &= ~CAMERA_COLOR;
+    publisher_config_.publish_camera &= ~CAMERA_COLOR;
   }
-  //publisher_config_mutex_.unlock();
-  //publisher_config_ = publisher_config;
   PublishStaticTransforms();
-  //publisher_config_mutex_.unlock();
 }
 
-void TangoRosNode::ros_spin_thread() {
+void TangoRosNode::RunRosSpin() {
   dynamic_reconfigure::Server<tango_ros_native::PublisherConfig> server;
-  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType f;
-  f = boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
-  server.setCallback(f);
-  bool run_threads;
+  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType callback;
+  callback = boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
+  server.setCallback(callback);
   while(ros::ok()) {
-    //run_threads_mutex_.lock();
-    run_threads = run_threads_;
-    //run_threads_mutex_.unlock();
-    if (!run_threads) {
+    if (!run_threads_) {
       break;
     }
     ros::spinOnce();

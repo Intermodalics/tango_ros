@@ -116,14 +116,15 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  // Run publish data functions.
+  // Run publish data functions in a loop.
   void RunPublishingPose();
   void RunPublishingPointCloud();
   void RunPublishingFisheyeImage();
   void RunPublishingColorImage();
-
+  // Function called when one of the dynamic reconfigure parameter is changed.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
-  void ros_spin_thread();
+  // Run ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
+  void RunRosSpin();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
