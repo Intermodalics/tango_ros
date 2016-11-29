@@ -48,12 +48,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     @Override
     public void onMasterUriConnect(String uri) {
+        Log.e(TAG, "onMasterUriConnect uri: " + uri);
         mMasterUri = uri;
-        // Save URI preference.
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(getString(R.string.saved_uri), mMasterUri);
-        editor.commit();
+        Log.e(TAG, "onMasterUriConnect mMasterUri: " + mMasterUri);
         // Start ROS and node.
         init();
         onResume();
@@ -74,6 +71,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
         setMasterUriDialog.show(manager, "MatserUriDialog");
+        Log.e(TAG, "Exit showSetMasterUriDialog");
     }
 
     /**
@@ -109,9 +107,17 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+            Log.e(TAG, "init mMasterUri: " + mMasterUri);
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
+                Log.e(TAG, "init mMasterUri: " + mMasterUri);
+                // Save URI preference.
+                SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.saved_uri), mMasterUri);
+                editor.commit();
                 mIsNodeInitialised = initNode();
             } else {
+                Log.e(TAG, "init mMasterUri: " + mMasterUri);
                 Log.e(TAG, getResources().getString(R.string.tango_ros_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
             }
@@ -192,6 +198,14 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             @Override
             public void onClick(View v){
                 applySettings();
+            }
+        });
+         // Set callback for connect button.
+        Button buttonConnect = (Button)findViewById(R.id.mainconnect);
+        buttonConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                showSetMasterUriDialog();
             }
         });
         // Request master URI from user.
