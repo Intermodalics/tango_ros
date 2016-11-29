@@ -31,9 +31,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
+public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener, TryReconnectingToRosDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
@@ -48,9 +49,26 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     @Override
     public void onMasterUriConnect(String uri) {
-        Log.e(TAG, "onMasterUriConnect uri: " + uri);
         mMasterUri = uri;
-        Log.e(TAG, "onMasterUriConnect mMasterUri: " + mMasterUri);
+        // Update view.
+        TextView mUriTextView;
+        mUriTextView = (TextView) findViewById(R.id.master_uri);
+        mUriTextView.setText(mMasterUri);
+        // Save URI preference.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.saved_uri), mMasterUri);
+        editor.commit();
+        // Start ROS and node.
+        init();
+        onResume();
+    }
+
+    /**
+     * Implements TryReconnectingToRosDialog.CallbackListener.
+     */
+    @Override
+    public void onTryReconnectingToRos() {
         // Start ROS and node.
         init();
         onResume();
@@ -62,16 +80,29 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private void showSetMasterUriDialog() {
         // Get URI preference or default value if does not exist.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String defaultUriValue = getResources().getString(R.string.saved_uri_default);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri), defaultUriValue);
-
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri),
+                getResources().getString(R.string.saved_uri_default));
         Bundle bundle = new Bundle();
         bundle.putString(getString(R.string.saved_uri), uriValue);
         FragmentManager manager = getFragmentManager();
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
         setMasterUriDialog.show(manager, "MatserUriDialog");
-        Log.e(TAG, "Exit showSetMasterUriDialog");
+    }
+
+    /**
+     * Shows a dialog for trying to reconnect to ros master.
+     */
+    private void showTryReconnectingToRosDialog() {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri),
+                getResources().getString(R.string.saved_uri_default));
+        Bundle bundle = new Bundle();
+        bundle.putString(getString(R.string.saved_uri), uriValue);
+        FragmentManager manager = getFragmentManager();
+        TryReconnectingToRosDialog setTryReconnectingToRosDialog = new TryReconnectingToRosDialog();
+        setTryReconnectingToRosDialog.setArguments(bundle);
+        setTryReconnectingToRosDialog.show(manager, "ReconnectingToRosDialog");
     }
 
     /**
@@ -107,19 +138,12 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-            Log.e(TAG, "init mMasterUri: " + mMasterUri);
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                Log.e(TAG, "init mMasterUri: " + mMasterUri);
-                // Save URI preference.
-                SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(getString(R.string.saved_uri), mMasterUri);
-                editor.commit();
                 mIsNodeInitialised = initNode();
             } else {
-                Log.e(TAG, "init mMasterUri: " + mMasterUri);
                 Log.e(TAG, getResources().getString(R.string.tango_ros_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
+                showTryReconnectingToRosDialog();
             }
         } else {
             Log.e(TAG, "Master URI is null");
@@ -198,14 +222,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             @Override
             public void onClick(View v){
                 applySettings();
-            }
-        });
-         // Set callback for connect button.
-        Button buttonConnect = (Button)findViewById(R.id.mainconnect);
-        buttonConnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v){
-                showSetMasterUriDialog();
             }
         });
         // Request master URI from user.

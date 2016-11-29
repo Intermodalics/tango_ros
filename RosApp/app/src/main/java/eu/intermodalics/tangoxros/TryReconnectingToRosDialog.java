@@ -19,23 +19,22 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.EditText;
+import android.widget.TextView;
 
 /**
- * Queries the user for a Master URI.
+ * Queries the user for retrying to connect to ros master.
  */
-public class SetMasterUriDialog extends DialogFragment implements OnClickListener {
+public class TryReconnectingToRosDialog extends DialogFragment implements OnClickListener {
 
-    EditText mUriEditText;
+    TextView mUriTextView;
     CallbackListener mCallbackListener;
 
     interface CallbackListener {
-        public void onMasterUriConnect(String uri);
+        public void onTryReconnectingToRos();
     }
 
     @Override
@@ -47,24 +46,20 @@ public class SetMasterUriDialog extends DialogFragment implements OnClickListene
     @Override
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflator.inflate(R.layout.set_master_uri_dialog, null);
-        getDialog().setTitle(R.string.set_master_uri_dialogTitle);
-        mUriEditText = (EditText) dialogView.findViewById(R.id.uri);
-        dialogView.findViewById(R.id.connect).setOnClickListener(this);
+        View dialogView = inflator.inflate(R.layout.try_reconnecting_ros_dialog, null);
+        getDialog().setTitle(R.string.try_reconnecting_ros_dialogTitle);
+        mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri);
+        mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri)));
+        dialogView.findViewById(R.id.try_reconnect).setOnClickListener(this);
         setCancelable(false);
-        String uri = this.getArguments().getString(getString(R.string.saved_uri));
-        if (uri != null) {
-            mUriEditText.setText(uri);
-        }
         return dialogView;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.connect:
-                mCallbackListener.onMasterUriConnect(
-                        mUriEditText.getText().toString());
+            case R.id.try_reconnect:
+                mCallbackListener.onTryReconnectingToRos();
                 dismiss();
                 break;
         }

@@ -3,18 +3,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <RelativeLayout android:id="@+id/RelativeLayout01"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
 
-        <Button
-            android:id="@+id/mainconnect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:text="@string/connect" />
-    </RelativeLayout>
+    <TextView
+        android:id="@+id/master_uri_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Master URI: "
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/master_uri"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp" />
+     </LinearLayout>
+
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
@@ -25,7 +32,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-             android:layout_marginTop="100dip"
+            android:layout_marginTop="40dp"
             android:text="@string/publish_device_pose" />
 
         <Switch android:id="@+id/switch_pointcloud"
