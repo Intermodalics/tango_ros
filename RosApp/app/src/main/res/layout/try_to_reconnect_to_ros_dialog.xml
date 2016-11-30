@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/RelativeLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/master_uri_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Failed to connect to ros master URI"
+            android:layout_centerHorizontal="true"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/master_uri_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/master_uri_text"
+            android:textSize="20sp" />
+
+
+        <TextView
+            android:id="@+id/countdown_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Try to reconnect to ros master in:"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/master_uri_value"
+            android:layout_marginTop="40dp"
+            android:textSize="20sp" />
+
+         <TextView
+            android:id="@+id/countdown_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/countdown_text"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/try_reconnect"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/countdown_value"
+            android:layout_marginTop="40dp"
+            android:text="@string/try_to_reconnect" />
+    </RelativeLayout>
+</FrameLayout>
