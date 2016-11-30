@@ -7,8 +7,8 @@
     <string name="saved_uri_default">http://local-desktop:11311</string>
     <string name="saved_uri">saved_uri</string>
 
-    <string name="try_reconnecting_ros_dialogTitle">Try reconnecting to ros master</string>
-    <string name="try_reconnecting">Try Reconnecting</string>
+    <string name="try_to_reconnect_to_ros_dialogTitle">Try to reconnect to ros master</string>
+    <string name="try_to_reconnect">Try to reconnect now</string>
 
     <string name="publish_device_pose">Publish device pose</string>
     <string name="publish_pointcloud">Publish point cloud</string>

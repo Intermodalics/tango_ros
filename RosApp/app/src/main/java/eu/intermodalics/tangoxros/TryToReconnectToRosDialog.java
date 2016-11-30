@@ -28,13 +28,13 @@ import android.widget.TextView;
 /**
  * Ask the user to retry connecting to ros master.
  */
-public class TryReconnectingToRosDialog extends DialogFragment implements OnClickListener {
+public class TryToReconnectToRosDialog extends DialogFragment implements OnClickListener {
 
     TextView mUriTextView;
     CallbackListener mCallbackListener;
 
     interface CallbackListener {
-        public void onTryReconnectingToRos();
+        public void onTryToReconnectToRos();
     }
 
     @Override
@@ -46,8 +46,8 @@ public class TryReconnectingToRosDialog extends DialogFragment implements OnClic
     @Override
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflator.inflate(R.layout.try_reconnecting_ros_dialog, null);
-        getDialog().setTitle(R.string.try_reconnecting_ros_dialogTitle);
+        View dialogView = inflator.inflate(R.layout.try_to_reconnect_to_ros_dialog, null);
+        getDialog().setTitle(R.string.try_to_reconnect_to_ros_dialogTitle);
         mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri);
         mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri)));
         dialogView.findViewById(R.id.try_reconnect).setOnClickListener(this);
@@ -59,7 +59,7 @@ public class TryReconnectingToRosDialog extends DialogFragment implements OnClic
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.try_reconnect:
-                mCallbackListener.onTryReconnectingToRos();
+                mCallbackListener.onTryToReconnectToRos();
                 dismiss();
                 break;
         }

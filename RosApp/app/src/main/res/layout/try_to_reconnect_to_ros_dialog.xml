@@ -35,6 +35,6 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="40dp"
-            android:text="@string/try_reconnecting" />
+            android:text="@string/try_to_reconnect" />
     </RelativeLayout>
 </FrameLayout>
