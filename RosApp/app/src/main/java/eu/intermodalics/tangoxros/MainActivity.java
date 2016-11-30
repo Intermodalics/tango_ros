@@ -69,7 +69,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     @Override
     public void onTryToReconnectToRos() {
-        // Start ROS and node.
         init();
         startNode();
     }

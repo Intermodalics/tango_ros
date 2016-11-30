@@ -19,6 +19,7 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -29,8 +30,11 @@ import android.widget.TextView;
  * Ask the user to retry connecting to ros master.
  */
 public class TryToReconnectToRosDialog extends DialogFragment implements OnClickListener {
+    private static final long COUNTDOWN_DURATION = 30000; // in ms
+    private static final long COUNTDOWN_INTERVAL = 1000; // in ms
 
     TextView mUriTextView;
+    TextView mCountDownTextView;
     CallbackListener mCallbackListener;
 
     interface CallbackListener {
@@ -48,10 +52,20 @@ public class TryToReconnectToRosDialog extends DialogFragment implements OnClick
                              Bundle savedInstanceState) {
         View dialogView = inflator.inflate(R.layout.try_to_reconnect_to_ros_dialog, null);
         getDialog().setTitle(R.string.try_to_reconnect_to_ros_dialogTitle);
-        mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri);
+        mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri_value);
         mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri)));
+        mCountDownTextView = (TextView) dialogView.findViewById(R.id.countdown_value);
         dialogView.findViewById(R.id.try_reconnect).setOnClickListener(this);
         setCancelable(false);
+         new CountDownTimer(COUNTDOWN_DURATION, COUNTDOWN_INTERVAL) {
+             public void onTick(long millisUntilFinished) {
+                 mCountDownTextView.setText(millisUntilFinished / 1000 + " seconds");
+             }
+             public void onFinish() {
+                 mCallbackListener.onTryToReconnectToRos();
+                 dismiss();
+             }
+         }.start();
         return dialogView;
     }
 
