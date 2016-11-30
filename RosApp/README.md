@@ -42,6 +42,10 @@ sdk.dir=/opt/android-sdk-linux
 
 * Launch a roscore on your desktop.
 
-* Enter the ros master URI when the application is asking and press connect.
+* Enter the ros master URI when the application is asking and press _Connect_.
+![screenshot_2016-11-25-08-56-08](https://cloud.githubusercontent.com/assets/12640723/20618636/89512010-b2f0-11e6-9343-770e0170a22c.png)
 
-* Open rviz with the config file located at RosApp/tango_ros.rviz to visualize the different tango data (device pose, point cloud, image).
+* Open rviz with the config file located at RosApp/tango_ros.rviz to visualize the different tango data (device pose, pointcloud, images). You can enable/disable published data thanks to the app's switch buttons, press _Apply_ to applie your changes.
+![screenshot_2016-11-25-08-57-21](https://cloud.githubusercontent.com/assets/12640723/20618637/8b53b1e8-b2f0-11e6-8f21-618fe99f238c.png)
+
+
