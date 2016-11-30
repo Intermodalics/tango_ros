@@ -24,8 +24,6 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 namespace {
-// The minimum Tango Core version required from this application.
-constexpr int TANGO_CORE_MINIMUM_VERSION = 11926; // Yildun release.
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode
@@ -196,27 +194,6 @@ TangoRosNode::~TangoRosNode() {
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
   }
-}
-
-bool TangoRosNode::IsTangoVersionOk(JNIEnv* env, jobject activity) {
-  int version;
-  TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
-  if (err != TANGO_SUCCESS || version < TANGO_CORE_MINIMUM_VERSION) {
-    LOG(ERROR) << "TangoRosNode::IsTangoVersionOk, Tango Core version is out of"
-        "date, minimum version required: " << TANGO_CORE_MINIMUM_VERSION <<
-        ", version used: " << version;
-    return false;
-  }
-  return true;
-}
-
-bool TangoRosNode::SetBinder(JNIEnv* env, jobject binder) {
-  TangoErrorType ret = TangoService_setBinder(env, binder);
-  if (ret != TANGO_SUCCESS) {
-    LOG(ERROR) << "TangoRosNode: Failed to bind Tango service with error code: " << ret;
-    return false;
-  }
-  return true;
 }
 
 bool TangoRosNode::OnTangoServiceConnected() {
