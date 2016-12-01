@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "tango_ros_android/tango_android_helper.h"
+#include "tango_helper.h"
 
 #include <glog/logging.h>
 #include <tango_client_api/tango_client_api.h>
 #include <tango_support_api/tango_support_api.h>
 
-namespace tango_android_helper {
+namespace tango_helper {
 bool IsTangoVersionOk(JNIEnv* env, jobject activity) {
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
@@ -38,4 +38,4 @@ bool SetBinder(JNIEnv* env, jobject binder) {
   }
   return true;
 }
-} // tango_android_helper
+} // tango_helper

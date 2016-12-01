@@ -11,9 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "tango_ros_android/tango_android_helper.h"
-#include "tango_ros_native/tango_ros_node.h"
-#include "tango_ros_native/tango_ros_util.h"
+#include "tango_helper.h"
+
+#include <tango_ros_native/tango_ros_node.h>
+#include <tango_ros_native/tango_ros_util.h>
 
 #include <jni.h>
 
@@ -61,13 +62,13 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publisher_configuration);
   tango_ros.reset(new tango_ros_node::TangoRosNode(publisher_configuration));
-  return tango_android_helper::IsTangoVersionOk(env, activity);
+  return tango_helper::IsTangoVersionOk(env, activity);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
     JNIEnv* env, jobject /*obj*/, jobject iBinder) {
-  return tango_android_helper::SetBinder(env, iBinder) && tango_ros->OnTangoServiceConnected();
+  return tango_helper::SetBinder(env, iBinder) && tango_ros->OnTangoServiceConnected();
 }
 
 JNIEXPORT void JNICALL

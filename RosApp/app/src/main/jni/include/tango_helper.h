@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <jni.h>
 
-namespace tango_android_helper {
+namespace tango_helper {
 // The minimum Tango Core version required from this application.
 const int TANGO_CORE_MINIMUM_VERSION = 11926; // Yildun release.
 
@@ -24,5 +24,5 @@ bool IsTangoVersionOk(JNIEnv* env, jobject activity);
 // Binds to the tango service.
 // @return returns true if setting the binder ended successfully.
 bool SetBinder(JNIEnv* env, jobject binder);
-} // tango_android_helper
+} // tango_helper
 
