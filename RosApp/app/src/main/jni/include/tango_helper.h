@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <jni.h>
 
+// Helper functions that need to be separated from the tango_ros_native package to get rif of the
+// jni dependency, so that the tango_ros_native package can be used for Android and Linux.
 namespace tango_helper {
 // The minimum Tango Core version required from this application.
 const int TANGO_CORE_MINIMUM_VERSION = 11926; // Yildun release.
