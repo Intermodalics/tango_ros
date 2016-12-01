@@ -29,7 +29,7 @@ public class JNIInterface {
                 TangoInitializationHelper.ARCH_ERROR) {
             Log.e("TangoJNINative", "ERROR! Unable to load libtango_client_api.so!");
         }
-        System.loadLibrary("tango_ros_android");
+        System.loadLibrary("tango_ros_android_lib");
     }
 
     /**

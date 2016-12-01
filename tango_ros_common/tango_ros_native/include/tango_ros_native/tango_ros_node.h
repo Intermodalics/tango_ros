@@ -13,11 +13,10 @@
 // limitations under the License.
 #ifndef TANGO_ROS_NODE_H_
 #define TANGO_ROS_NODE_H_
-#include <jni.h>
+
 #include <string>
 
 #include <tango_client_api/tango_client_api.h>
-#include <tango_support_api/tango_support_api.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -63,13 +62,6 @@ class TangoRosNode {
  public:
   TangoRosNode(PublisherConfiguration publisher_config);
   ~TangoRosNode();
-  // Checks the installed version of the TangoCore. If it is too old, then
-  // it will not support the most up to date features.
-  // @return returns true if tango version if supported.
-  bool IsTangoVersionOk(JNIEnv* env, jobject activity);
-  // Binds to the tango service.
-  // @return returns true if setting the binder ended successfully.
-  bool SetBinder(JNIEnv* env, jobject binder);
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
   // @return returns true if it ended successfully.
