@@ -57,7 +57,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         // Save URI preference.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(getString(R.string.saved_uri), mMasterUri);
+        editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
         // Start ROS and node.
         init();
@@ -79,10 +79,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private void showSetMasterUriDialog() {
         // Get URI preference or default value if does not exist.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri),
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
                 getResources().getString(R.string.saved_uri_default));
         Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri), uriValue);
+        bundle.putString(getString(R.string.saved_uri_key), uriValue);
         FragmentManager manager = getFragmentManager();
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
@@ -94,10 +94,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
      */
     private void showTryToReconnectToRosDialog() {
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri),
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
                 getResources().getString(R.string.saved_uri_default));
         Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri), uriValue);
+        bundle.putString(getString(R.string.saved_uri_key), uriValue);
         FragmentManager manager = getFragmentManager();
         TryToReconnectToRosDialog setTryToReconnectToRosDialog = new TryToReconnectToRosDialog();
         setTryToReconnectToRosDialog.setArguments(bundle);
@@ -169,6 +169,13 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mIsNodeInitialised) {
             startNode();
         }
+        // Store new configuration.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(getString(R.string.publish_device_pose_key), mPublishConfig.publishDevicePose);
+        editor.putBoolean(getString(R.string.publish_pointcloud_key), mPublishConfig.publishPointCloud);
+        editor.putInt(getString(R.string.publish_camera_key), mPublishConfig.publishCamera);
+        editor.commit();
     }
 
     @Override
@@ -176,6 +183,11 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         mPublishConfig = new PublisherConfiguration();
+        // Read stored configuration.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        mPublishConfig.publishDevicePose = sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false);
+        mPublishConfig.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_pointcloud_key), false);
+        mPublishConfig.publishCamera = sharedPref.getInt(getString(R.string.publish_camera_key), PublisherConfiguration.CAMERA_NONE);
         // Set callback for device pose switch.
         Switch switchDevicePose = (Switch) findViewById(R.id.switch_device_pose);
         switchDevicePose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -189,6 +201,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
+        switchDevicePose.setChecked(mPublishConfig.publishDevicePose);
         // Set callback for point cloud switch.
         Switch switchPointCloud = (Switch) findViewById(R.id.switch_pointcloud);
         switchPointCloud.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -202,6 +215,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
+        switchPointCloud.setChecked(mPublishConfig.publishPointCloud);
         // Set callback for fisheye camera switch.
         Switch switchFisheyeCamera = (Switch) findViewById(R.id.switch_fisheye_camera);
         switchFisheyeCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -215,7 +229,8 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
-
+        switchFisheyeCamera.setChecked((mPublishConfig.publishCamera &
+                PublisherConfiguration.CAMERA_FISHEYE) == PublisherConfiguration.CAMERA_FISHEYE);
         // Set callback for color camera switch.
         Switch switchColorCamera = (Switch) findViewById(R.id.switch_color_camera);
         switchColorCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -229,6 +244,8 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
+        switchColorCamera.setChecked((mPublishConfig.publishCamera
+                & PublisherConfiguration.CAMERA_COLOR) == PublisherConfiguration.CAMERA_COLOR);
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
         buttonApply.setOnClickListener(new View.OnClickListener() {

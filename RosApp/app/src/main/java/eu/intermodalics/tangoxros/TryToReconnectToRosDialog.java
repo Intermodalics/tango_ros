@@ -53,7 +53,7 @@ public class TryToReconnectToRosDialog extends DialogFragment implements OnClick
         View dialogView = inflator.inflate(R.layout.try_to_reconnect_to_ros_dialog, null);
         getDialog().setTitle(R.string.try_to_reconnect_to_ros_dialogTitle);
         mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri_value);
-        mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri)));
+        mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri_key)));
         mCountDownTextView = (TextView) dialogView.findViewById(R.id.countdown_value);
         dialogView.findViewById(R.id.try_reconnect).setOnClickListener(this);
         setCancelable(false);
