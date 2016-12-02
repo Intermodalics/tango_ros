@@ -51,7 +51,7 @@ public class SetMasterUriDialog extends DialogFragment implements OnClickListene
         mUriEditText = (EditText) dialogView.findViewById(R.id.uri);
         dialogView.findViewById(R.id.connect).setOnClickListener(this);
         setCancelable(false);
-        String uri = this.getArguments().getString(getString(R.string.saved_uri));
+        String uri = this.getArguments().getString(getString(R.string.saved_uri_key));
         if (uri != null) {
             mUriEditText.setText(uri);
         }

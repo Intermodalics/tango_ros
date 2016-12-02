@@ -1,0 +1,23 @@
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+            android:title="">
+
+        <SwitchPreference
+                android:key="@string/publish_device_pose_key"
+                android:title="@string/publish_device_pose" />
+
+        <SwitchPreference
+            android:key="@string/publish_pointcloud_key"
+            android:title="@string/publish_pointcloud" />
+
+        <SwitchPreference
+            android:key="@string/publish_fisheye_camera_key"
+            android:title="@string/publish_fisheye_camera" />
+
+        <SwitchPreference
+            android:key="@string/publish_color_camera_key"
+            android:title="@string/publish_color_camera" />
+    </PreferenceCategory>
+</PreferenceScreen>
