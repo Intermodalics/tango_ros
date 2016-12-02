@@ -5,10 +5,15 @@
     <string name="connect">Connect</string>
     <string name="uri_hint">http://</string>
     <string name="saved_uri_default">http://local-desktop:11311</string>
-    <string name="saved_uri">saved_uri</string>
+    <string name="saved_uri_key">saved_uri</string>
 
     <string name="try_to_reconnect_to_ros_dialogTitle">Try to reconnect to ros master</string>
     <string name="try_to_reconnect">Try to reconnect now</string>
+
+    <string name="publish_device_pose_key">publish_device_pose</string>
+    <string name="publish_pointcloud_key">publish_pointcloud</string>
+    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
+    <string name="publish_color_camera_key">publish_color_camera</string>
 
     <string name="publish_device_pose">Publish device pose</string>
     <string name="publish_pointcloud">Publish point cloud</string>

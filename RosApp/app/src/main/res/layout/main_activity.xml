@@ -22,47 +22,17 @@
             android:textSize="20sp" />
      </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/preferencesFrame"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" >
+    </FrameLayout>
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
-
-        <Switch android:id="@+id/switch_device_pose"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_marginTop="40dp"
-            android:text="@string/publish_device_pose" />
-
-        <Switch android:id="@+id/switch_pointcloud"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_pointcloud" />
-
-        <Switch android:id="@+id/switch_fisheye_camera"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_fisheye_camera" />
-
-        <Switch android:id="@+id/switch_color_camera"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_color_camera" />
-
-        <Button
-            android:id="@+id/apply"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_below="@+id/checkbox_pointcloud"
-            android:text="@string/apply" />
-    </LinearLayout>
+    <Button
+        android:id="@+id/apply"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="50dp"
+        android:text="@string/apply" />
 </FrameLayout>
