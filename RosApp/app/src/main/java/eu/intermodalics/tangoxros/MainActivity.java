@@ -29,12 +29,11 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener, TryToReconnectToRosDialog.CallbackListener {
+public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener,
+        TryToReconnectToRosDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
@@ -125,6 +124,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     };
 
     public boolean initNode() {
+        // Update publisher configuration according to current preferences.
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         if(!mJniInterface.initNode(this, mPublishConfig)) {
             Log.e(TAG, getResources().getString(R.string.tango_node_error));
             Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
@@ -169,13 +171,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mIsNodeInitialised) {
             startNode();
         }
-        // Store new configuration.
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(getString(R.string.publish_device_pose_key), mPublishConfig.publishDevicePose);
-        editor.putBoolean(getString(R.string.publish_pointcloud_key), mPublishConfig.publishPointCloud);
-        editor.putInt(getString(R.string.publish_camera_key), mPublishConfig.publishCamera);
-        editor.commit();
     }
 
     @Override
@@ -183,69 +178,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         mPublishConfig = new PublisherConfiguration();
-        // Read stored configuration.
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        mPublishConfig.publishDevicePose = sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false);
-        mPublishConfig.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_pointcloud_key), false);
-        mPublishConfig.publishCamera = sharedPref.getInt(getString(R.string.publish_camera_key), PublisherConfiguration.CAMERA_NONE);
-        // Set callback for device pose switch.
-        Switch switchDevicePose = (Switch) findViewById(R.id.switch_device_pose);
-        switchDevicePose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishDevicePose = true;
-                    Log.i(TAG, "Publish device pose is switched on");
-                } else {
-                    mPublishConfig.publishDevicePose = false;
-                    Log.i(TAG, "Publish device pose is switched off");
-                }
-            }
-        });
-        switchDevicePose.setChecked(mPublishConfig.publishDevicePose);
-        // Set callback for point cloud switch.
-        Switch switchPointCloud = (Switch) findViewById(R.id.switch_pointcloud);
-        switchPointCloud.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishPointCloud = true;
-                    Log.i(TAG, "Publish point cloud is switched on");
-                } else {
-                    mPublishConfig.publishPointCloud = false;
-                    Log.i(TAG, "Publish point cloud is switched off");
-                }
-            }
-        });
-        switchPointCloud.setChecked(mPublishConfig.publishPointCloud);
-        // Set callback for fisheye camera switch.
-        Switch switchFisheyeCamera = (Switch) findViewById(R.id.switch_fisheye_camera);
-        switchFisheyeCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
-                    Log.i(TAG, "Publish fisheye camera is switched on");
-                } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
-                    Log.i(TAG, "Publish fisheye camera is switched off");
-                }
-            }
-        });
-        switchFisheyeCamera.setChecked((mPublishConfig.publishCamera &
-                PublisherConfiguration.CAMERA_FISHEYE) == PublisherConfiguration.CAMERA_FISHEYE);
-        // Set callback for color camera switch.
-        Switch switchColorCamera = (Switch) findViewById(R.id.switch_color_camera);
-        switchColorCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
-                    Log.i(TAG, "Publish color camera is switched on");
-                } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
-                    Log.i(TAG, "Publish color camera is switched off");
-                }
-            }
-        });
-        switchColorCamera.setChecked((mPublishConfig.publishCamera
-                & PublisherConfiguration.CAMERA_COLOR) == PublisherConfiguration.CAMERA_COLOR);
+        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
         buttonApply.setOnClickListener(new View.OnClickListener() {

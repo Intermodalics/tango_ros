@@ -12,7 +12,8 @@
 
     <string name="publish_device_pose_key">publish_device_pose</string>
     <string name="publish_pointcloud_key">publish_pointcloud</string>
-    <string name="publish_camera_key">publish_camera</string>
+    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
+    <string name="publish_color_camera_key">publish_color_camera</string>
 
     <string name="publish_device_pose">Publish device pose</string>
     <string name="publish_pointcloud">Publish point cloud</string>
