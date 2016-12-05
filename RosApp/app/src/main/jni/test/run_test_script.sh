@@ -9,7 +9,7 @@ DEVICE_IP="192.168.168.185"
 DESKTOP_TEST_DIR="$HOME/tango_ros_ws/devel/lib/tango_ros_native"
 
 # Push libs and test executable to the device.
-adb push $LIB_DIR/libtango_ros_android.so $DEST_DIR/
+adb push $LIB_DIR/libtango_ros_android_lib.so $DEST_DIR/
 adb push $LIB_DIR/libtango_ros_native.so $DEST_DIR/
 adb push $LIB_DIR/libtango_support_api.so $DEST_DIR/
 adb push $LIB_DIR/test_tango_ros_native $DEST_DIR/
