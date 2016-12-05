@@ -39,7 +39,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private static final String IP_PREFIX = "__ip:=";
 
     private JNIInterface mJniInterface;
-    private String mMasterUri;
+    private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
 
@@ -73,7 +73,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     /**
-     * Shows a dialog for setting the Master URI.
+     * Shows a dialog to request master URI from user.
      */
     private void showSetMasterUriDialog() {
         // Get URI preference or default value if does not exist.
@@ -155,6 +155,8 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             mJniInterface.startPublishing();
+        } else {
+            Log.w(TAG, "Node is not initialized");
         }
     }
 
@@ -179,8 +181,14 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 applySettings();
             }
         });
-        // Request master URI from user.
-        showSetMasterUriDialog();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mMasterUri.isEmpty()) {
+            showSetMasterUriDialog();
+        }
     }
 
     @Override
