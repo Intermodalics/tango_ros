@@ -28,4 +28,11 @@ public class PublisherConfiguration {
     public boolean publishPointCloud = false;
     // Flag corresponding to which cameras need to be published.
     public int publishCamera = CAMERA_NONE;
+
+    @Override
+    public String toString() {
+        return "Publisher configuration:\npublish device pose = " +  publishDevicePose +
+                "\npublsih point cloud = " + publishPointCloud + "\npublish camera = " +
+                publishCamera;
+    }
 }

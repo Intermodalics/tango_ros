@@ -19,11 +19,13 @@ package eu.intermodalics.tangoxros;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
+import android.util.Log;
 
 /**
  * Created by intermodalics on 12/1/16.
  */
 public class PrefsFragment extends PreferenceFragment {
+    private static final String TAG = PrefsFragment.class.getSimpleName();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,7 @@ public class PrefsFragment extends PreferenceFragment {
         } else {
             publisherConfiguration.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
         }
+        Log.i(TAG, publisherConfiguration.toString());
         return publisherConfiguration;
     }
 }
