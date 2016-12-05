@@ -11,29 +11,52 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <time.h>
+
 #include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
+#include <tf2_msgs/TFMessage.h>
 
 #include <tango_ros_native/tango_ros_node.h>
 #include <tango_ros_native/tango_ros_util.h>
+
+const double TF_RATE = 100; // in Hz.
+const double POINT_CLOUD_RATE = 5.; // in Hz.
+const double FISHEYE_IMAGE_RATE = 20.; // in Hz.
+const double COLOR_IMAGE_RATE = 10.; // in Hz.
+const double RATE_TOLERANCE_PERCENTAGE = 0.2;
 
 class TangoRosTest : public ::testing::Test {
  public:
   ros::NodeHandle nh_;
   tf::TransformListener tf_listener_;
+  ros::Subscriber sub_tf_;
   ros::Subscriber sub_point_cloud_;
   ros::Subscriber sub_fisheye_image_;
   ros::Subscriber sub_color_image_;
 
-  bool point_cloud_received_ = false;
-  bool fisheye_image_received_ = false;
-  bool color_image_received_ = false;
+  bool point_cloud_received_;
+  bool fisheye_image_received_;
+  bool color_image_received_;
+
+  int tf_message_count;
+  int point_cloud_message_count;
+  int fisheye_image_message_count;
+  int color_image_message_count;
 
  protected:
   virtual void SetUp() {
+    point_cloud_received_ = false;
+    fisheye_image_received_ = false;
+    color_image_received_ = false;
+    tf_message_count = 0;
+    point_cloud_message_count = 0;
+    fisheye_image_message_count = 0;
+    color_image_message_count = 0;
+
     sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(
         tango_ros_node::PublisherConfiguration().point_cloud_topic, 1,
         boost::bind(&TangoRosTest::PointCloudCallback, this, _1));
@@ -45,23 +68,33 @@ class TangoRosTest : public ::testing::Test {
     sub_color_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
             tango_ros_node::PublisherConfiguration().color_camera_topic, 1,
             boost::bind(&TangoRosTest::ColorImageCallback, this, _1));
+
+    sub_tf_ = nh_.subscribe<tf2_msgs::TFMessage>(
+        "/tf", 1, boost::bind(&TangoRosTest::TfCallback, this, _1));
   }
 
  private:
   void PointCloudCallback(const boost::shared_ptr<const sensor_msgs::PointCloud2> msg) {
     point_cloud_received_ = true;
+    point_cloud_message_count ++;
   }
 
   void FisheyeImageCallback(const boost::shared_ptr<const sensor_msgs::CompressedImage> msg) {
     fisheye_image_received_ = true;
+    fisheye_image_message_count++;
   }
 
   void ColorImageCallback(const boost::shared_ptr<const sensor_msgs::CompressedImage> msg) {
     color_image_received_ = true;
+    color_image_message_count++;
+  }
+
+  void TfCallback(const boost::shared_ptr<const tf2_msgs::TFMessage> msg) {
+    tf_message_count++;
   }
 };
 
-TEST_F(TangoRosTest, TestMessages) {
+TEST_F(TangoRosTest, TestMessagesArePublished) {
   tf::StampedTransform transform;
   EXPECT_THROW(tf_listener_.lookupTransform("/start_of_service", "/device",
                                             ros::Time(0), transform), tf::TransformException);
@@ -90,6 +123,24 @@ TEST_F(TangoRosTest, TestMessages) {
   EXPECT_TRUE(point_cloud_received_);
   EXPECT_TRUE(fisheye_image_received_);
   EXPECT_TRUE(color_image_received_);
+}
+
+TEST_F(TangoRosTest, TestMessagesRates) {
+  time_t current_time = time(NULL);
+  double duration = 5;
+  time_t end = current_time + duration;
+  while (current_time < end) {
+    ros::spinOnce();
+    current_time = time(NULL);
+  }
+  double rate_tf = tf_message_count / duration;
+  double rate_point_cloud = point_cloud_message_count / duration;
+  double rate_fisheye_image = fisheye_image_message_count / duration;
+  double rate_color_image = color_image_message_count / duration;
+  EXPECT_NEAR(TF_RATE, rate_tf, RATE_TOLERANCE_PERCENTAGE * TF_RATE);
+  EXPECT_NEAR(POINT_CLOUD_RATE, rate_point_cloud, RATE_TOLERANCE_PERCENTAGE * POINT_CLOUD_RATE);
+  EXPECT_NEAR(FISHEYE_IMAGE_RATE, rate_fisheye_image, RATE_TOLERANCE_PERCENTAGE * FISHEYE_IMAGE_RATE);
+  EXPECT_NEAR(COLOR_IMAGE_RATE, rate_color_image, RATE_TOLERANCE_PERCENTAGE * COLOR_IMAGE_RATE);
 }
 
 // Run all the tests that were declared with TEST()

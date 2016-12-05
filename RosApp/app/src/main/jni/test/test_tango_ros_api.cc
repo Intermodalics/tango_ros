@@ -22,7 +22,7 @@ std::string device_ip;
 
 class TangoRosTest : public ::testing::Test {
  public:
-  const int TEST_DURATION = 5; // in second.
+  const int TEST_DURATION = 20; // in second.
   std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros_node_;
   tango_ros_node::PublisherConfiguration publisher_config_;
   bool connected_to_tango = false;
