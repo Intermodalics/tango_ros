@@ -133,14 +133,14 @@ TEST_F(TangoRosTest, TestMessagesRates) {
     ros::spinOnce();
     current_time = time(NULL);
   }
-  double rate_tf = tf_message_count / duration;
-  double rate_point_cloud = point_cloud_message_count / duration;
-  double rate_fisheye_image = fisheye_image_message_count / duration;
-  double rate_color_image = color_image_message_count / duration;
-  EXPECT_NEAR(TF_RATE, rate_tf, RATE_TOLERANCE_PERCENTAGE * TF_RATE);
-  EXPECT_NEAR(POINT_CLOUD_RATE, rate_point_cloud, RATE_TOLERANCE_PERCENTAGE * POINT_CLOUD_RATE);
-  EXPECT_NEAR(FISHEYE_IMAGE_RATE, rate_fisheye_image, RATE_TOLERANCE_PERCENTAGE * FISHEYE_IMAGE_RATE);
-  EXPECT_NEAR(COLOR_IMAGE_RATE, rate_color_image, RATE_TOLERANCE_PERCENTAGE * COLOR_IMAGE_RATE);
+  double tf_rate = tf_message_count / duration;
+  double point_cloud_rate = point_cloud_message_count / duration;
+  double fisheye_image_rate = fisheye_image_message_count / duration;
+  double color_image_rate = color_image_message_count / duration;
+  EXPECT_NEAR(TF_RATE, tf_rate, RATE_TOLERANCE_PERCENTAGE * TF_RATE);
+  EXPECT_NEAR(POINT_CLOUD_RATE, point_cloud_rate, RATE_TOLERANCE_PERCENTAGE * POINT_CLOUD_RATE);
+  EXPECT_NEAR(FISHEYE_IMAGE_RATE, fisheye_image_rate, RATE_TOLERANCE_PERCENTAGE * FISHEYE_IMAGE_RATE);
+  EXPECT_NEAR(COLOR_IMAGE_RATE, color_image_rate, RATE_TOLERANCE_PERCENTAGE * COLOR_IMAGE_RATE);
 }
 
 // Run all the tests that were declared with TEST()
