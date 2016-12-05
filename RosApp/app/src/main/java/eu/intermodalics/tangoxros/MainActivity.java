@@ -159,6 +159,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     }
 
     public void applySettings() {
+        // Update publisher configuration according to current preferences.
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 
