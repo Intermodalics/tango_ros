@@ -2,46 +2,37 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
 
-        <Switch android:id="@+id/switch_device_pose"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_device_pose" />
-
-        <Switch android:id="@+id/switch_pointcloud"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_pointcloud" />
-
-        <Switch android:id="@+id/switch_fisheye_camera"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_fisheye_camera" />
-
-        <Switch android:id="@+id/switch_color_camera"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/publish_color_camera" />
-
-        <Button
-            android:id="@+id/apply"
-            style="?android:attr/buttonStyleSmall"
+        <TextView
+            android:id="@+id/master_uri_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_below="@+id/checkbox_pointcloud"
-            android:text="@string/apply" />
-    </LinearLayout>
+            android:text="Master URI: "
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/master_uri"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp" />
+     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/preferencesFrame"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" >
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/apply"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="50dp"
+        android:text="@string/apply" />
 </FrameLayout>

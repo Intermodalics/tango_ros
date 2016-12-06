@@ -8,14 +8,12 @@ find_package(catkin REQUIRED COMPONENTS
    roscpp
    sensor_msgs
    tango_client_api
-   tango_support_api
    tf
    tf2_ros
    )
 
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(JNI REQUIRED)
 find_package(OpenCV 2 REQUIRED)
 
 generate_dynamic_reconfigure_options(
@@ -23,7 +21,9 @@ generate_dynamic_reconfigure_options(
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp sensor_msgs glog_catkin tango_client_api tango_support_api tf tf2_ros
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS glog_catkin roscpp sensor_msgs tango_client_api tf tf2_ros
+  LIBRARIES tango_ros_native
   DEPENDS Eigen OpenCV
   )
   
@@ -31,7 +31,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
-  ${JNI_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 

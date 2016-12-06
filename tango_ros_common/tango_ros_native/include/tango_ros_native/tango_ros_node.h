@@ -17,13 +17,11 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include <thread>
 #include <string>
-
-#include <jni.h>
+#include <thread>
+#include <time.h>
 
 #include <tango_client_api/tango_client_api.h>
-#include <tango_support_api/tango_support_api.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -71,13 +69,6 @@ class TangoRosNode {
  public:
   TangoRosNode(bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera);
   ~TangoRosNode();
-  // Checks the installed version of the TangoCore. If it is too old, then
-  // it will not support the most up to date features.
-  // @return returns true if tango version if supported.
-  bool IsTangoVersionOk(JNIEnv* env, jobject activity);
-  // Binds to the tango service.
-  // @return returns true if setting the binder ended successfully.
-  bool SetBinder(JNIEnv* env, jobject binder);
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
   // @return returns true if it ended successfully.
@@ -116,15 +107,11 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  // Run publish data functions in a loop.
-  void RunPublishingPose();
-  void RunPublishingPointCloud();
-  void RunPublishingFisheyeImage();
-  void RunPublishingColorImage();
-  // Function called when one of the dynamic reconfigure parameter is changed.
-  void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   // Run ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
+  // Function called when one of the dynamic reconfigure parameter is changed.
+  void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -139,22 +126,16 @@ class TangoRosNode {
 
   std::mutex pose_available_mutex_;
   std::condition_variable pose_available_;
+  bool is_new_pose_available_ = false;
   std::mutex point_cloud_available_mutex_;
   std::condition_variable point_cloud_available_;
+  bool is_new_point_cloud_available_ = false;
   std::mutex fisheye_image_available_mutex_;
   std::condition_variable fisheye_image_available_;
+  bool is_new_fisheye_image_available_ = false;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
-
-  std::atomic_bool device_pose_lock_;
-  std::atomic_bool point_cloud_lock_;
-  std::atomic_bool fisheye_image_lock_;
-  std::atomic_bool color_image_lock_;
-
-  std::atomic_bool new_pose_available_;
-  std::atomic_bool new_point_cloud_available_;
-  std::atomic_bool new_fisheye_image_available_;
-  std::atomic_bool new_color_image_available_;
+  bool is_new_color_image_available_ = false;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 

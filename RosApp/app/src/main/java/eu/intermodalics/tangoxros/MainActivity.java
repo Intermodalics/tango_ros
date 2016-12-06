@@ -29,17 +29,17 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener {
+public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener,
+        TryToReconnectToRosDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
 
     private JNIInterface mJniInterface;
-    private String mMasterUri;
+    private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
 
@@ -49,31 +49,58 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     @Override
     public void onMasterUriConnect(String uri) {
         mMasterUri = uri;
+        // Update view.
+        TextView uriTextView;
+        uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
         // Save URI preference.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(getString(R.string.saved_uri), mMasterUri);
+        editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
         // Start ROS and node.
         init();
-        onResume();
+        startNode();
     }
 
     /**
-     * Shows a dialog for setting the Master URI.
+     * Implements TryToReconnectToRosDialog.CallbackListener.
+     */
+    @Override
+    public void onTryToReconnectToRos() {
+        init();
+        startNode();
+    }
+
+    /**
+     * Shows a dialog to request master URI from user.
      */
     private void showSetMasterUriDialog() {
         // Get URI preference or default value if does not exist.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String defaultUriValue = getResources().getString(R.string.saved_uri_default);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri), defaultUriValue);
-
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
+                getResources().getString(R.string.saved_uri_default));
         Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri), uriValue);
+        bundle.putString(getString(R.string.saved_uri_key), uriValue);
         FragmentManager manager = getFragmentManager();
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
         setMasterUriDialog.show(manager, "MatserUriDialog");
+    }
+
+    /**
+     * Shows a dialog for trying to reconnect to ros master.
+     */
+    private void showTryToReconnectToRosDialog() {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
+                getResources().getString(R.string.saved_uri_default));
+        Bundle bundle = new Bundle();
+        bundle.putString(getString(R.string.saved_uri_key), uriValue);
+        FragmentManager manager = getFragmentManager();
+        TryToReconnectToRosDialog setTryToReconnectToRosDialog = new TryToReconnectToRosDialog();
+        setTryToReconnectToRosDialog.setArguments(bundle);
+        setTryToReconnectToRosDialog.show(manager, "TryToReconnectToRosDialog");
     }
 
     /**
@@ -97,6 +124,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     };
 
     public boolean initNode() {
+        // Update publisher configuration according to current preferences.
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         if(!mJniInterface.initNode(this, mPublishConfig)) {
             Log.e(TAG, getResources().getString(R.string.tango_node_error));
             Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
@@ -114,13 +144,26 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_ros_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
+                showTryToReconnectToRosDialog();
             }
         } else {
             Log.e(TAG, "Master URI is null");
         }
     }
 
+    public void startNode() {
+        if (mIsNodeInitialised) {
+            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+            mJniInterface.startPublishing();
+        } else {
+            Log.w(TAG, "Node is not initialized");
+        }
+    }
+
     public void applySettings() {
+        // Update publisher configuration according to current preferences.
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 
@@ -129,59 +172,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         mPublishConfig = new PublisherConfiguration();
-        // Set callback for device pose switch.
-        Switch switchDevicePose = (Switch) findViewById(R.id.switch_device_pose);
-        switchDevicePose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishDevicePose = true;
-                    Log.i(TAG, "Publish device pose is switched on");
-                } else {
-                    mPublishConfig.publishDevicePose = false;
-                    Log.i(TAG, "Publish device pose is switched off");
-                }
-            }
-        });
-        // Set callback for point cloud switch.
-        Switch switchPointCloud = (Switch) findViewById(R.id.switch_pointcloud);
-        switchPointCloud.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishPointCloud = true;
-                    Log.i(TAG, "Publish point cloud is switched on");
-                } else {
-                    mPublishConfig.publishPointCloud = false;
-                    Log.i(TAG, "Publish point cloud is switched off");
-                }
-            }
-        });
-        // Set callback for fisheye camera switch.
-        Switch switchFisheyeCamera = (Switch) findViewById(R.id.switch_fisheye_camera);
-        switchFisheyeCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
-                    Log.i(TAG, "Publish fisheye camera is switched on");
-                } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
-                    Log.i(TAG, "Publish fisheye camera is switched off");
-                }
-            }
-        });
-
-        // Set callback for color camera switch.
-        Switch switchColorCamera = (Switch) findViewById(R.id.switch_color_camera);
-        switchColorCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPublishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
-                    Log.i(TAG, "Publish color camera is switched on");
-                } else {
-                    mPublishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
-                    Log.i(TAG, "Publish color camera is switched off");
-                }
-            }
-        });
+        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
         buttonApply.setOnClickListener(new View.OnClickListener() {
@@ -190,17 +181,20 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 applySettings();
             }
         });
-        // Request master URI from user.
-        showSetMasterUriDialog();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mMasterUri.isEmpty()) {
+            showSetMasterUriDialog();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (mIsNodeInitialised) {
-            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            mJniInterface.startPublishing();
-        }
+        startNode();
     }
 
     @Override

@@ -19,22 +19,26 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.EditText;
+import android.widget.TextView;
 
 /**
- * Queries the user for a Master URI.
+ * Ask the user to retry connecting to ros master.
  */
-public class SetMasterUriDialog extends DialogFragment implements OnClickListener {
+public class TryToReconnectToRosDialog extends DialogFragment implements OnClickListener {
+    private static final long COUNTDOWN_DURATION = 30000; // in ms
+    private static final long COUNTDOWN_INTERVAL = 1000; // in ms
 
-    EditText mUriEditText;
+    TextView mUriTextView;
+    TextView mCountDownTextView;
     CallbackListener mCallbackListener;
 
     interface CallbackListener {
-        public void onMasterUriConnect(String uri);
+        public void onTryToReconnectToRos();
     }
 
     @Override
@@ -46,24 +50,30 @@ public class SetMasterUriDialog extends DialogFragment implements OnClickListene
     @Override
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflator.inflate(R.layout.set_master_uri_dialog, null);
-        getDialog().setTitle(R.string.set_master_uri_dialogTitle);
-        mUriEditText = (EditText) dialogView.findViewById(R.id.uri);
-        dialogView.findViewById(R.id.connect).setOnClickListener(this);
+        View dialogView = inflator.inflate(R.layout.try_to_reconnect_to_ros_dialog, null);
+        getDialog().setTitle(R.string.try_to_reconnect_to_ros_dialogTitle);
+        mUriTextView = (TextView) dialogView.findViewById(R.id.master_uri_value);
+        mUriTextView.setText(this.getArguments().getString(getString(R.string.saved_uri_key)));
+        mCountDownTextView = (TextView) dialogView.findViewById(R.id.countdown_value);
+        dialogView.findViewById(R.id.try_reconnect).setOnClickListener(this);
         setCancelable(false);
-        String uri = this.getArguments().getString(getString(R.string.saved_uri_key));
-        if (uri != null) {
-            mUriEditText.setText(uri);
-        }
+         new CountDownTimer(COUNTDOWN_DURATION, COUNTDOWN_INTERVAL) {
+             public void onTick(long millisUntilFinished) {
+                 mCountDownTextView.setText(millisUntilFinished / 1000 + " seconds");
+             }
+             public void onFinish() {
+                 mCallbackListener.onTryToReconnectToRos();
+                 dismiss();
+             }
+         }.start();
         return dialogView;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.connect:
-                mCallbackListener.onMasterUriConnect(
-                        mUriEditText.getText().toString());
+            case R.id.try_reconnect:
+                mCallbackListener.onTryToReconnectToRos();
                 dismiss();
                 break;
         }
