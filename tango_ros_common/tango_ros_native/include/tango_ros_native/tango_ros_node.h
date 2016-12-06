@@ -104,11 +104,6 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  // Run publish data functions.
-  void RunPublishingPose();
-  void RunPublishingPointCloud();
-  void RunPublishingFisheyeImage();
-  void RunPublishingColorImage();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -122,22 +117,16 @@ class TangoRosNode {
 
   std::mutex pose_available_mutex_;
   std::condition_variable pose_available_;
+  bool is_new_pose_available_ = false;
   std::mutex point_cloud_available_mutex_;
   std::condition_variable point_cloud_available_;
+  bool is_new_point_cloud_available_ = false;
   std::mutex fisheye_image_available_mutex_;
   std::condition_variable fisheye_image_available_;
+  bool is_new_fisheye_image_available_ = false;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
-
-  std::atomic_bool device_pose_lock_;
-  std::atomic_bool point_cloud_lock_;
-  std::atomic_bool fisheye_image_lock_;
-  std::atomic_bool color_image_lock_;
-
-  std::atomic_bool new_pose_available_;
-  std::atomic_bool new_point_cloud_available_;
-  std::atomic_bool new_fisheye_image_available_;
-  std::atomic_bool new_color_image_available_;
+  bool is_new_color_image_available_ = false;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
