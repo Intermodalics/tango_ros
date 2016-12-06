@@ -19,6 +19,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <time.h>
 
 #include <tango_client_api/tango_client_api.h>
 

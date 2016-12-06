@@ -216,9 +216,20 @@ bool TangoRosNode::OnTangoServiceConnected() {
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
   TangoPoseData pose;
-  do {
+  time_t current_time = time(NULL);
+  time_t end = current_time + 10;
+  while (current_time < end) {
     TangoService_getPoseAtTime(0.0, pair, &pose);
-  } while (pose.status_code != TANGO_POSE_VALID);
+    if (pose.status_code == TANGO_POSE_VALID) {
+      break;
+    }
+    sleep(1);
+    current_time = time(NULL);
+  }
+  if (pose.status_code != TANGO_POSE_VALID) {
+    LOG(ERROR) << "Error, could not get a first valid pose.";
+    return false;
+  }
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
   return true;
 }
@@ -345,9 +356,7 @@ void TangoRosNode::PublishStaticTransforms() {
   if (publisher_config_.publish_point_cloud) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
+    TangoService_getPoseAtTime(0.0, pair, &pose);
     toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
     device_T_camera_depth_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
     device_T_camera_depth_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
@@ -358,9 +367,7 @@ void TangoRosNode::PublishStaticTransforms() {
   if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
+    TangoService_getPoseAtTime(0.0, pair, &pose);
     toTransformStamped(pose, time_offset_, &device_T_camera_fisheye_);
     device_T_camera_fisheye_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
     device_T_camera_fisheye_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
@@ -371,9 +378,7 @@ void TangoRosNode::PublishStaticTransforms() {
   if (publisher_config_.publish_camera & CAMERA_COLOR) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
+    TangoService_getPoseAtTime(0.0, pair, &pose);
     toTransformStamped(pose, time_offset_, &device_T_camera_color_);
     device_T_camera_color_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
     device_T_camera_color_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
