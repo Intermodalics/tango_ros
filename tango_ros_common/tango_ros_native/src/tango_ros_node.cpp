@@ -20,6 +20,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <dynamic_reconfigure/BoolParameter.h>
+#include <dynamic_reconfigure/Config.h>
+#include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -345,10 +348,31 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
                                                 bool publish_point_cloud,
                                                 uint32_t publish_camera) {
-  publisher_config_.publish_device_pose = publish_device_pose;
-  publisher_config_.publish_point_cloud = publish_point_cloud;
-  publisher_config_.publish_camera = publish_camera;
-  PublishStaticTransforms();
+  // Update dynamic reconfigure parameters consequently.
+  dynamic_reconfigure::ReconfigureRequest srv_req;
+  dynamic_reconfigure::ReconfigureResponse srv_resp;
+  dynamic_reconfigure::Config config;
+  dynamic_reconfigure::BoolParameter dynamic_boolean_param;
+  dynamic_boolean_param.name = "publish_device_pose";
+  dynamic_boolean_param.value = publish_device_pose;
+  config.bools.push_back(dynamic_boolean_param);
+
+  dynamic_boolean_param.name = "publish_point_cloud";
+  dynamic_boolean_param.value = publish_point_cloud;
+  config.bools.push_back(dynamic_boolean_param);
+
+  dynamic_boolean_param.name = "publish_camera_fisheye";
+  dynamic_boolean_param.value = publish_camera & CAMERA_FISHEYE;
+  config.bools.push_back(dynamic_boolean_param);
+
+  dynamic_boolean_param.name = "publish_camera_color";
+  dynamic_boolean_param.value = publish_camera & CAMERA_COLOR;
+  config.bools.push_back(dynamic_boolean_param);
+
+  srv_req.config = config;
+  if(!ros::service::call("/tango_x_ros/set_parameters", srv_req, srv_resp)) {
+    LOG(ERROR) << "Service call failed, could not update dynamic reconfigure parameters.";
+  }
 }
 
 void TangoRosNode::PublishStaticTransforms() {
@@ -539,6 +563,7 @@ void TangoRosNode::PublishColorImage() {
 }
 
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
+  LOG(INFO) << "DynamicReconfigureCallback";
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
   if (config.publish_camera_fisheye) {
@@ -563,6 +588,7 @@ void TangoRosNode::RunRosSpin() {
     if (!run_threads_) {
       break;
     }
+    LOG(INFO) << "Spinning!";
     ros::spinOnce();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }

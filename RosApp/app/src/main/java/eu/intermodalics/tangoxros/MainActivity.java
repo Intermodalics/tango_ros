@@ -155,6 +155,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             mJniInterface.startPublishing();
+            applySettings();
         } else {
             Log.w(TAG, "Node is not initialized");
         }
