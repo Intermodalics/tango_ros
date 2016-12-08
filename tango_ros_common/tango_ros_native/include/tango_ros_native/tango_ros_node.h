@@ -80,11 +80,15 @@ class TangoRosNode {
   // Stop the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Sets a new PublisherConfiguration and calls PublishStaticTransforms with
-  // the new publisher_config.
+  // Sets new publisher configuration values and make a ros service call to
+  // update the dynamic reconfigure config consequently.
   void UpdatePublisherConfiguration(bool publish_device_pose,
                                     bool publish_point_cloud,
                                     uint32_t publish_camera);
+  // Returns the current publisher configuration values.
+  void GetPublisherConfiguration(bool* publish_device_pose,
+                                 bool* publish_point_cloud,
+                                 uint32_t* publish_camera);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);

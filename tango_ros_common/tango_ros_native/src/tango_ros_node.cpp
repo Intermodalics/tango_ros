@@ -375,6 +375,14 @@ void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
   }
 }
 
+void TangoRosNode::GetPublisherConfiguration(bool* publish_device_pose,
+                               bool* publish_point_cloud,
+                               uint32_t* publish_camera) {
+  *publish_device_pose = publisher_config_.publish_device_pose;
+  *publish_point_cloud = publisher_config_.publish_point_cloud;
+  *publish_camera = publisher_config_.publish_camera;
+}
+
 void TangoRosNode::PublishStaticTransforms() {
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
@@ -588,7 +596,6 @@ void TangoRosNode::RunRosSpin() {
     if (!run_threads_) {
       break;
     }
-    LOG(INFO) << "Spinning!";
     ros::spinOnce();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }

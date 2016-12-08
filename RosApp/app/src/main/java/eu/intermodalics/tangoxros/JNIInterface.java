@@ -82,4 +82,11 @@ public class JNIInterface {
      * @param publisherConfiguration the new publisher configuration.
      */
     public static native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
+
+    /**
+     * Get the publisher configuration from the tango-ros node.
+     *
+     * @param publisherConfiguration the returned publisher configuration.
+     */
+    public static native void getPublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }

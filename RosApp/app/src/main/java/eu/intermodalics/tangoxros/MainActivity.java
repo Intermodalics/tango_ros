@@ -25,6 +25,7 @@ import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.SwitchPreference;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
@@ -42,6 +43,8 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
+
+    private Thread mThread;
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -196,6 +199,46 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onResume() {
         super.onResume();
         startNode();
+        mThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
+                while(true) {
+                    if (mIsNodeInitialised) {
+                        JNIInterface.getPublisherConfiguration(publisherConfiguration);
+                        if (publisherConfiguration.publishDevicePose != mPublishConfig.publishDevicePose ||
+                                publisherConfiguration.publishPointCloud != mPublishConfig.publishPointCloud ||
+                                publisherConfiguration.publishCamera != mPublishConfig.publishCamera) {
+                            mPublishConfig.publishDevicePose = publisherConfiguration.publishDevicePose;
+                            mPublishConfig.publishPointCloud = publisherConfiguration.publishPointCloud;
+                            mPublishConfig.publishCamera = publisherConfiguration.publishCamera;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+                                    SwitchPreference mPublishDevicePose = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
+                                    SwitchPreference mPublishPointCloud = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
+                                    SwitchPreference mPublishFisheyeImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
+                                    SwitchPreference mPublishColorImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
+                                    mPublishDevicePose.setChecked(mPublishConfig.publishDevicePose);
+                                    mPublishPointCloud.setChecked(mPublishConfig.publishPointCloud);
+                                    mPublishFisheyeImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
+                                            PublisherConfiguration.CAMERA_FISHEYE);
+                                    mPublishColorImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
+                                            PublisherConfiguration.CAMERA_COLOR);
+                                }
+                            });
+                        }
+                        try {
+                            mThread.sleep(500);
+                        } catch (InterruptedException e) {
+                            Log.e(TAG, e.toString());
+                        }
+                    }
+                }
+            }
+        });
+        mThread.start();
     }
 
     @Override
