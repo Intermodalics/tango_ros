@@ -86,6 +86,10 @@ class TangoRosNode {
   void UpdatePublisherConfiguration(bool publish_device_pose,
                                     bool publish_point_cloud,
                                     uint32_t publish_camera);
+  // Returns the current publisher configuration values.
+  void GetPublisherConfiguration(bool* publish_device_pose,
+                                 bool* publish_point_cloud,
+                                 uint32_t* publish_camera);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
