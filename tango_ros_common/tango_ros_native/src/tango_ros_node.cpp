@@ -571,7 +571,6 @@ void TangoRosNode::PublishColorImage() {
 }
 
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
-  LOG(INFO) << "DynamicReconfigureCallback";
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
   if (config.publish_camera_fisheye) {
