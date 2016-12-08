@@ -44,7 +44,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
-    private Thread mThread;
+    private Thread mUpdatePublisherConfigurationThread;
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -126,7 +126,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     };
 
-    public boolean initNode() {
+    private boolean initNode() {
         // Update publisher configuration according to current preferences.
         PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
         mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
@@ -138,7 +138,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         return true;
     }
 
-    public void init() {
+    private void init() {
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
@@ -154,7 +154,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     }
 
-    public void startNode() {
+    private void startNode() {
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             mJniInterface.startPublishing();
@@ -164,11 +164,30 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     }
 
-    public void applySettings() {
+    private void applySettings() {
         // Update publisher configuration according to current preferences.
         PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
         mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
+    }
+
+    private void updatePreferences() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+                SwitchPreference mPublishDevicePose = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
+                SwitchPreference mPublishPointCloud = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
+                SwitchPreference mPublishFisheyeImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
+                SwitchPreference mPublishColorImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
+                mPublishDevicePose.setChecked(mPublishConfig.publishDevicePose);
+                mPublishPointCloud.setChecked(mPublishConfig.publishPointCloud);
+                mPublishFisheyeImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
+                        PublisherConfiguration.CAMERA_FISHEYE);
+                mPublishColorImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
+                        PublisherConfiguration.CAMERA_COLOR);
+            }
+        });
     }
 
     @Override
@@ -198,7 +217,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onResume() {
         super.onResume();
         startNode();
-        mThread = new Thread(new Runnable() {
+        mUpdatePublisherConfigurationThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
@@ -211,25 +230,10 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                             mPublishConfig.publishDevicePose = publisherConfiguration.publishDevicePose;
                             mPublishConfig.publishPointCloud = publisherConfiguration.publishPointCloud;
                             mPublishConfig.publishCamera = publisherConfiguration.publishCamera;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-                                    SwitchPreference mPublishDevicePose = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
-                                    SwitchPreference mPublishPointCloud = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
-                                    SwitchPreference mPublishFisheyeImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
-                                    SwitchPreference mPublishColorImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
-                                    mPublishDevicePose.setChecked(mPublishConfig.publishDevicePose);
-                                    mPublishPointCloud.setChecked(mPublishConfig.publishPointCloud);
-                                    mPublishFisheyeImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
-                                            PublisherConfiguration.CAMERA_FISHEYE);
-                                    mPublishColorImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
-                                            PublisherConfiguration.CAMERA_COLOR);
-                                }
-                            });
+                            updatePreferences();
                         }
                         try {
-                            mThread.sleep(500);
+                            mUpdatePublisherConfigurationThread.sleep(500);
                         } catch (InterruptedException e) {
                             Log.e(TAG, e.toString());
                         }
@@ -237,7 +241,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
                 }
             }
         });
-        mThread.start();
+        mUpdatePublisherConfigurationThread.start();
     }
 
     @Override
