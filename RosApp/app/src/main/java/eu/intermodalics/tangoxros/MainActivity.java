@@ -176,15 +176,19 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             @Override
             public void run() {
                 PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-                SwitchPreference mPublishDevicePose = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
-                SwitchPreference mPublishPointCloud = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
-                SwitchPreference mPublishFisheyeImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
-                SwitchPreference mPublishColorImage = (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
-                mPublishDevicePose.setChecked(mPublishConfig.publishDevicePose);
-                mPublishPointCloud.setChecked(mPublishConfig.publishPointCloud);
-                mPublishFisheyeImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
+                SwitchPreference publishDevicePoseSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
+                SwitchPreference publishPointCloudSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
+                SwitchPreference publishFisheyeImageSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
+                SwitchPreference publishColorImageSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
+                publishDevicePoseSwitch.setChecked(mPublishConfig.publishDevicePose);
+                publishPointCloudSwitch.setChecked(mPublishConfig.publishPointCloud);
+                publishFisheyeImageSwitch.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
                         PublisherConfiguration.CAMERA_FISHEYE);
-                mPublishColorImage.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
+                publishColorImageSwitch.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
                         PublisherConfiguration.CAMERA_COLOR);
             }
         });
