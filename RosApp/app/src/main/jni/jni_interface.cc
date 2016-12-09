@@ -18,7 +18,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +42,21 @@ static void set_native_publisher_configuration_from_java_publisher_configuration
   *publish_camera = publishCamera;
 }
 
+static void set_java_publisher_configuration_from_native_publisher_configuration(
+    JNIEnv* env, bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera,
+    jobject jpublisherConfiguration) {
+    jclass cls = env->GetObjectClass(jpublisherConfiguration);
+
+    jfieldID fidPublishDevicePose = env->GetFieldID(cls, "publishDevicePose", "Z");
+    env->SetBooleanField(jpublisherConfiguration, fidPublishDevicePose, publish_device_pose);
+
+    jfieldID fidPublishPointCloud = env->GetFieldID(cls, "publishPointCloud", "Z");
+    env->SetBooleanField(jpublisherConfiguration, fidPublishPointCloud, publish_point_cloud);
+
+    jfieldID fidPublishCamera = env->GetFieldID(cls, "publishCamera", "I");
+    env->SetIntField(jpublisherConfiguration, fidPublishCamera, publish_camera);
+}
+
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_initRos(JNIEnv* env, jobject /*obj*/,
     jstring master_uri_value, jstring ip_address_value) {
@@ -58,7 +73,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
   uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
-  tango_ros.reset(new tango_ros_node::TangoRosNode(publish_device_pose, publish_point_cloud,
+  tango_ros.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_point_cloud,
     publish_camera));
   return tango_helper::IsTangoVersionOk(env, activity);
 }
@@ -93,6 +108,17 @@ Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
   tango_ros->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
+}
+
+JNIEXPORT void JNICALL
+Java_eu_intermodalics_tangoxros_JNIInterface_getPublisherConfiguration(JNIEnv* env, jobject /*obj*/,
+    jobject jpublisherConfiguration) {
+  bool publish_device_pose;
+  bool publish_point_cloud;
+  uint32_t publish_camera;
+  tango_ros->GetPublisherConfiguration(&publish_device_pose, &publish_point_cloud, &publish_camera);
+  set_java_publisher_configuration_from_native_publisher_configuration(env, publish_device_pose,
+    publish_point_cloud, publish_camera, jpublisherConfiguration);
 }
 
 #ifdef __cplusplus

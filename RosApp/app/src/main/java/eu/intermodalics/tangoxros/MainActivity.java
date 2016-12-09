@@ -25,6 +25,7 @@ import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.SwitchPreference;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
@@ -41,7 +42,9 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
-    private PublisherConfiguration mPublishConfig;
+    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
+
+    private Thread mUpdatePublisherConfigurationThread;
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -123,7 +126,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     };
 
-    public boolean initNode() {
+    private boolean initNode() {
         // Update publisher configuration according to current preferences.
         PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
         mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
@@ -135,7 +138,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         return true;
     }
 
-    public void init() {
+    private void init() {
         if (mMasterUri != null) {
             WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
             String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
@@ -151,27 +154,50 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         }
     }
 
-    public void startNode() {
+    private void startNode() {
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             mJniInterface.startPublishing();
+            applySettings();
         } else {
             Log.w(TAG, "Node is not initialized");
         }
     }
 
-    public void applySettings() {
+    private void applySettings() {
         // Update publisher configuration according to current preferences.
         PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
         mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 
+    private void updatePreferences() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+                SwitchPreference publishDevicePoseSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_device_pose_key));
+                SwitchPreference publishPointCloudSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_pointcloud_key));
+                SwitchPreference publishFisheyeImageSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_fisheye_camera_key));
+                SwitchPreference publishColorImageSwitch =
+                        (SwitchPreference) prefsFragment.findPreference(getString(R.string.publish_color_camera_key));
+                publishDevicePoseSwitch.setChecked(mPublishConfig.publishDevicePose);
+                publishPointCloudSwitch.setChecked(mPublishConfig.publishPointCloud);
+                publishFisheyeImageSwitch.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) ==
+                        PublisherConfiguration.CAMERA_FISHEYE);
+                publishColorImageSwitch.setChecked((mPublishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) ==
+                        PublisherConfiguration.CAMERA_COLOR);
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        mPublishConfig = new PublisherConfiguration();
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
@@ -195,6 +221,31 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onResume() {
         super.onResume();
         startNode();
+        mUpdatePublisherConfigurationThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
+                while(true) {
+                    if (mIsNodeInitialised) {
+                        JNIInterface.getPublisherConfiguration(publisherConfiguration);
+                        if (publisherConfiguration.publishDevicePose != mPublishConfig.publishDevicePose ||
+                                publisherConfiguration.publishPointCloud != mPublishConfig.publishPointCloud ||
+                                publisherConfiguration.publishCamera != mPublishConfig.publishCamera) {
+                            mPublishConfig.publishDevicePose = publisherConfiguration.publishDevicePose;
+                            mPublishConfig.publishPointCloud = publisherConfiguration.publishPointCloud;
+                            mPublishConfig.publishCamera = publisherConfiguration.publishCamera;
+                            updatePreferences();
+                        }
+                        try {
+                            mUpdatePublisherConfigurationThread.sleep(500);
+                        } catch (InterruptedException e) {
+                            Log.e(TAG, e.toString());
+                        }
+                    }
+                }
+            }
+        });
+        mUpdatePublisherConfigurationThread.start();
     }
 
     @Override
