@@ -370,7 +370,7 @@ void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
   config.bools.push_back(dynamic_boolean_param);
 
   srv_req.config = config;
-  if(!ros::service::call("/tango_x_ros/set_parameters", srv_req, srv_resp)) {
+  if(!ros::service::call("/" + NODE_NAME + "/set_parameters", srv_req, srv_resp)) {
     LOG(ERROR) << "Service call failed, could not update dynamic reconfigure parameters.";
   }
 }

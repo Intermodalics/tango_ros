@@ -42,7 +42,7 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
-    private PublisherConfiguration mPublishConfig;
+    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
     private Thread mUpdatePublisherConfigurationThread;
 
@@ -198,7 +198,6 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        mPublishConfig = new PublisherConfiguration();
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
