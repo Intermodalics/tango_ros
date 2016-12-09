@@ -32,6 +32,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake
 )
 
 add_library(tango_ros_native SHARED
@@ -52,6 +53,16 @@ install(TARGETS tango_ros_native
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+# Copy generated header files by dynamic reconfigure into local include folder.
+# Otherwise these header files can not be found when building for Android.
+set(dynamic_reconfigure_header_LOCATION ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/PublisherConfig.h)
+set(dynamic_reconfigure_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/)
+file(COPY ${dynamic_reconfigure_header_LOCATION}
+  DESTINATION ${dynamic_reconfigure_header_DESTINATION}
+)
+
+
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(${PROJECT_NAME}_test_tango_ros test/test_tango_ros_msg.cpp)
   target_link_libraries(${PROJECT_NAME}_test_tango_ros tango_ros_native)
