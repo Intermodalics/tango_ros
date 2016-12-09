@@ -348,7 +348,6 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
                                                 bool publish_point_cloud,
                                                 uint32_t publish_camera) {
-  // Update dynamic reconfigure parameters consequently.
   dynamic_reconfigure::ReconfigureRequest srv_req;
   dynamic_reconfigure::ReconfigureResponse srv_resp;
   dynamic_reconfigure::Config config;

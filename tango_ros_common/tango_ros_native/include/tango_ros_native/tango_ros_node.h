@@ -65,7 +65,7 @@ struct PublisherConfiguration {
   std::string color_camera_topic = "tango/camera/color/image_raw/compressed";
 };
 
-// Node collecting tango data and publishing it on ros topic.
+// Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode(bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera);
@@ -76,13 +76,13 @@ class TangoRosNode {
   bool OnTangoServiceConnected();
   // Disconnects from the tango service.
   void TangoDisconnect();
-  // Start the threads that publish data.
+  // Starts the threads that publish data.
   void StartPublishing();
-  // Stop the threads that publish data.
+  // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Sets new publisher configuration values and make a ros service call to
-  // update the dynamic reconfigure config consequently.
+  // Updates the publisher configuration by making a ros service call to dynamic
+  // reconfigure.
   void UpdatePublisherConfiguration(bool publish_device_pose,
                                     bool publish_point_cloud,
                                     uint32_t publish_camera);
@@ -112,9 +112,10 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
-  // Run ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
+  // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
+  // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
 
 
