@@ -36,6 +36,7 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
+const std::string NODE_NAME = "tango_x_ros";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
