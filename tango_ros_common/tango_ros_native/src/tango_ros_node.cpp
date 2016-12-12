@@ -119,7 +119,8 @@ void compressImage(const cv::Mat& image, const char* compressing_format,
                        int compressing_quality,
                        sensor_msgs::CompressedImage* compressed_image) {
   cv::Mat image_good_endcoding = cv::Mat();
-  cv::cvtColor(image, image_good_endcoding, cv::COLOR_YUV420sp2RGBA);
+  // OpenCV expects an image with channels in BGR order for compressing.
+  cv::cvtColor(image, image_good_endcoding, cv::COLOR_YUV420sp2BGRA);
   std::vector<int> params {CV_IMWRITE_JPEG_QUALITY, compressing_quality};
   cv::imencode(compressing_format, image_good_endcoding, compressed_image->data, params);
 }
