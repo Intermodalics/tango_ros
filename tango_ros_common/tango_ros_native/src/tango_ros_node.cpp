@@ -112,17 +112,17 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
-// @param image, cv::Mat to compress.
+// @param image, cv::Mat to compress, in YUV420sp format.
 // @param compressing_quality, value from 0 to 100 (the higher is the better).
 // @param compressed_image, the output CompressedImage.
 void compressImage(const cv::Mat& image, const char* compressing_format,
-                       int compressing_quality,
-                       sensor_msgs::CompressedImage* compressed_image) {
-  cv::Mat image_good_endcoding = cv::Mat();
+                   int compressing_quality,
+                   sensor_msgs::CompressedImage* compressed_image) {
+  cv::Mat image_rgb_encoded;
   // OpenCV expects an image with channels in BGR order for compressing.
-  cv::cvtColor(image, image_good_endcoding, cv::COLOR_YUV420sp2BGRA);
+  cv::cvtColor(image, image_rgb_encoded, cv::COLOR_YUV420sp2BGRA);
   std::vector<int> params {CV_IMWRITE_JPEG_QUALITY, compressing_quality};
-  cv::imencode(compressing_format, image_good_endcoding, compressed_image->data, params);
+  cv::imencode(compressing_format, image_rgb_encoded, compressed_image->data, params);
 }
 // Converts a TangoCoordinateFrameType to a ros frame ID i.e. a string.
 // @param tango_frame_type, TangoCoordinateFrameType to convert.
