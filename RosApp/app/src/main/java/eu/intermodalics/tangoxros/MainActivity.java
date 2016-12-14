@@ -75,39 +75,12 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
 
-        // Start ROS and node. - Tango node commented for this example
-        //init();
-        //startNode();
+        // Start ROS and node.
+        init();
+        startNode();
 
-        initAndStartNode();
-    }
-
-    private void initAndStartNode() {
-        Log.i(TAG, "Starting node with RosJava interface");
-
-        if (mMasterUri != null) {
-            URI masterUri;
-
-            try {
-                masterUri = URI.create(mMasterUri);
-            } catch (IllegalArgumentException e){
-                Log.e(TAG, "Wrong URI: " + e.getMessage());
-                return;
-            }
-
-            this.nodeMainExecutorService.setMasterUri(masterUri);
-
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... params) {
-                    MainActivity.this.init(nodeMainExecutorService);
-                    return null;
-                }
-            }.execute();
-
-        } else {
-            Log.e(TAG, "Master URI is null");
-        }
+        // Start sample node with RJ interface.
+        initAndStartRJNode();
     }
 
     /**
@@ -255,11 +228,53 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-        NodeMain node = new SimplePublisherNode();
 
+        // Create common configuration for nodes to be created
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+
+        // Standard Rosjava node creation and execution
+        nodeConfiguration.setNodeName("SampleNode");
+        NodeMain node = new SimplePublisherNode();
         nodeMainExecutor.execute(node, nodeConfiguration);
+
+        // TangoRos node creation and execution
+        // Creation and execution of the TangoRosNode would be the same as a RosJava Node.
+        // Native "execute" function shall deal with initializing Ros, the node itself, and then start a running loop.
+
+        // nodeConfiguration.setNodeName("TangoRosNode");
+        // NodeMain tangoNode = new TangoRosNode();
+        // nodeMainExecutor.execute(tangoNode, nodeConfiguration);
+    }
+
+    // This function allows initialization of the node with RosJava interface without using MasterChooser,
+    // and is compatible with current Master Uri setter interface.
+    private void initAndStartRJNode() {
+        Log.i(TAG, "Starting node with RosJava interface");
+
+        if (mMasterUri != null) {
+            URI masterUri;
+
+            try {
+                masterUri = URI.create(mMasterUri);
+            } catch (IllegalArgumentException e){
+                Log.e(TAG, "Wrong URI: " + e.getMessage());
+                return;
+            }
+
+            this.nodeMainExecutorService.setMasterUri(masterUri);
+
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    MainActivity.this.init(nodeMainExecutorService);
+                    return null;
+                }
+            }.execute();
+
+        } else {
+            Log.e(TAG, "Master URI is null");
+        }
     }
 
     @Override
