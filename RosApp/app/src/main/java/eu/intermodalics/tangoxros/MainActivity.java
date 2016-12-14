@@ -16,13 +16,13 @@
 
 package eu.intermodalics.tangoxros;
 
-import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.text.format.Formatter;
@@ -32,7 +32,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements SetMasterUriDialog.CallbackListener,
+import org.ros.address.InetAddressFactory;
+import org.ros.android.RosActivity;
+import org.ros.node.NodeConfiguration;
+import org.ros.node.NodeMain;
+import org.ros.node.NodeMainExecutor;
+
+import java.net.URI;
+
+public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
         TryToReconnectToRosDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
@@ -42,6 +50,14 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
     private String mMasterUri;
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig;
+
+    public MainActivity() {
+        super("Example", "Example");
+    }
+
+    protected MainActivity(String notificationTicker, String notificationTitle) {
+        super(notificationTicker, notificationTitle);
+    }
 
     /**
      * Implements SetMasterUriDialog.CallbackListener.
@@ -58,9 +74,40 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
-        // Start ROS and node.
-        init();
-        startNode();
+
+        // Start ROS and node. - Tango node commented for this example
+        //init();
+        //startNode();
+
+        initAndStartNode();
+    }
+
+    private void initAndStartNode() {
+        Log.i(TAG, "Starting node with RosJava interface");
+
+        if (mMasterUri != null) {
+            URI masterUri;
+
+            try {
+                masterUri = URI.create(mMasterUri);
+            } catch (IllegalArgumentException e){
+                Log.e(TAG, "Wrong URI: " + e.getMessage());
+                return;
+            }
+
+            this.nodeMainExecutorService.setMasterUri(masterUri);
+
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    MainActivity.this.init(nodeMainExecutorService);
+                    return null;
+                }
+            }.execute();
+
+        } else {
+            Log.e(TAG, "Master URI is null");
+        }
     }
 
     /**
@@ -204,5 +251,19 @@ public class MainActivity extends Activity implements SetMasterUriDialog.Callbac
             mJniInterface.tangoDisconnect();
             unbindService(mTangoServiceConnection);
         }
+    }
+
+    @Override
+    protected void init(NodeMainExecutor nodeMainExecutor) {
+        NodeMain node = new SimplePublisherNode();
+
+        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+        nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+        nodeMainExecutor.execute(node, nodeConfiguration);
+    }
+
+    @Override
+    public void startMasterChooser() {
+        // onMasterUriConnect already connects to master; overriding this method with an empty one prevents MasterChooser from running.
     }
 }
