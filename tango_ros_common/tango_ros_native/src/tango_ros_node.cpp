@@ -170,12 +170,16 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   }
   return string_frame_type;
 }
-
 }  // namespace
 
 namespace tango_ros_node {
-TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
-    publisher_config_(publisher_config) {
+TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
+                           uint32_t publish_camera) :
+    run_threads_(false) {
+  publisher_config_.publish_device_pose = publish_device_pose;
+  publisher_config_.publish_point_cloud = publish_point_cloud;
+  publisher_config_.publish_camera = publish_camera;
+
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -192,6 +196,7 @@ TangoRosNode::TangoRosNode(PublisherConfiguration publisher_config) :
 }
 
 TangoRosNode::~TangoRosNode() {
+  StopPublishing();
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
   }
@@ -202,59 +207,31 @@ bool TangoRosNode::OnTangoServiceConnected() {
       LOG(ERROR) << "Error while setting up Tango config.";
       return false;
   }
-
   if (TangoConnect() != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while connecting to Tango Service.";
     return false;
   }
 
+  PublishStaticTransforms();
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
   TangoPoseData pose;
-  do {
+  time_t current_time = time(NULL);
+  time_t end = current_time + 10;
+  while (current_time < end) {
     TangoService_getPoseAtTime(0.0, pair, &pose);
-  } while (pose.status_code != TANGO_POSE_VALID);
+    if (pose.status_code == TANGO_POSE_VALID) {
+      break;
+    }
+    sleep(1);
+    current_time = time(NULL);
+  }
+  if (pose.status_code != TANGO_POSE_VALID) {
+    LOG(ERROR) << "Error, could not get a first valid pose.";
+    return false;
+  }
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
-
-  if (publisher_config_.publish_point_cloud) {
-    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
-    pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
-    toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
-    device_T_camera_depth_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-    device_T_camera_depth_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    device_T_camera_depth_.header.stamp = ros::Time::now();
-    tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
-  }
-
-  if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
-    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
-    pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
-    toTransformStamped(pose, time_offset_, &device_T_camera_fisheye_);
-    device_T_camera_fisheye_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-    device_T_camera_fisheye_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-    device_T_camera_fisheye_.header.stamp = ros::Time::now();
-    tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
-  }
-
-  if (publisher_config_.publish_camera & CAMERA_COLOR) {
-    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
-    pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
-    do {
-      TangoService_getPoseAtTime(0.0, pair, &pose);
-    } while (pose.status_code != TANGO_POSE_VALID);
-    toTransformStamped(pose, time_offset_, &device_T_camera_color_);
-    device_T_camera_color_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-    device_T_camera_color_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-    device_T_camera_color_.header.stamp = ros::Time::now();
-    tf_static_broadcaster_.sendTransform(device_T_camera_color_);
-  }
   return true;
 }
 
@@ -321,42 +298,34 @@ TangoErrorType TangoRosNode::TangoConnect() {
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
 
   TangoErrorType result;
-  if (publisher_config_.publish_device_pose) {
-    result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
-    if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << function_name
-          << ", TangoService_connectOnPoseAvailable error: " << result;
-      return result;
-    }
+  result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnPoseAvailable error: " << result;
+    return result;
   }
 
-  if (publisher_config_.publish_point_cloud) {
-    result = TangoService_connectOnPointCloudAvailable(onPointCloudAvailableRouter);
-    if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << function_name
-          << ", TangoService_connectOnPointCloudAvailable error: " << result;
-      return result;
-    }
+  result = TangoService_connectOnPointCloudAvailable(onPointCloudAvailableRouter);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnPointCloudAvailable error: " << result;
+    return result;
   }
 
-  if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
-    result = TangoService_connectOnFrameAvailable(
-        TANGO_CAMERA_FISHEYE, this, onFrameAvailableRouter);
-    if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << function_name
-          << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
-      return result;
-    }
+  result = TangoService_connectOnFrameAvailable(
+      TANGO_CAMERA_FISHEYE, this, onFrameAvailableRouter);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
+    return result;
   }
 
-  if (publisher_config_.publish_camera & CAMERA_COLOR) {
-    result = TangoService_connectOnFrameAvailable(
-        TANGO_CAMERA_COLOR, this, onFrameAvailableRouter);
-    if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << function_name
-          << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result;
-      return result;
-    }
+  result = TangoService_connectOnFrameAvailable(
+      TANGO_CAMERA_COLOR, this, onFrameAvailableRouter);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result;
+    return result;
   }
 
   result = TangoService_connect(this, tango_config_);
@@ -373,39 +342,49 @@ void TangoRosNode::TangoDisconnect() {
   TangoService_disconnect();
 }
 
-void TangoRosNode::Publish() {
-  if (new_pose_available_ && !pose_lock_ && publisher_config_.publish_device_pose) {
-    pose_lock_ = true;
-    tf_broadcaster_.sendTransform(start_of_service_T_device_);
-    new_pose_available_ = false;
-    pose_lock_ = false;
+void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
+                                                bool publish_point_cloud,
+                                                uint32_t publish_camera) {
+  publisher_config_.publish_device_pose = publish_device_pose;
+  publisher_config_.publish_point_cloud = publish_point_cloud;
+  publisher_config_.publish_camera = publish_camera;
+  PublishStaticTransforms();
+}
+
+void TangoRosNode::PublishStaticTransforms() {
+  TangoCoordinateFramePair pair;
+  TangoPoseData pose;
+  if (publisher_config_.publish_point_cloud) {
+    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
+    pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
+    TangoService_getPoseAtTime(0.0, pair, &pose);
+    toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
+    device_T_camera_depth_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+    device_T_camera_depth_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+    device_T_camera_depth_.header.stamp = ros::Time::now();
+    tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
   }
 
-  if (publisher_config_.publish_point_cloud && new_point_cloud_available_ && !point_cloud_lock_) {
-    point_cloud_lock_ = true;
-    point_cloud_publisher_.publish(point_cloud_);
-    new_point_cloud_available_ = false;
-    point_cloud_lock_ = false;
+  if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
+    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
+    pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
+    TangoService_getPoseAtTime(0.0, pair, &pose);
+    toTransformStamped(pose, time_offset_, &device_T_camera_fisheye_);
+    device_T_camera_fisheye_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+    device_T_camera_fisheye_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
+    device_T_camera_fisheye_.header.stamp = ros::Time::now();
+    tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
   }
 
-  if ((publisher_config_.publish_camera & CAMERA_FISHEYE) && new_fisheye_image_available_ &&
-       !fisheye_image_lock_) {
-    fisheye_image_lock_ = true;
-    compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
-      &fisheye_compressed_image_);
-    fisheye_image_publisher_.publish(fisheye_compressed_image_);
-    new_fisheye_image_available_ = false;
-    fisheye_image_lock_ = false;
-  }
-
-  if ((publisher_config_.publish_camera & CAMERA_COLOR) && new_color_image_available_ &&
-       !color_image_lock_) {
-    color_image_lock_ = true;
-    compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT, IMAGE_COMPRESSING_QUALITY,
-      &color_compressed_image_);
-    color_image_publisher_.publish(color_compressed_image_);
-    new_color_image_available_ = false;
-    color_image_lock_ = false;
+  if (publisher_config_.publish_camera & CAMERA_COLOR) {
+    pair.base = TANGO_COORDINATE_FRAME_DEVICE;
+    pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
+    TangoService_getPoseAtTime(0.0, pair, &pose);
+    toTransformStamped(pose, time_offset_, &device_T_camera_color_);
+    device_T_camera_color_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+    device_T_camera_color_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
+    device_T_camera_color_.header.stamp = ros::Time::now();
+    tf_static_broadcaster_.sendTransform(device_T_camera_color_);
   }
 }
 
@@ -413,62 +392,139 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
   if (publisher_config_.publish_device_pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
         && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-      if (pose->status_code == TANGO_POSE_VALID) {
-        if (!pose_lock_) {
-          pose_lock_ = true;
-          toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
-          start_of_service_T_device_.header.frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-          start_of_service_T_device_.child_frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-          new_pose_available_ = true;
-          pose_lock_ = false;
-        }
+      if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
+        toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
+        start_of_service_T_device_.header.frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+        start_of_service_T_device_.child_frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+        pose_available_.notify_all();
+        pose_available_mutex_.unlock();
       }
     }
   }
 }
 
 void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
-  if (publisher_config_.publish_point_cloud && point_cloud->num_points > 0) {
-    if (!point_cloud_lock_) {
-      point_cloud_lock_= true;
-      toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
-      point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-      new_point_cloud_available_ = true;
-      point_cloud_lock_ = false;
-    }
+  if (publisher_config_.publish_point_cloud && point_cloud->num_points > 0
+      && point_cloud_available_mutex_.try_lock()) {
+    toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
+    point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+    point_cloud_available_.notify_all();
+    point_cloud_available_mutex_.unlock();
   }
 }
 
 void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
   if ((publisher_config_.publish_camera & CAMERA_FISHEYE) &&
-       camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE) {
-    if (!fisheye_image_lock_) {
-      fisheye_image_lock_ = true;
-      fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
-                       CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-      fisheye_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
-      fisheye_compressed_image_.header.seq = buffer->frame_number;
-      fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-      fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
-      new_fisheye_image_available_ = true;
-      fisheye_image_lock_ = false;
-    }
+       camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE &&
+       fisheye_image_available_mutex_.try_lock()) {
+    fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
+                             CV_8UC1, buffer->data, buffer->stride); // No deep copy.
+    fisheye_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    fisheye_compressed_image_.header.seq = buffer->frame_number;
+    fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
+    fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
+    fisheye_image_available_.notify_all();
+    fisheye_image_available_mutex_.unlock();
   }
   if ((publisher_config_.publish_camera & CAMERA_COLOR) &&
-       camera_id == TangoCameraId::TANGO_CAMERA_COLOR) {
-    if (!color_image_lock_) {
-      color_image_lock_ = true;
-      color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
-                       CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-      color_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
-      color_compressed_image_.header.seq = buffer->frame_number;
-      color_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-      color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
-      new_color_image_available_ = true;
-      color_image_lock_ = false;
+       camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
+       color_image_available_mutex_.try_lock()) {
+    color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
+                           CV_8UC1, buffer->data, buffer->stride); // No deep copy.
+    color_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    color_compressed_image_.header.seq = buffer->frame_number;
+    color_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
+    color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
+    color_image_available_.notify_all();
+    color_image_available_mutex_.unlock();
+  }
+}
+
+void TangoRosNode::StartPublishing() {
+  run_threads_ = true;
+  publish_device_pose_thread_ = std::thread(&TangoRosNode::PublishDevicePose, this);
+  publish_pointcloud_thread_ = std::thread(&TangoRosNode::PublishPointCloud, this);
+  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::PublishFisheyeImage, this);
+  publish_color_image_thread_ = std::thread(&TangoRosNode::PublishColorImage, this);
+}
+
+void TangoRosNode::StopPublishing() {
+  if (run_threads_) {
+    run_threads_ = false;
+    if (publisher_config_.publish_device_pose)
+      publish_device_pose_thread_.join();
+    if (publisher_config_.publish_point_cloud)
+      publish_pointcloud_thread_.join();
+    if (publisher_config_.publish_camera & CAMERA_FISHEYE)
+      publish_fisheye_image_thread_.join();
+    if (publisher_config_.publish_camera & CAMERA_COLOR)
+      publish_color_image_thread_.join();
+  }
+}
+
+void TangoRosNode::PublishDevicePose() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    {
+      std::unique_lock<std::mutex> lock(pose_available_mutex_);
+      pose_available_.wait(lock);
+      if (publisher_config_.publish_device_pose) {
+        tf_broadcaster_.sendTransform(start_of_service_T_device_);
+      }
     }
   }
 }
+
+void TangoRosNode::PublishPointCloud() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    {
+      std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
+      point_cloud_available_.wait(lock);
+      if (publisher_config_.publish_point_cloud) {
+        point_cloud_publisher_.publish(point_cloud_);
+      }
+    }
+  }
 }
+
+void TangoRosNode::PublishFisheyeImage() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    {
+      std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
+      fisheye_image_available_.wait(lock);
+      if ((publisher_config_.publish_camera & CAMERA_FISHEYE)) {
+        compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT,
+                      IMAGE_COMPRESSING_QUALITY, &fisheye_compressed_image_);
+        fisheye_image_publisher_.publish(fisheye_compressed_image_);
+      }
+    }
+  }
+}
+
+void TangoRosNode::PublishColorImage() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    {
+      std::unique_lock<std::mutex> lock(color_image_available_mutex_);
+      color_image_available_.wait(lock);
+      if ((publisher_config_.publish_camera & CAMERA_COLOR)) {
+        compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT,
+                      IMAGE_COMPRESSING_QUALITY, &color_compressed_image_);
+        color_image_publisher_.publish(color_compressed_image_);
+      }
+    }
+  }
+}
+}  // namespace tango_ros_node
