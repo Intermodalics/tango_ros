@@ -47,9 +47,9 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private static final String IP_PREFIX = "__ip:=";
 
     private JNIInterface mJniInterface;
-    private String mMasterUri;
+    private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
-    private PublisherConfiguration mPublishConfig;
+    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
     public MainActivity() {
         super("Example", "Example");
@@ -93,7 +93,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     }
 
     /**
-     * Shows a dialog for setting the Master URI.
+     * Shows a dialog to request master URI from user.
      */
     private void showSetMasterUriDialog() {
         // Get URI preference or default value if does not exist.
@@ -174,30 +174,24 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     public void startNode() {
         if (mIsNodeInitialised) {
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (mJniInterface.isRosOk()) {
-                        mJniInterface.publish();
-                    }
-                }
-            }).start();
+            mJniInterface.startPublishing();
+            applySettings();
+        } else {
+            Log.w(TAG, "Node is not initialized");
         }
     }
 
     public void applySettings() {
-        onPause();
-        mIsNodeInitialised = initNode();
-        if (mIsNodeInitialised) {
-            startNode();
-        }
+        // Update publisher configuration according to current preferences.
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
+        mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        mPublishConfig = new PublisherConfiguration();
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         // Set callback for apply button.
         Button buttonApply = (Button)findViewById(R.id.apply);
@@ -207,8 +201,14 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 applySettings();
             }
         });
-        // Request master URI from user.
-        showSetMasterUriDialog();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mMasterUri.isEmpty()) {
+            showSetMasterUriDialog();
+        }
     }
 
     @Override
@@ -221,6 +221,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     protected void onPause() {
         super.onPause();
         if (mIsNodeInitialised) {
+            mJniInterface.stopPublishing();
             mJniInterface.tangoDisconnect();
             unbindService(mTangoServiceConnection);
         }
