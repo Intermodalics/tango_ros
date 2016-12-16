@@ -27,7 +27,7 @@ const double TF_RATE = 100; // in Hz.
 const double POINT_CLOUD_RATE = 5.; // in Hz.
 const double FISHEYE_IMAGE_RATE = 20.; // in Hz.
 const double COLOR_IMAGE_RATE = 10.; // in Hz.
-const double RATE_TOLERANCE_PERCENTAGE = 0.2;
+const double RATE_TOLERANCE_PERCENTAGE = 0.3;
 
 class TangoRosTest : public ::testing::Test {
  public:
@@ -38,6 +38,7 @@ class TangoRosTest : public ::testing::Test {
   ros::Subscriber sub_fisheye_image_;
   ros::Subscriber sub_color_image_;
 
+  bool tf_message_received_;
   bool point_cloud_received_;
   bool fisheye_image_received_;
   bool color_image_received_;
@@ -49,6 +50,7 @@ class TangoRosTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
+    tf_message_received_ = false;
     point_cloud_received_ = false;
     fisheye_image_received_ = false;
     color_image_received_ = false;
@@ -74,6 +76,11 @@ class TangoRosTest : public ::testing::Test {
   }
 
  private:
+  void TfCallback(const boost::shared_ptr<const tf2_msgs::TFMessage> msg) {
+    tf_message_received_ = true;
+    tf_message_count++;
+  }
+
   void PointCloudCallback(const boost::shared_ptr<const sensor_msgs::PointCloud2> msg) {
     point_cloud_received_ = true;
     point_cloud_message_count ++;
@@ -88,10 +95,6 @@ class TangoRosTest : public ::testing::Test {
     color_image_received_ = true;
     color_image_message_count++;
   }
-
-  void TfCallback(const boost::shared_ptr<const tf2_msgs::TFMessage> msg) {
-    tf_message_count++;
-  }
 };
 
 TEST_F(TangoRosTest, TestMessagesArePublished) {
@@ -104,6 +107,7 @@ TEST_F(TangoRosTest, TestMessagesArePublished) {
                                               ros::Time(0), transform), tf::TransformException);
   EXPECT_THROW(tf_listener_.lookupTransform("/device", "/camera_color",
                                               ros::Time(0), transform), tf::TransformException);
+  EXPECT_FALSE(tf_message_received_);
   EXPECT_FALSE(point_cloud_received_);
   EXPECT_FALSE(fisheye_image_received_);
   EXPECT_FALSE(color_image_received_);
@@ -120,14 +124,15 @@ TEST_F(TangoRosTest, TestMessagesArePublished) {
                                              ros::Time(0), transform));
   EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_color",
                                              ros::Time(0), transform));
+  EXPECT_TRUE(tf_message_received_);
   EXPECT_TRUE(point_cloud_received_);
   EXPECT_TRUE(fisheye_image_received_);
   EXPECT_TRUE(color_image_received_);
 }
 
 TEST_F(TangoRosTest, TestMessagesRates) {
-  time_t current_time = time(NULL);
   double duration = 5;
+  time_t current_time = time(NULL);
   time_t end = current_time + duration;
   while (current_time < end) {
     ros::spinOnce();
