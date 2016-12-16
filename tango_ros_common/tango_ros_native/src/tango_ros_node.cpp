@@ -20,9 +20,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <dynamic_reconfigure/BoolParameter.h>
-#include <dynamic_reconfigure/Config.h>
-#include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -351,22 +349,22 @@ void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
   dynamic_reconfigure::ReconfigureRequest srv_req;
   dynamic_reconfigure::ReconfigureResponse srv_resp;
   dynamic_reconfigure::Config config;
-  dynamic_reconfigure::BoolParameter dynamic_boolean_param;
-  dynamic_boolean_param.name = "publish_device_pose";
-  dynamic_boolean_param.value = publish_device_pose;
-  config.bools.push_back(dynamic_boolean_param);
+  dynamic_reconfigure::ConfigTools config_tools;
+  std::string dynamic_parameter_name = "publish_device_pose";
+  bool dynamic_parameter_value = publish_device_pose;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_boolean_param.name = "publish_point_cloud";
-  dynamic_boolean_param.value = publish_point_cloud;
-  config.bools.push_back(dynamic_boolean_param);
+  dynamic_parameter_name = "publish_point_cloud";
+  dynamic_parameter_value = publish_point_cloud;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_boolean_param.name = "publish_camera_fisheye";
-  dynamic_boolean_param.value = publish_camera & CAMERA_FISHEYE;
-  config.bools.push_back(dynamic_boolean_param);
+  dynamic_parameter_name = "publish_camera_fisheye";
+  dynamic_parameter_value = publish_camera & CAMERA_FISHEYE;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_boolean_param.name = "publish_camera_color";
-  dynamic_boolean_param.value = publish_camera & CAMERA_COLOR;
-  config.bools.push_back(dynamic_boolean_param);
+  dynamic_parameter_name = "publish_camera_color";
+  dynamic_parameter_value = publish_camera & CAMERA_COLOR;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
   srv_req.config = config;
   if(!ros::service::call("/" + NODE_NAME + "/set_parameters", srv_req, srv_resp)) {
