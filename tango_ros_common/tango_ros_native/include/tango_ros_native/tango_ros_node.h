@@ -118,16 +118,12 @@ class TangoRosNode {
 
   std::mutex pose_available_mutex_;
   std::condition_variable pose_available_;
-  bool is_new_pose_available_ = false;
   std::mutex point_cloud_available_mutex_;
   std::condition_variable point_cloud_available_;
-  bool is_new_point_cloud_available_ = false;
   std::mutex fisheye_image_available_mutex_;
   std::condition_variable fisheye_image_available_;
-  bool is_new_fisheye_image_available_ = false;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
-  bool is_new_color_image_available_ = false;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
