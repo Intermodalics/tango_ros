@@ -579,8 +579,8 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
 
 void TangoRosNode::RunRosSpin() {
   dynamic_reconfigure::Server<tango_ros_native::PublisherConfig> server;
-  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType callback;
-  callback = boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
+  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType callback =
+      boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
   server.setCallback(callback);
   while(ros::ok()) {
     if (!run_threads_) {
