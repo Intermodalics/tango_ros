@@ -1,6 +1,7 @@
 package eu.intermodalics.tangoxros;
 
 import org.ros.namespace.GraphName;
+import org.ros.node.NativeNodeMain;
 
 /**
  * Created by juan on 14/12/16.
@@ -8,10 +9,10 @@ import org.ros.namespace.GraphName;
 
 public class TangoRosNode extends NativeNodeMain {
 
-    private static final String nodeName = "TangoRosNode";
+    public static final String nodeName = "tango_x_ros";
 
     public TangoRosNode() {
-        super("tango_ros_node_native");
+        super("tango_ros_android_lib");
     }
 
     public TangoRosNode(String libName) {

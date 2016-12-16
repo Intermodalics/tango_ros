@@ -35,7 +35,6 @@ import android.widget.Toast;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
 import org.ros.node.NodeConfiguration;
-import org.ros.node.NodeMain;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
@@ -234,17 +233,9 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        // Standard Rosjava node creation and execution
-        nodeConfiguration.setNodeName("SampleNode");
-        NodeMain node = new SimplePublisherNode();
-        nodeMainExecutor.execute(node, nodeConfiguration);
-
-        // TangoRos node creation and execution
-        // Creation and execution of the TangoRosNode would be the same as a RosJava Node.
-        // Native "execute" function shall deal with initializing Ros, the node itself, and then start a running loop.
-
-        // nodeConfiguration.setNodeName("TangoRosNode");
+        // TangoRos node creation and execution using RosJava STD method.
         // NodeMain tangoNode = new TangoRosNode();
+        // nodeConfiguration.setNodeName(tangoNode.getDefaultNodeName());
         // nodeMainExecutor.execute(tangoNode, nodeConfiguration);
     }
 

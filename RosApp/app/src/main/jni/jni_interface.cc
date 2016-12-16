@@ -95,6 +95,19 @@ Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv
   tango_ros->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
 }
 
+JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_execute
+  (JNIEnv *, jobject, jstring, jstring, jstring, jobjectArray) {
+	// Implementation pending
+	// This function shall deal with initializing Ros, the node itself, and the Tango Service.
+	// Then, it should start a running loop publishing the data required by the user.
+}
+
+JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown
+  (JNIEnv *, jobject) {
+	// Implementation pending
+	// shutdown should stop publishing, and disconnect from Tango Service.
+}
+
 #ifdef __cplusplus
 }
 #endif

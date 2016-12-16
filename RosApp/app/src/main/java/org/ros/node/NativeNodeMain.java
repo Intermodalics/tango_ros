@@ -1,10 +1,7 @@
-package eu.intermodalics.tangoxros;
+package org.ros.node;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.ros.node.AbstractNodeMain;
-import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 
 /**
  * A java wrapper to load and run a native-code ROS node.
