@@ -32,7 +32,7 @@ public class PublisherConfiguration {
     @Override
     public String toString() {
         return "Publisher configuration:\npublish device pose = " +  publishDevicePose +
-                "\npublsih point cloud = " + publishPointCloud + "\npublish camera = " +
+                "\npublish point cloud = " + publishPointCloud + "\npublish camera = " +
                 publishCamera;
     }
 }

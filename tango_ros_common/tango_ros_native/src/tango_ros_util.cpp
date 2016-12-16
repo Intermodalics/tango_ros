@@ -17,6 +17,8 @@
 
 #include <glog/logging.h>
 
+#include "tango_ros_native/tango_ros_node.h"
+
 namespace tango_ros_util {
 
 bool InitRos(const char* master_uri, const char* slave_ip) {
@@ -24,7 +26,7 @@ bool InitRos(const char* master_uri, const char* slave_ip) {
   char* master_uri_copy = strdup(master_uri);
   char* slave_ip_copy = strdup(slave_ip);
   char* argv[] = {"nothing_important" , master_uri_copy, slave_ip_copy};
-  ros::init(argc, &argv[0], "tango_x_ros");
+  ros::init(argc, &argv[0], tango_ros_native::NODE_NAME);
   LOG(INFO) << "Master URI: " << ros::master::getURI().c_str();
   free(master_uri_copy);
   free(slave_ip_copy);
