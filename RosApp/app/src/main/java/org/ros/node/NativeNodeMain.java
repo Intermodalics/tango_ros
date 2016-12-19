@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
  * Note: there are no actual native methods declared in this class. We only define an interface. The native methods should be declared in the child class.
  *
  * @author ecorbellini@creativa77.com.ar (Ernesto Corbellini)
+ * File extracted from rosjava_core repository: https://github.com/rosjava/rosjava_core.
  */
 public abstract class NativeNodeMain extends AbstractNodeMain {
 

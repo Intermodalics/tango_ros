@@ -51,7 +51,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
     public MainActivity() {
-        super("Example", "Example");
+        super("TangoxRos", "TangoxRos");
     }
 
     protected MainActivity(String notificationTicker, String notificationTitle) {
@@ -78,8 +78,8 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         init();
         startNode();
 
-        // Start sample node with RJ interface.
-        initAndStartRJNode();
+        // Start sample node with RosJava interface.
+        initAndStartRosJavaNode();
     }
 
     /**
@@ -104,7 +104,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         FragmentManager manager = getFragmentManager();
         SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
         setMasterUriDialog.setArguments(bundle);
-        setMasterUriDialog.show(manager, "MatserUriDialog");
+        setMasterUriDialog.show(manager, "MasterUriDialog");
     }
 
     /**
@@ -196,7 +196,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         Button buttonApply = (Button)findViewById(R.id.apply);
         buttonApply.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 applySettings();
             }
         });
@@ -228,20 +228,14 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-
         // Create common configuration for nodes to be created
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
-
-        // TangoRos node creation and execution using RosJava STD method.
-        // NodeMain tangoNode = new TangoRosNode();
-        // nodeConfiguration.setNodeName(tangoNode.getDefaultNodeName());
-        // nodeMainExecutor.execute(tangoNode, nodeConfiguration);
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
     // and is compatible with current Master Uri setter interface.
-    private void initAndStartRJNode() {
+    private void initAndStartRosJavaNode() {
         Log.i(TAG, "Starting node with RosJava interface");
 
         if (mMasterUri != null) {
@@ -249,7 +243,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
             try {
                 masterUri = URI.create(mMasterUri);
-            } catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Wrong URI: " + e.getMessage());
                 return;
             }
