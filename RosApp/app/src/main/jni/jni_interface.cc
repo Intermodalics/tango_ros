@@ -18,7 +18,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_node::TangoRosNode> tango_ros;
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,7 +58,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
   uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
-  tango_ros.reset(new tango_ros_node::TangoRosNode(publish_device_pose, publish_point_cloud,
+  tango_ros.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_point_cloud,
     publish_camera));
   return tango_helper::IsTangoVersionOk(env, activity);
 }
@@ -93,6 +93,19 @@ Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
   tango_ros->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
+}
+
+JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_execute
+  (JNIEnv *, jobject, jstring, jstring, jstring, jobjectArray) {
+	// Implementation pending
+	// This function shall deal with initializing Ros, the node itself, and the Tango Service.
+	// Then, it should start a running loop publishing the data required by the user.
+}
+
+JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown
+  (JNIEnv *, jobject) {
+	// Implementation pending
+	// shutdown should stop publishing, and disconnect from Tango Service.
 }
 
 #ifdef __cplusplus

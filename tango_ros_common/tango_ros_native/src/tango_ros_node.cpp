@@ -20,6 +20,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <dynamic_reconfigure/config_tools.h>
+#include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
@@ -30,8 +32,8 @@ namespace {
 //        instance on which to call the callback.
 // @param pose, pose data to route to onPoseAvailable function.
 void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
-  tango_ros_node::TangoRosNode* app =
-      static_cast<tango_ros_node::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNode* app =
+      static_cast<tango_ros_native::TangoRosNode*>(context);
   app->OnPoseAvailable(pose);
 }
 // This function routes onPointCloudAvailable callback to the application
@@ -42,8 +44,8 @@ void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
 //        function.
 void onPointCloudAvailableRouter(void* context,
                                  const TangoPointCloud* point_cloud) {
-  tango_ros_node::TangoRosNode* app =
-      static_cast<tango_ros_node::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNode* app =
+      static_cast<tango_ros_native::TangoRosNode*>(context);
   app->OnPointCloudAvailable(point_cloud);
 }
 // This function routes OnFrameAvailable callback to the application
@@ -55,8 +57,8 @@ void onPointCloudAvailableRouter(void* context,
 // @param buffer, image data to route to OnFrameAvailable function.
 void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
                             const TangoImageBuffer* buffer) {
-  tango_ros_node::TangoRosNode* app =
-      static_cast<tango_ros_node::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNode* app =
+      static_cast<tango_ros_native::TangoRosNode*>(context);
   app->OnFrameAvailable(camera_id, buffer);
 }
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
@@ -86,13 +88,13 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
                    sensor_msgs::PointCloud2* point_cloud) {
   point_cloud->width = tango_point_cloud.num_points;
   point_cloud->height = 1;
-  point_cloud->point_step = (sizeof(float) * tango_ros_node::NUMBER_OF_FIELDS_IN_POINT_CLOUD);
+  point_cloud->point_step = (sizeof(float) * tango_ros_native::NUMBER_OF_FIELDS_IN_POINT_CLOUD);
   point_cloud->is_dense = true;
   point_cloud->row_step = point_cloud->width;
   point_cloud->is_bigendian = false;
   point_cloud->data.resize(tango_point_cloud.num_points);
   sensor_msgs::PointCloud2Modifier modifier(*point_cloud);
-  modifier.setPointCloud2Fields(tango_ros_node::NUMBER_OF_FIELDS_IN_POINT_CLOUD,
+  modifier.setPointCloud2Fields(tango_ros_native::NUMBER_OF_FIELDS_IN_POINT_CLOUD,
                                 "x", 1, sensor_msgs::PointField::FLOAT32,
                                 "y", 1, sensor_msgs::PointField::FLOAT32,
                                 "z", 1, sensor_msgs::PointField::FLOAT32,
@@ -112,16 +114,17 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
-// @param image, cv::Mat to compress.
+// @param image, cv::Mat to compress, in YUV420sp format.
 // @param compressing_quality, value from 0 to 100 (the higher is the better).
 // @param compressed_image, the output CompressedImage.
 void compressImage(const cv::Mat& image, const char* compressing_format,
-                       int compressing_quality,
-                       sensor_msgs::CompressedImage* compressed_image) {
-  cv::Mat image_good_endcoding = cv::Mat();
-  cv::cvtColor(image, image_good_endcoding, cv::COLOR_YUV420sp2RGBA);
+                   int compressing_quality,
+                   sensor_msgs::CompressedImage* compressed_image) {
+  cv::Mat image_rgb_encoded;
+  // OpenCV expects an image with channels in BGR order for compressing.
+  cv::cvtColor(image, image_rgb_encoded, cv::COLOR_YUV420sp2BGRA);
   std::vector<int> params {CV_IMWRITE_JPEG_QUALITY, compressing_quality};
-  cv::imencode(compressing_format, image_good_endcoding, compressed_image->data, params);
+  cv::imencode(compressing_format, image_rgb_encoded, compressed_image->data, params);
 }
 // Converts a TangoCoordinateFrameType to a ros frame ID i.e. a string.
 // @param tango_frame_type, TangoCoordinateFrameType to convert.
@@ -171,7 +174,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }
 }  // namespace
 
-namespace tango_ros_node {
+namespace tango_ros_native {
 TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
                            uint32_t publish_camera) :
     run_threads_(false) {
@@ -344,10 +347,30 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
                                                 bool publish_point_cloud,
                                                 uint32_t publish_camera) {
-  publisher_config_.publish_device_pose = publish_device_pose;
-  publisher_config_.publish_point_cloud = publish_point_cloud;
-  publisher_config_.publish_camera = publish_camera;
-  PublishStaticTransforms();
+  dynamic_reconfigure::ReconfigureRequest srv_req;
+  dynamic_reconfigure::ReconfigureResponse srv_resp;
+  dynamic_reconfigure::Config config;
+  dynamic_reconfigure::ConfigTools config_tools;
+  std::string dynamic_parameter_name = "publish_device_pose";
+  bool dynamic_parameter_value = publish_device_pose;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
+
+  dynamic_parameter_name = "publish_point_cloud";
+  dynamic_parameter_value = publish_point_cloud;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
+
+  dynamic_parameter_name = "publish_camera_fisheye";
+  dynamic_parameter_value = publish_camera & CAMERA_FISHEYE;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
+
+  dynamic_parameter_name = "publish_camera_color";
+  dynamic_parameter_value = publish_camera & CAMERA_COLOR;
+  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
+
+  srv_req.config = config;
+  if(!ros::service::call("/" + NODE_NAME + "/set_parameters", srv_req, srv_resp)) {
+    LOG(ERROR) << "Service call failed, could not update dynamic reconfigure parameters.";
+  }
 }
 
 void TangoRosNode::PublishStaticTransforms() {
@@ -397,7 +420,6 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         start_of_service_T_device_.child_frame_id =
           toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-        is_new_pose_available_ = true;
         pose_available_.notify_all();
         pose_available_mutex_.unlock();
       }
@@ -410,7 +432,6 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       && point_cloud_available_mutex_.try_lock()) {
     toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
     point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    is_new_point_cloud_available_ = true;
     point_cloud_available_.notify_all();
     point_cloud_available_mutex_.unlock();
   }
@@ -426,7 +447,6 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     fisheye_compressed_image_.header.seq = buffer->frame_number;
     fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
     fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
-    is_new_fisheye_image_available_ = true;
     fisheye_image_available_.notify_all();
     fisheye_image_available_mutex_.unlock();
   }
@@ -439,7 +459,6 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_compressed_image_.header.seq = buffer->frame_number;
     color_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
     color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
-    is_new_color_image_available_ = true;
     color_image_available_.notify_all();
     color_image_available_mutex_.unlock();
   }
@@ -451,6 +470,7 @@ void TangoRosNode::StartPublishing() {
   publish_pointcloud_thread_ = std::thread(&TangoRosNode::PublishPointCloud, this);
   publish_fisheye_image_thread_ = std::thread(&TangoRosNode::PublishFisheyeImage, this);
   publish_color_image_thread_ = std::thread(&TangoRosNode::PublishColorImage, this);
+  ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
 }
 
 void TangoRosNode::StopPublishing() {
@@ -464,6 +484,7 @@ void TangoRosNode::StopPublishing() {
       publish_fisheye_image_thread_.join();
     if (publisher_config_.publish_camera & CAMERA_COLOR)
       publish_color_image_thread_.join();
+    ros_spin_thread_.join();
   }
 }
 
@@ -474,11 +495,10 @@ void TangoRosNode::PublishDevicePose() {
     }
     {
       std::unique_lock<std::mutex> lock(pose_available_mutex_);
-      pose_available_.wait(lock, [this] { return is_new_pose_available_ == true; });
+      pose_available_.wait(lock);
       if (publisher_config_.publish_device_pose) {
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
       }
-      is_new_pose_available_ = false;
     }
   }
 }
@@ -490,11 +510,10 @@ void TangoRosNode::PublishPointCloud() {
     }
     {
       std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
-      point_cloud_available_.wait(lock, [this] { return is_new_point_cloud_available_ == true; });
+      point_cloud_available_.wait(lock);
       if (publisher_config_.publish_point_cloud) {
         point_cloud_publisher_.publish(point_cloud_);
       }
-      is_new_point_cloud_available_ = false;
     }
   }
 }
@@ -506,13 +525,12 @@ void TangoRosNode::PublishFisheyeImage() {
     }
     {
       std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
-      fisheye_image_available_.wait(lock, [this] { return is_new_fisheye_image_available_ == true; });
+      fisheye_image_available_.wait(lock);
       if ((publisher_config_.publish_camera & CAMERA_FISHEYE)) {
         compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT,
                       IMAGE_COMPRESSING_QUALITY, &fisheye_compressed_image_);
         fisheye_image_publisher_.publish(fisheye_compressed_image_);
       }
-      is_new_fisheye_image_available_ = false;
     }
   }
 }
@@ -524,14 +542,43 @@ void TangoRosNode::PublishColorImage() {
     }
     {
       std::unique_lock<std::mutex> lock(color_image_available_mutex_);
-      color_image_available_.wait(lock, [this] { return is_new_color_image_available_ == true; });
+      color_image_available_.wait(lock);
       if ((publisher_config_.publish_camera & CAMERA_COLOR)) {
         compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT,
                       IMAGE_COMPRESSING_QUALITY, &color_compressed_image_);
         color_image_publisher_.publish(color_compressed_image_);
       }
-      is_new_color_image_available_ = false;
     }
   }
 }
-}  // namespace tango_ros_node
+
+void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
+  publisher_config_.publish_device_pose = config.publish_device_pose;
+  publisher_config_.publish_point_cloud = config.publish_point_cloud;
+  if (config.publish_camera_fisheye) {
+    publisher_config_.publish_camera |= CAMERA_FISHEYE;
+  } else {
+    publisher_config_.publish_camera &= ~CAMERA_FISHEYE;
+  }
+  if (config.publish_camera_color) {
+    publisher_config_.publish_camera |= CAMERA_COLOR;
+  } else {
+    publisher_config_.publish_camera &= ~CAMERA_COLOR;
+  }
+  PublishStaticTransforms();
+}
+
+void TangoRosNode::RunRosSpin() {
+  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig> server;
+  dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType callback =
+      boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
+  server.setCallback(callback);
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    ros::spinOnce();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+} // namespace tango_ros_native

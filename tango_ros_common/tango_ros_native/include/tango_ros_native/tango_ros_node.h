@@ -33,7 +33,10 @@
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
-namespace tango_ros_node {
+#include "tango_ros_native/PublisherConfig.h"
+
+namespace tango_ros_native {
+const std::string NODE_NAME = "tango_x_ros";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
@@ -62,7 +65,7 @@ struct PublisherConfiguration {
   std::string color_camera_topic = "tango/camera/color/image_raw/compressed";
 };
 
-// Node collecting tango data and publishing it on ros topic.
+// Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode(bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera);
@@ -73,13 +76,13 @@ class TangoRosNode {
   bool OnTangoServiceConnected();
   // Disconnects from the tango service.
   void TangoDisconnect();
-  // Start the threads that publish data.
+  // Starts the threads that publish data.
   void StartPublishing();
-  // Stop the threads that publish data.
+  // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Sets a new PublisherConfiguration and calls PublishStaticTransforms with
-  // the new publisher_config.
+  // Updates the publisher configuration by making a ros service call to dynamic
+  // reconfigure.
   void UpdatePublisherConfiguration(bool publish_device_pose,
                                     bool publish_point_cloud,
                                     uint32_t publish_camera);
@@ -105,6 +108,12 @@ class TangoRosNode {
   void PublishPointCloud();
   void PublishFisheyeImage();
   void PublishColorImage();
+  // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
+  void RunRosSpin();
+  // Function called when one of the dynamic reconfigure parameter is changed.
+  // Updates the publisher configuration consequently.
+  void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -114,20 +123,17 @@ class TangoRosNode {
   std::thread publish_pointcloud_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
+  std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
 
   std::mutex pose_available_mutex_;
   std::condition_variable pose_available_;
-  bool is_new_pose_available_ = false;
   std::mutex point_cloud_available_mutex_;
   std::condition_variable point_cloud_available_;
-  bool is_new_point_cloud_available_ = false;
   std::mutex fisheye_image_available_mutex_;
   std::condition_variable fisheye_image_available_;
-  bool is_new_fisheye_image_available_ = false;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
-  bool is_new_color_image_available_ = false;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in ms.
 
@@ -149,5 +155,5 @@ class TangoRosNode {
   sensor_msgs::CompressedImage color_compressed_image_;
   cv::Mat color_image_;
 };
-}  // namespace tango_ros_node
+}  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
