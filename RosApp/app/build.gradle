@@ -23,6 +23,10 @@ android {
             jniDebuggable true
         }
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 tasks.withType(JavaCompile) {
@@ -37,4 +41,25 @@ task ndkBuild(type: Exec) {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile ('org.ros.android_core:android_honeycomb_mr2:[0.1,0.2)') {
+        exclude group: 'junit'
+        exclude group: 'xml-apis'
+    }
+    // e.g. official msgs
+    compile 'org.ros.rosjava_messages:std_msgs:[0.1,)'
+    compile 'org.ros.rosjava_messages:sensor_msgs:[0.1,)'
+    compile 'org.ros.rosjava_messages:geometry_msgs:[0.1,)'
+}
+
+repositories {
+    maven {
+        url 'https://github.com/rosjava/rosjava_mvn_repo/raw/master'
+    }
+    mavenCentral()
+}
+
+android.packagingOptions {
+    exclude 'META-INF/LICENSE.txt'
+    exclude 'META-INF/NOTICE.txt'
 }
