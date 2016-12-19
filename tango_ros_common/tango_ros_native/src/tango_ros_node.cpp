@@ -359,11 +359,11 @@ void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
   dynamic_parameter_value = publish_point_cloud;
   config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_parameter_name = "publish_camera_fisheye";
+  dynamic_parameter_name = "publish_fisheye_camera";
   dynamic_parameter_value = publish_camera & CAMERA_FISHEYE;
   config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_parameter_name = "publish_camera_color";
+  dynamic_parameter_name = "publish_color_camera";
   dynamic_parameter_value = publish_camera & CAMERA_COLOR;
   config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
@@ -555,12 +555,12 @@ void TangoRosNode::PublishColorImage() {
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
-  if (config.publish_camera_fisheye) {
+  if (config.publish_fisheye_camera) {
     publisher_config_.publish_camera |= CAMERA_FISHEYE;
   } else {
     publisher_config_.publish_camera &= ~CAMERA_FISHEYE;
   }
-  if (config.publish_camera_color) {
+  if (config.publish_color_camera) {
     publisher_config_.publish_camera |= CAMERA_COLOR;
   } else {
     publisher_config_.publish_camera &= ~CAMERA_COLOR;
