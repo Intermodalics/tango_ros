@@ -22,9 +22,10 @@ import org.ros.node.NativeNodeMain;
 public class TangoRosNode extends NativeNodeMain {
 
     public static final String NODE_NAME = "tango_x_ros";
+    public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
 
     public TangoRosNode() {
-        super("tango_ros_android_lib");
+        super(DEFAULT_LIB_NAME);
     }
 
     public TangoRosNode(String libName) {

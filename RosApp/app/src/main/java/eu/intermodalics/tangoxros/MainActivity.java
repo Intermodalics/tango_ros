@@ -35,6 +35,7 @@ import android.widget.Toast;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
 import org.ros.node.NodeConfiguration;
+import org.ros.node.NodeMain;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
@@ -48,6 +49,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
+    private boolean mIsTangoRunning = false;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
     public MainActivity() {
@@ -74,9 +76,9 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
 
-        // Start ROS and node.
-        init();
-        startNode();
+        // Start ROS and node - this code shall be removed along with the old JNI interface methods.
+        //init();
+        //startNode();
 
         // Start sample node with RosJava interface.
         initAndStartRosJavaNode();
@@ -127,12 +129,16 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "Tango Service connected");
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
             if(!mJniInterface.onTangoServiceConnected(service)) {
                 Log.e(TAG, getResources().getString(R.string.tango_service_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
                 onDestroy();
+            } else {
+                Log.d(TAG, "Tango running");
+                mIsTangoRunning = true;
             }
         }
 
@@ -231,6 +237,21 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         // Create common configuration for nodes to be created
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+
+
+        Log.d(TAG, "Binding service");
+        TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+
+        // Using boolean to sync with binder callback - provisory
+        while(mIsTangoRunning == false) {
+            ;
+        }
+
+        // TangoRos node creation and execution - Standard RosJava
+        Log.d(TAG, "Creating tango_x_ros node");
+        nodeConfiguration.setNodeName("tango_x_ros");
+        NodeMain tangoNode = new TangoRosNode();
+        nodeMainExecutor.execute(tangoNode, nodeConfiguration);
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,

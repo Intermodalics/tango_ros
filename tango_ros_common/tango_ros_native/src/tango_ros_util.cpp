@@ -21,12 +21,34 @@
 
 namespace tango_ros_util {
 
-bool InitRos(const char* master_uri, const char* slave_ip) {
+void Execute(const char * master_uri, const char * slave_ip, const char * node_name) {
+
+  if (InitRos(master_uri, slave_ip, node_name) == false) {
+    return;
+  }
+
+  // Example configuration for debugging
+  tango_ros_native::TangoRosNode tangoRosNode(true, false, tango_ros_native::CAMERA_NONE);
+
+  tangoRosNode.OnTangoServiceConnected();
+
+  tangoRosNode.StartPublishing();
+
+}
+
+bool InitRos(const char * master_uri, const char * slave_ip, const char * node_name) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
   char* slave_ip_copy = strdup(slave_ip);
   char* argv[] = {"nothing_important" , master_uri_copy, slave_ip_copy};
-  ros::init(argc, &argv[0], tango_ros_native::NODE_NAME);
+
+  LOG(INFO) << "About to init ros: " << '\n' << "Master: " << master_uri_copy << '\n' << "Slave: " << slave_ip_copy << '\n' << "Name: " << node_name << '\n';
+
+  try {
+    ros::init(argc, &argv[0], node_name);   // ros::init is crashing the app - to be debugged
+  } catch (std::exception& e) {
+    LOG(INFO) << e.what() << '\n';
+  }
   LOG(INFO) << "Master URI: " << ros::master::getURI().c_str();
   free(master_uri_copy);
   free(slave_ip_copy);
@@ -38,4 +60,5 @@ bool InitRos(const char* master_uri, const char* slave_ip) {
   }
   return true;
 }
+
 }  // namespace tango_ros_util

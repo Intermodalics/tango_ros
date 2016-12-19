@@ -18,7 +18,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros; // to be removed
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,7 +66,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_initNode(JNIEnv* env, jobject /*obj
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_JNIInterface_onTangoServiceConnected(
     JNIEnv* env, jobject /*obj*/, jobject iBinder) {
-  return tango_helper::SetBinder(env, iBinder) && tango_ros->OnTangoServiceConnected();
+  return tango_helper::SetBinder(env, iBinder); // && tango_ros->OnTangoServiceConnected(); - Now called inside native Execute
 }
 
 JNIEXPORT void JNICALL
@@ -96,16 +96,23 @@ Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv
 }
 
 JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_execute
-  (JNIEnv *, jobject, jstring, jstring, jstring, jobjectArray) {
-	// Implementation pending
-	// This function shall deal with initializing Ros, the node itself, and the Tango Service.
-	// Then, it should start a running loop publishing the data required by the user.
+  (JNIEnv* env, jobject obj, jstring master_uri_value, jstring slave_ip_value, jstring node_name_value, jobjectArray remapping_objects_value) {
+
+  const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
+  const char* slave_ip = env->GetStringUTFChars(slave_ip_value, NULL);
+  const char* node_name = env->GetStringUTFChars(node_name_value, NULL);    // This one is the name of the loaded library - TODO: check if this function can be called with node name
+
+  tango_ros_util::Execute(master_uri, slave_ip, "tango_x_ros");
+
+  env->ReleaseStringUTFChars(master_uri_value, master_uri);
+  env->ReleaseStringUTFChars(slave_ip_value, slave_ip);
+  env->ReleaseStringUTFChars(node_name_value, node_name);
+
 }
 
 JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown
   (JNIEnv *, jobject) {
-	// Implementation pending
-	// shutdown should stop publishing, and disconnect from Tango Service.
+  // Implementation pending
 }
 
 #ifdef __cplusplus
