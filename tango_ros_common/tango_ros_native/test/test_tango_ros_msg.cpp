@@ -23,8 +23,8 @@
 #include <tango_ros_native/tango_ros_node.h>
 #include <tango_ros_native/tango_ros_util.h>
 
-const double TF_RATE = 100; // in Hz.
-const double POINT_CLOUD_RATE = 5.; // in Hz.
+const double TF_RATE = 100.; // in Hz.
+const double POINT_CLOUD_RATE = 4.; // in Hz.
 const double FISHEYE_IMAGE_RATE = 20.; // in Hz.
 const double COLOR_IMAGE_RATE = 10.; // in Hz.
 const double RATE_TOLERANCE_PERCENTAGE = 0.3;
@@ -59,6 +59,9 @@ class TangoRosTest : public ::testing::Test {
     fisheye_image_message_count = 0;
     color_image_message_count = 0;
 
+    sub_tf_ = nh_.subscribe<tf2_msgs::TFMessage>(
+        "/tf", 1, boost::bind(&TangoRosTest::TfCallback, this, _1));
+
     sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(
         tango_ros_native::PublisherConfiguration().point_cloud_topic, 1,
         boost::bind(&TangoRosTest::PointCloudCallback, this, _1));
@@ -70,9 +73,6 @@ class TangoRosTest : public ::testing::Test {
     sub_color_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
         tango_ros_native::PublisherConfiguration().color_camera_topic, 1,
             boost::bind(&TangoRosTest::ColorImageCallback, this, _1));
-
-    sub_tf_ = nh_.subscribe<tf2_msgs::TFMessage>(
-        "/tf", 1, boost::bind(&TangoRosTest::TfCallback, this, _1));
   }
 
  private:
