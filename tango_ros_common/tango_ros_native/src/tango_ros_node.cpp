@@ -347,30 +347,11 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
                                                 bool publish_point_cloud,
                                                 uint32_t publish_camera) {
-  dynamic_reconfigure::ReconfigureRequest srv_req;
-  dynamic_reconfigure::ReconfigureResponse srv_resp;
-  dynamic_reconfigure::Config config;
-  dynamic_reconfigure::ConfigTools config_tools;
-  std::string dynamic_parameter_name = "publish_device_pose";
-  bool dynamic_parameter_value = publish_device_pose;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
 
-  dynamic_parameter_name = "publish_point_cloud";
-  dynamic_parameter_value = publish_point_cloud;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  dynamic_parameter_name = "publish_camera_fisheye";
-  dynamic_parameter_value = publish_camera & CAMERA_FISHEYE;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  dynamic_parameter_name = "publish_camera_color";
-  dynamic_parameter_value = publish_camera & CAMERA_COLOR;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  srv_req.config = config;
-  if(!ros::service::call("/" + NODE_NAME + "/set_parameters", srv_req, srv_resp)) {
-    LOG(ERROR) << "Service call failed, could not update dynamic reconfigure parameters.";
-  }
+  // This function shall be removed once the node is able to listen to the parameter server.
+  this->publisher_config_.publish_device_pose = publish_device_pose;
+  this->publisher_config_.publish_point_cloud = publish_point_cloud;
+  this->publisher_config_.publish_camera = publish_camera;
 }
 
 void TangoRosNode::PublishStaticTransforms() {

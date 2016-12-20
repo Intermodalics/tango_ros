@@ -25,7 +25,7 @@ import org.ros.node.parameter.ParameterTree;
 
 public class TangoRosNode extends NativeNodeMain {
 
-    public static final String NODE_NAME = "tango_x_ros_rosjava";
+    public static final String NODE_NAME = "tango_x_ros";
 
     public TangoRosNode() {
         super("tango_ros_android_lib");
@@ -34,9 +34,6 @@ public class TangoRosNode extends NativeNodeMain {
     public TangoRosNode(String libName) {
         super(libName);
     }
-
-    public PublisherConfiguration publishConfig = null;
-    public ParameterTree parameterTree = null;
 
     @Override
     public native void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
@@ -49,22 +46,4 @@ public class TangoRosNode extends NativeNodeMain {
         return GraphName.of(NODE_NAME);
     }
 
-    @Override
-    public void onStart(ConnectedNode connectedNode) {
-        super.onStart(connectedNode);
-        Log.i("ParamLoader", "On Start function called");
-        parameterTree = connectedNode.getParameterTree();
-
-        if (publishConfig != null) {
-            uploadPreferencesToParameterServer(publishConfig);
-            Log.d("ParamLoader", "Parameters uploaded");
-        } else {
-            Log.d("ParamLoader", "NULL Publisher configuration");
-        }
-    }
-
-    public void uploadPreferencesToParameterServer(PublisherConfiguration configuration) {
-        parameterTree.set("/publish_device_pose", configuration.publishDevicePose);
-        parameterTree.set("/publish_point_cloud", configuration.publishPointCloud);
-    }
 }

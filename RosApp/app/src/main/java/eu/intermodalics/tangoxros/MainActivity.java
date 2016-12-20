@@ -49,7 +49,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
-    private TangoRosNode mTangoNode = null;
+    private ParameterNode mParameterNode = null;
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -184,6 +184,9 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         // Update publisher configuration according to current preferences.
         mPublishConfig = fetchConfigurationFromFragment();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
+        if (mParameterNode != null) {
+            mParameterNode.uploadPreferencesToParameterServer(mPublishConfig);
+        }
     }
 
     private PublisherConfiguration fetchConfigurationFromFragment() {
@@ -236,12 +239,10 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        // TangoRos node creation and execution using RosJava STD method.
-        Log.d(TAG, "Creating TangoRosNode");
-        mTangoNode = new TangoRosNode();
-        mTangoNode.publishConfig = fetchConfigurationFromFragment();
-        nodeConfiguration.setNodeName(mTangoNode.getDefaultNodeName());
-        nodeMainExecutor.execute(mTangoNode, nodeConfiguration);
+        mParameterNode = new ParameterNode();
+        mParameterNode.setPublishConfig(fetchConfigurationFromFragment());
+        nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
