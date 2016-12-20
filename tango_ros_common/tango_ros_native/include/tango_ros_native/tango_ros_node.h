@@ -36,7 +36,7 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
-const std::string NODE_NAME = "tango_x_ros";
+const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
@@ -60,9 +60,9 @@ struct PublisherConfiguration {
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the fisheye image publisher.
-  std::string fisheye_camera_topic = "tango/camera/fisheye/image_raw/compressed";
+  std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
-  std::string color_camera_topic = "tango/camera/color/image_raw/compressed";
+  std::string color_camera_topic = "tango/camera/color_1/image_raw/compressed";
 };
 
 // Node collecting tango data and publishing it on ros topics.
