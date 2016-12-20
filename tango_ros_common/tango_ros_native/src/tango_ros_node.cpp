@@ -175,12 +175,11 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
-                           uint32_t publish_camera) :
+TangoRosNode::TangoRosNode() :
     run_threads_(false) {
-  publisher_config_.publish_device_pose = publish_device_pose;
-  publisher_config_.publish_point_cloud = publish_point_cloud;
-  publisher_config_.publish_camera = publish_camera;
+  publisher_config_.publish_device_pose = false;
+  publisher_config_.publish_point_cloud = false;
+  publisher_config_.publish_camera = CAMERA_NONE;
 
   const  uint32_t queue_size = 1;
   const bool latching = true;

@@ -20,38 +20,21 @@
 #include "tango_ros_native/tango_ros_node.h"
 
 namespace tango_ros_util {
-
-void Execute(const char * master_uri, const char * slave_ip, const char * node_name) {
-
-  if (InitRos(master_uri, slave_ip, node_name) == false) {
-    return;
-  }
-
-  // Example configuration for debugging
-  tango_ros_native::TangoRosNode tangoRosNode(true, false, tango_ros_native::CAMERA_NONE);
-
-  tangoRosNode.OnTangoServiceConnected();
-
-  tangoRosNode.StartPublishing();
-
-}
-
-bool InitRos(const char * master_uri, const char * slave_ip, const char * node_name) {
+bool InitRos(const char* master_uri, const char* host_ip) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
-  char* slave_ip_copy = strdup(slave_ip);
-  char* argv[] = {"nothing_important" , master_uri_copy, slave_ip_copy};
+  char* host_ip_copy = strdup(host_ip);
+  char* argv[] = {"nothing_important" , master_uri_copy, host_ip_copy};
 
-  LOG(INFO) << "About to init ros: " << '\n' << "Master: " << master_uri_copy << '\n' << "Slave: " << slave_ip_copy << '\n' << "Name: " << node_name << '\n';
-
+  LOG(INFO) << "\nMaster: " << master_uri_copy << "\n"
+            << "Host: " << host_ip_copy;
   try {
-    ros::init(argc, &argv[0], node_name);   // ros::init is crashing the app - to be debugged
+    ros::init(argc, &argv[0], tango_ros_native::NODE_NAME);
   } catch (std::exception& e) {
-    LOG(INFO) << e.what() << '\n';
+    LOG(INFO) << e.what() << "\n";
   }
-  LOG(INFO) << "Master URI: " << ros::master::getURI().c_str();
   free(master_uri_copy);
-  free(slave_ip_copy);
+  free(host_ip_copy);
   if (ros::master::check()) {
     LOG(INFO) << "ROS MASTER IS UP! ";
   } else {
@@ -59,6 +42,14 @@ bool InitRos(const char * master_uri, const char * slave_ip, const char * node_n
     return false;
   }
   return true;
+}
+
+void Execute() {
+  ros::Rate loop_rate(30);
+  while(ros::ok()) {
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
 }
 
 }  // namespace tango_ros_util

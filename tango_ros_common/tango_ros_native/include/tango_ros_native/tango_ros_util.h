@@ -18,13 +18,13 @@
 #include <ros/ros.h>
 
 namespace tango_ros_util {
-
-void Execute(const char * master_uri, const char * slave_ip, const char * node_name);
-
 // Initializes ros with the correct arguments.
 // @param master_uri, URI of the ros master.
 // @param slave_ip, IP address of the device.
 // @return returns true if the ros master was found.
-bool InitRos(const char* master_uri, const char* slave_ip, const char* node_name = "tango_x_ros");
+bool InitRos(const char* master_uri, const char* host_ip);
+
+//
+void Execute();
 } // namespace tango_ros_util
 #endif  // TANGO_ROS_UTIL_H_

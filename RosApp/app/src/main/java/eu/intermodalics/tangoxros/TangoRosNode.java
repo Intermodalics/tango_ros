@@ -16,6 +16,8 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.os.IBinder;
+
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMain;
 
@@ -32,6 +34,7 @@ public class TangoRosNode extends NativeNodeMain {
     }
 
     @Override
+    // Note: rosNodeName is actually the name of the loaded library.
     public native void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
 
     @Override
@@ -41,4 +44,19 @@ public class TangoRosNode extends NativeNodeMain {
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
     }
+
+    /**
+     * Binds to the tango service.
+     *
+     * @param nativeTangoServiceBinder The native binder object.
+     * @return true if binding to the Tango service ended successfully.
+     */
+    public native boolean setBinderTangoService(IBinder nativeTangoServiceBinder);
+
+    /**
+     * Update the publisher configuration of the tango-ros node.
+     *
+     * @param publisherConfiguration the new publisher configuration.
+     */
+    public native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }

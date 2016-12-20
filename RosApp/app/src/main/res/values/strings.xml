@@ -23,6 +23,6 @@
 
     <string name="tango_ros_error">Unable to init ROS! Do you have a roscore running?</string>
     <string name="tango_node_error">Unable to init Tango Ros node. Do you have a correct tango version?</string>
-    <string name="tango_service_error">Unable to connect to Tango Service</string>
+    <string name="tango_service_error">Unable to bind to Tango Service</string>
 
 </resources>
