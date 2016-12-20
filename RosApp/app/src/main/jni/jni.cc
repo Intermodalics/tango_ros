@@ -18,7 +18,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros; // to be removed
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,13 +65,13 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
     tango_ros.reset(new tango_ros_native::TangoRosNode());
     if (tango_ros->OnTangoServiceConnected()) {
       tango_ros->StartPublishing();
-      tango_ros_util::Execute(); // enter while ros::ok loop
+      tango_ros_util::Execute();
     }
   }
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv *, jobject) {
+Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
   tango_ros->StopPublishing();
   tango_ros->TangoDisconnect();
 }
