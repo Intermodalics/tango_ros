@@ -52,4 +52,5 @@ public class PrefsFragment extends PreferenceFragment {
         Log.i(TAG, publisherConfiguration.toString());
         return publisherConfiguration;
     }
+
 }

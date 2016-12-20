@@ -72,7 +72,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
         // retain important ROS info
         masterUri = connectedNode.getMasterUri().toString();
         hostName = connectedNode.getUri().getHost();
-        nodeName = this.libName;
+        nodeName = this.getDefaultNodeName().toString();
 
         // create a new thread to execute the native code.
         new Thread() {

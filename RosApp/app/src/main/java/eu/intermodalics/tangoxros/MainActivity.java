@@ -48,7 +48,8 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
-    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
+    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
+    private TangoRosNode mTangoNode = null;
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -144,8 +145,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     public boolean initNode() {
         // Update publisher configuration according to current preferences.
-        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
+        mPublishConfig = fetchConfigurationFromFragment();
         if(!mJniInterface.initNode(this, mPublishConfig)) {
             Log.e(TAG, getResources().getString(R.string.tango_node_error));
             Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
@@ -182,9 +182,13 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     public void applySettings() {
         // Update publisher configuration according to current preferences.
-        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-        mPublishConfig = prefsFragment.getPublisherConfigurationFromPreferences();
+        mPublishConfig = fetchConfigurationFromFragment();
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
+    }
+
+    private PublisherConfiguration fetchConfigurationFromFragment() {
+        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+        return prefsFragment.getPublisherConfigurationFromPreferences();
     }
 
     @Override
@@ -231,6 +235,13 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         // Create common configuration for nodes to be created
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+
+        // TangoRos node creation and execution using RosJava STD method.
+        Log.d(TAG, "Creating TangoRosNode");
+        mTangoNode = new TangoRosNode();
+        mTangoNode.publishConfig = fetchConfigurationFromFragment();
+        nodeConfiguration.setNodeName(mTangoNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mTangoNode, nodeConfiguration);
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
@@ -257,6 +268,21 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                     return null;
                 }
             }.execute();
+
+            // Code for testing parameter server from the java side.
+/*
+            Log.d(TAG, "Got after async task");
+            while (mTangoNode == null)
+                ;
+
+            Log.d(TAG, "TangoNode exists");
+            while (mTangoNode.parameterTree == null)
+                ;
+
+            Log.d(TAG, "Node is connected");
+            boolean publishPose = mTangoNode.parameterTree.getBoolean("publish_device_pose");
+            Log.d(TAG, "Parameter fetched: " + publishPose);
+*/
 
         } else {
             Log.e(TAG, "Master URI is null");
