@@ -23,10 +23,10 @@
 #include <tango_ros_native/tango_ros_node.h>
 #include <tango_ros_native/tango_ros_util.h>
 
-constexpr double TF_RATE = 100.; // in Hz.
+constexpr double TF_RATE = 85.; // in Hz.
 constexpr double POINT_CLOUD_RATE = 4.; // in Hz.
 constexpr double FISHEYE_IMAGE_RATE = 20.; // in Hz.
-constexpr double COLOR_IMAGE_RATE = 10.; // in Hz.
+constexpr double COLOR_IMAGE_RATE = 9.; // in Hz.
 constexpr double RATE_TOLERANCE_RATIO = 0.2;
 
 constexpr int SLEEP_TIME_UNTIL_FIRST_MESSAGE = 2; // in second.
