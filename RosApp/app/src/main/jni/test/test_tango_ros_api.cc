@@ -22,7 +22,7 @@ std::string device_ip;
 
 class TangoRosTest : public ::testing::Test {
  public:
-  const int TEST_DURATION = 5; // in second.
+  constexpr static int TEST_DURATION = 15; // in second.
   std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;
   bool connected_to_tango = false;
 
@@ -32,7 +32,7 @@ class TangoRosTest : public ::testing::Test {
     bool publish_device_pose = true;
     bool publish_point_cloud = true;
     uint32_t publish_camera = tango_ros_native::CAMERA_FISHEYE | tango_ros_native::CAMERA_COLOR;
-    tango_ros_node_.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_device_pose,
+    tango_ros_node_.reset(new tango_ros_native::TangoRosNode(publish_device_pose, publish_point_cloud,
       publish_camera));
     ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
     connected_to_tango = true;
@@ -56,7 +56,7 @@ TEST_F(TangoRosTest, TestPublishingForFixedTime) {
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   master_uri = argv[1];
   device_ip = argv[2];
