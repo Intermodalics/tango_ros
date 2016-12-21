@@ -347,7 +347,6 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
                                                 bool publish_point_cloud,
                                                 uint32_t publish_camera) {
-
   // This function shall be removed once the node is able to listen to the parameter server.
   this->publisher_config_.publish_device_pose = publish_device_pose;
   this->publisher_config_.publish_point_cloud = publish_point_cloud;
@@ -536,12 +535,12 @@ void TangoRosNode::PublishColorImage() {
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
-  if (config.publish_camera_fisheye) {
+  if (config.publish_fisheye_camera) {
     publisher_config_.publish_camera |= CAMERA_FISHEYE;
   } else {
     publisher_config_.publish_camera &= ~CAMERA_FISHEYE;
   }
-  if (config.publish_camera_color) {
+  if (config.publish_color_camera) {
     publisher_config_.publish_camera |= CAMERA_COLOR;
   } else {
     publisher_config_.publish_camera &= ~CAMERA_COLOR;
