@@ -43,8 +43,14 @@ static void set_native_publisher_configuration_from_java_publisher_configuration
 
 JNIEXPORT jboolean JNICALL
 Java_eu_intermodalics_tangoxros_TangoRosNode_setBinderTangoService(
-    JNIEnv* env, jobject /*obj*/, jobject iBinder) {
-  return tango_helper::SetBinder(env, iBinder);
+    JNIEnv* env, jobject /*obj*/, jobject binder) {
+  return tango_helper::SetBinder(env, binder);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_eu_intermodalics_tangoxros_TangoRosNode_isTangoVersionOk(
+    JNIEnv* env, jobject /*obj*/, jobject activity) {
+  return tango_helper::IsTangoVersionOk(env, activity);
 }
 
 JNIEXPORT void JNICALL

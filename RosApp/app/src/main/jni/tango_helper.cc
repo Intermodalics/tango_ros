@@ -22,7 +22,7 @@ bool IsTangoVersionOk(JNIEnv* env, jobject activity) {
   int version;
   TangoErrorType err = TangoSupport_GetTangoVersion(env, activity, &version);
   if (err != TANGO_SUCCESS || version < TANGO_CORE_MINIMUM_VERSION) {
-    LOG(ERROR) << "Tango Core version is out of"
+    LOG(ERROR) << "Tango Core version is out of "
         "date, minimum version required: " << TANGO_CORE_MINIMUM_VERSION <<
         ", version used: " << version;
     return false;
@@ -31,9 +31,9 @@ bool IsTangoVersionOk(JNIEnv* env, jobject activity) {
 }
 
 bool SetBinder(JNIEnv* env, jobject binder) {
-  TangoErrorType ret = TangoService_setBinder(env, binder);
-  if (ret != TANGO_SUCCESS) {
-    LOG(ERROR) << "Failed to bind Tango service with error code: " << ret;
+  TangoErrorType err = TangoService_setBinder(env, binder);
+  if (err != TANGO_SUCCESS) {
+    LOG(ERROR) << "Failed to bind Tango service with error code: " << err;
     return false;
   }
   return true;

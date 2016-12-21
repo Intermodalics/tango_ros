@@ -120,13 +120,13 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            if(!mTangoRosNode.setBinderTangoService(service)) {
+            if(mTangoRosNode.setBinderTangoService(service)) {
+                Log.i(TAG, "Bound to tango service");
+                mIsTangoServiceBound = true;
+            } else {
                 Log.e(TAG, getResources().getString(R.string.tango_service_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
                 onDestroy();
-            } else {
-                Log.i(TAG, "Bound to tango service");
-                mIsTangoServiceBound = true;
             }
         }
 
@@ -181,7 +181,17 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         mTangoRosNode = new TangoRosNode();
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-        nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+        if(mTangoRosNode.isTangoVersionOk(this)) {
+            nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.e(TAG, getResources().getString(R.string.tango_version_error));
+                    Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
