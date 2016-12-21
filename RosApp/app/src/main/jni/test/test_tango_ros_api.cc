@@ -22,7 +22,7 @@ std::string device_ip;
 
 class TangoRosTest : public ::testing::Test {
  public:
-  const int TEST_DURATION = 5; // in second.
+  constexpr static int TEST_DURATION = 15; // in second.
   std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;
   bool connected_to_tango = false;
 
@@ -56,7 +56,7 @@ TEST_F(TangoRosTest, TestPublishingForFixedTime) {
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   master_uri = argv[1];
   device_ip = argv[2];
