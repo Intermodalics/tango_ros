@@ -44,10 +44,13 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
+    // Fixed IP address created by USB tethering.
+    private static final String USB_TETHERING_IP = "192.168.42.129";
 
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
+    private boolean mIsUsbTetheringOn = false;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();;
 
     public MainActivity() {
@@ -156,8 +159,11 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     public void init() {
         if (mMasterUri != null) {
-            WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-            String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+            String ip_address = USB_TETHERING_IP;
+            if (!mIsUsbTetheringOn) {
+                WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
+                ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+            }
             if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
                 mIsNodeInitialised = initNode();
             } else {
