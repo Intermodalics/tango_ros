@@ -295,7 +295,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
             }
         };
 
-        scheduler.scheduleAtFixedRate(prefSyncTask, 5, 5, SECONDS);
+        scheduler.scheduleAtFixedRate(prefSyncTask, 1, 1, SECONDS);
     }
 
     @Override
