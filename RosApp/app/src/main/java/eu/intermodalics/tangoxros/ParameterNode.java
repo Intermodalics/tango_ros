@@ -16,23 +16,40 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.parameter.ParameterTree;
 
+import java.util.Map;
 
-public class ParameterNode extends AbstractNodeMain implements NodeMain {
+
+public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String NODE_NAME = "parameter_node";
-    private static final String POSE_PARAM_NAME = "/publish_device_pose";
-    private static final String POINT_CLOUD_PARAM_NAME = "/publish_point_cloud";
-    private static final String CAMERA_COLOR_PARAM_NAME = "/publish_camera_color";
-    private static final String CAMERA_FISHEYE_PARAM_NAME = "/publish_camera_fisheye";
+    private final String POSE_PARAM_NAME;
+    private final String POINT_CLOUD_PARAM_NAME;
+    private final String CAMERA_COLOR_PARAM_NAME;
+    private final String CAMERA_FISHEYE_PARAM_NAME;
 
     private PublisherConfiguration publishConfig = null;
     private ParameterTree parameterTree = null;
+    private Activity creator;
+
+    public ParameterNode(Activity activity, String poseParamName, String pointcloudParamName,
+                         String camcolorParamName, String camFisheyeParamName) {
+        creator = activity;
+        POSE_PARAM_NAME = poseParamName;
+        POINT_CLOUD_PARAM_NAME = pointcloudParamName;
+        CAMERA_COLOR_PARAM_NAME = camcolorParamName;
+        CAMERA_FISHEYE_PARAM_NAME = camFisheyeParamName;
+    }
 
     @Override
     public GraphName getDefaultNodeName() { return GraphName.of(NODE_NAME); }
@@ -43,6 +60,20 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
         if (publishConfig != null) {
             uploadPreferencesToParameterServer();
+        }
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(creator);
+        pref.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                          String key) {
+        Log.d(NODE_NAME, "################### UPDATING ROS PARAMETER SERVER WITH PREFERENCES ###################");
+
+        Map<String,?> prefKeys = sharedPreferences.getAll();
+        Object prefValue = prefKeys.get(key);
+
+        if (prefValue.getClass().equals(Boolean.class)) {
+            uploadSingleBooleanParameter(key,sharedPreferences.getBoolean(key, false));
         }
     }
 
@@ -59,10 +90,39 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         uploadPreferencesToParameterServer();
     }
 
+    public PublisherConfiguration fetchPreferencesFromParameterServer() {
+        publishConfig.publishDevicePose = fetchSingleBooleanParameter(POSE_PARAM_NAME);
+        publishConfig.publishPointCloud = fetchSingleBooleanParameter(POINT_CLOUD_PARAM_NAME);
+        if (fetchSingleBooleanParameter(CAMERA_COLOR_PARAM_NAME) == true) {
+            publishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
+        } else {
+            publishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
+        }
+        if (fetchSingleBooleanParameter(CAMERA_FISHEYE_PARAM_NAME) == true) {
+            publishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
+        } else {
+            publishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
+        }
+
+        return publishConfig;
+    }
+
     private void uploadPreferencesToParameterServer() {
-        parameterTree.set(TangoRosNode.NODE_NAME + "/" + POSE_PARAM_NAME, publishConfig.publishDevicePose);
-        parameterTree.set(TangoRosNode.NODE_NAME + "/" + POINT_CLOUD_PARAM_NAME, publishConfig.publishPointCloud);
-        parameterTree.set(TangoRosNode.NODE_NAME + "/" + CAMERA_COLOR_PARAM_NAME, publishConfig.publishDevicePose);
-        parameterTree.set(TangoRosNode.NODE_NAME + "/" + CAMERA_FISHEYE_PARAM_NAME, publishConfig.publishPointCloud);
+        uploadSingleBooleanParameter(POSE_PARAM_NAME, publishConfig.publishDevicePose);
+        uploadSingleBooleanParameter(POINT_CLOUD_PARAM_NAME, publishConfig.publishPointCloud);
+        uploadSingleBooleanParameter(CAMERA_COLOR_PARAM_NAME, (publishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) != 0);
+        uploadSingleBooleanParameter(CAMERA_FISHEYE_PARAM_NAME, (publishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) != 0);
+    }
+
+    private void uploadSingleBooleanParameter(String paramName, boolean paramValue) {
+        parameterTree.set(buildFullParameterName(paramName), paramValue);
+    }
+
+    private boolean fetchSingleBooleanParameter(String paramName) {
+        return parameterTree.getBoolean(buildFullParameterName(paramName));
+    }
+
+    private String buildFullParameterName(String paramName) {
+        return TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }

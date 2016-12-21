@@ -38,6 +38,10 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
         TryToReconnectToRosDialog.CallbackListener {
@@ -45,6 +49,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
@@ -130,7 +135,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            if(!mJniInterface.onTangoServiceConnected(service)) {
+            if (!mJniInterface.onTangoServiceConnected(service)) {
                 Log.e(TAG, getResources().getString(R.string.tango_service_error));
                 Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
                 onDestroy();
@@ -146,7 +151,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     public boolean initNode() {
         // Update publisher configuration according to current preferences.
         mPublishConfig = fetchConfigurationFromFragment();
-        if(!mJniInterface.initNode(this, mPublishConfig)) {
+        if (!mJniInterface.initNode(this, mPublishConfig)) {
             Log.e(TAG, getResources().getString(R.string.tango_node_error));
             Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
             return false;
@@ -239,10 +244,16 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        mParameterNode = new ParameterNode();
+        mParameterNode = new ParameterNode(this,
+                getString(R.string.publish_device_pose_key),
+                getString(R.string.publish_pointcloud_key),
+                getString(R.string.publish_color_camera_key),
+                getString(R.string.publish_fisheye_camera_key));
         mParameterNode.setPublishConfig(fetchConfigurationFromFragment());
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+        syncPreferencesWithParameterServer();
+
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
@@ -270,24 +281,22 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 }
             }.execute();
 
-            // Code for testing parameter server from the java side.
-/*
-            Log.d(TAG, "Got after async task");
-            while (mTangoNode == null)
-                ;
-
-            Log.d(TAG, "TangoNode exists");
-            while (mTangoNode.parameterTree == null)
-                ;
-
-            Log.d(TAG, "Node is connected");
-            boolean publishPose = mTangoNode.parameterTree.getBoolean("publish_device_pose");
-            Log.d(TAG, "Parameter fetched: " + publishPose);
-*/
-
         } else {
             Log.e(TAG, "Master URI is null");
         }
+    }
+
+    public void syncPreferencesWithParameterServer() {
+        final Runnable prefSyncTask = new Runnable() {
+            public void run() {
+                PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+                PublisherConfiguration publishConfig = mParameterNode.fetchPreferencesFromParameterServer();
+                prefsFragment.setPreferencesFromPublsherConfiguration(publishConfig);
+                Log.d(TAG, "****************************************** PREFERECES SYNC *******************************************\n\n\n" + publishConfig.toString());
+            }
+        };
+
+        scheduler.scheduleAtFixedRate(prefSyncTask, 5, 5, SECONDS);
     }
 
     @Override
