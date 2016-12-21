@@ -17,19 +17,18 @@
 
 #include <glog/logging.h>
 
-#include "tango_ros_native/tango_ros_node.h"
-
 namespace tango_ros_util {
-bool InitRos(const char* master_uri, const char* host_ip) {
+bool InitRos(const char* master_uri, const char* host_ip, const char* node_name) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
   char* host_ip_copy = strdup(host_ip);
   char* argv[] = {"nothing_important" , master_uri_copy, host_ip_copy};
 
   LOG(INFO) << "\nMaster: " << master_uri_copy << "\n"
-            << "Host: " << host_ip_copy;
+            << "Host: " << host_ip_copy << "\n"
+            << "Node: " << node_name;
   try {
-    ros::init(argc, &argv[0], tango_ros_native::NODE_NAME);
+    ros::init(argc, &argv[0], node_name);
   } catch (std::exception& e) {
     LOG(INFO) << e.what() << "\n";
   }

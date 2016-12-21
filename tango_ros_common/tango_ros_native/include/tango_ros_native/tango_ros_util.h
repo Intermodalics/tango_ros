@@ -20,9 +20,10 @@
 namespace tango_ros_util {
 // Initializes ros with the correct arguments.
 // @param master_uri, URI of the ros master.
-// @param slave_ip, IP address of the device.
+// @param host_ip, IP address of the device.
+// @param node_name, name of the node.
 // @return returns true if the ros master was found.
-bool InitRos(const char* master_uri, const char* host_ip);
+bool InitRos(const char* master_uri, const char* host_ip, const char* node_name);
 // Enters a loop, exits when ros shutdown.
 void Execute();
 } // namespace tango_ros_util

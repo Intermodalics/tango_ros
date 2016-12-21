@@ -18,7 +18,7 @@
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros;
+static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node;
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,17 +54,20 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
     jobjectArray remapping_objects_value) {
   const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
   const char* host_ip = env->GetStringUTFChars(host_ip_value, NULL);
+  const char* node_name = env->GetStringUTFChars(node_name_value, NULL);
 
-  std::string master("__master:=" + std::string(master_uri));
-  std::string host("__ip:=" + std::string(host_ip));
+  std::string master = "__master:=" + std::string(master_uri);
+  std::string host = "__ip:=" + std::string(host_ip);
+  std::string node = std::string(node_name);
 
   env->ReleaseStringUTFChars(master_uri_value, master_uri);
   env->ReleaseStringUTFChars(host_ip_value, host_ip);
+  env->ReleaseStringUTFChars(node_name_value, node_name);
 
-  if (tango_ros_util::InitRos(master.c_str(), host.c_str())) {
-    tango_ros.reset(new tango_ros_native::TangoRosNode());
-    if (tango_ros->OnTangoServiceConnected()) {
-      tango_ros->StartPublishing();
+  if (tango_ros_util::InitRos(master.c_str(), host.c_str(), node.c_str())) {
+    tango_ros_node.reset(new tango_ros_native::TangoRosNode());
+    if (tango_ros_node->OnTangoServiceConnected()) {
+      tango_ros_node->StartPublishing();
       tango_ros_util::Execute();
     }
   }
@@ -72,8 +75,8 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros->StopPublishing();
-  tango_ros->TangoDisconnect();
+  tango_ros_node->StopPublishing();
+  tango_ros_node->TangoDisconnect();
 }
 
 JNIEXPORT void JNICALL
@@ -84,7 +87,7 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_updatePublisherConfiguration(JNIEnv
   uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
-  tango_ros->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
+  tango_ros_node->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
 }
 
 #ifdef __cplusplus
