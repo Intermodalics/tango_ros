@@ -41,7 +41,6 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
-        Log.d(TAG, "---------------- ON SHARED PREF CHANGE -------------------------");
         Preference pref = findPreference(key);
         if (pref instanceof SwitchPreference) {
             SwitchPreference swPref = (SwitchPreference) pref;
@@ -71,10 +70,8 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
 
     public void setPreferencesFromPublsherConfiguration(PublisherConfiguration publishConfig) {
         SharedPreferences sharedPref = getPreferenceManager().getDefaultSharedPreferences(getActivity());
-
-        Log.d(TAG, "///////////////// Device pose pref: /////////////////" + sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false));
-
         SharedPreferences.Editor editor = sharedPref.edit();
+
         editor.putBoolean(getString(R.string.publish_device_pose_key), publishConfig.publishDevicePose);
         editor.putBoolean(getString(R.string.publish_pointcloud_key), publishConfig.publishPointCloud);
         editor.putBoolean(getString(R.string.publish_fisheye_camera_key), (publishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) != 0);

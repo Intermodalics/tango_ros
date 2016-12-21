@@ -19,7 +19,6 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -65,10 +64,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         pref.registerOnSharedPreferenceChangeListener(this);
     }
 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-                                          String key) {
-        Log.d(NODE_NAME, "################### UPDATING ROS PARAMETER SERVER WITH PREFERENCES ###################");
-
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
         Object prefValue = prefKeys.get(key);
 

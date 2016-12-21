@@ -292,7 +292,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
                 PublisherConfiguration publishConfig = mParameterNode.fetchPreferencesFromParameterServer();
                 prefsFragment.setPreferencesFromPublsherConfiguration(publishConfig);
-                Log.d(TAG, "****************************************** PREFERECES SYNC *******************************************\n\n\n" + publishConfig.toString());
             }
         };
 
