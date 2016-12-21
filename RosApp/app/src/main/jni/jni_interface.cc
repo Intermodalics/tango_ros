@@ -100,18 +100,6 @@ JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_execute
 	// Implementation pending
 	// This function shall deal with initializing Ros, the node itself, and the Tango Service.
 	// Then, it should start a running loop publishing the data required by the user.
-
-  const char* node_name = env->GetStringUTFChars(node_name_value, NULL);
-  tango_ros_util::PrintAlive(node_name);
-
-  const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
-  const char* slave_ip = env->GetStringUTFChars(slave_ip_value, NULL);
-
-  tango_ros_util::InitRos(master_uri, slave_ip);
-
-  env->ReleaseStringUTFChars(master_uri_value, master_uri);
-  env->ReleaseStringUTFChars(slave_ip_value, slave_ip);
-
 }
 
 JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown

@@ -39,8 +39,4 @@ bool InitRos(const char* master_uri, const char* slave_ip) {
   return true;
 }
 
-void PrintAlive(const char* name) {
-  LOG(INFO) << "Im alive and executing: " << name;
-}
-
 }  // namespace tango_ros_util
