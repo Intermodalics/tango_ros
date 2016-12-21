@@ -18,7 +18,8 @@
 #include <glog/logging.h>
 
 namespace tango_ros_util {
-bool InitRos(const char* master_uri, const char* host_ip, const char* node_name) {
+bool InitRos(const char* master_uri, const char* host_ip,
+                                   const char* node_name) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
   char* host_ip_copy = strdup(host_ip);
@@ -43,12 +44,34 @@ bool InitRos(const char* master_uri, const char* host_ip, const char* node_name)
   return true;
 }
 
-void Execute() {
-  ros::Rate loop_rate(30);
-  while(ros::ok()) {
-    ros::spinOnce();
-    loop_rate.sleep();
+TangoRosNodeExecutor::TangoRosNodeExecutor() {}
+
+TangoRosNodeExecutor::~TangoRosNodeExecutor() {}
+
+
+void TangoRosNodeExecutor::Execute(const char* master_uri, const char* host_ip,
+                                   const char* node_name) {
+  if (InitRos(master_uri, host_ip, node_name)) {
+    tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
+    if (tango_ros_node_->OnTangoServiceConnected()) {
+      tango_ros_node_->StartPublishing();
+      ros::Rate loop_rate(30);
+      while(ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep();
+      }
+    }
   }
 }
 
+void TangoRosNodeExecutor::Shutdown() {
+  tango_ros_node_->StopPublishing();
+  tango_ros_node_->TangoDisconnect();
+}
+
+void TangoRosNodeExecutor::UpdatePublisherConfiguration(bool publish_device_pose,
+                                                        bool publish_point_cloud,
+                                                        uint32_t publish_camera) {
+  tango_ros_node_->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
+}
 }  // namespace tango_ros_util

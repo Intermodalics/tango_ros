@@ -125,6 +125,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
                 onDestroy();
             } else {
+                Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
             }
         }
@@ -163,6 +164,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     protected void onDestroy() {
         super.onDestroy();
         if (mIsTangoServiceBound) {
+            Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
     }

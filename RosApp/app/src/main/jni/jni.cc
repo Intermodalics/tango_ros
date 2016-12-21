@@ -13,12 +13,11 @@
 // limitations under the License.
 #include "tango_helper.h"
 
-#include <tango_ros_native/tango_ros_node.h>
 #include <tango_ros_native/tango_ros_util.h>
 
 #include <jni.h>
 
-static std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node;
+static tango_ros_util::TangoRosNodeExecutor tango_ros_node_executor;
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,19 +63,13 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
   env->ReleaseStringUTFChars(host_ip_value, host_ip);
   env->ReleaseStringUTFChars(node_name_value, node_name);
 
-  if (tango_ros_util::InitRos(master.c_str(), host.c_str(), node.c_str())) {
-    tango_ros_node.reset(new tango_ros_native::TangoRosNode());
-    if (tango_ros_node->OnTangoServiceConnected()) {
-      tango_ros_node->StartPublishing();
-      tango_ros_util::Execute();
-    }
-  }
+  tango_ros_node_executor = tango_ros_util::TangoRosNodeExecutor();
+  tango_ros_node_executor.Execute(master.c_str(), host.c_str(), node.c_str());
 }
 
 JNIEXPORT void JNICALL
 Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
-  tango_ros_node->StopPublishing();
-  tango_ros_node->TangoDisconnect();
+  tango_ros_node_executor.Shutdown();
 }
 
 JNIEXPORT void JNICALL
@@ -87,7 +80,7 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_updatePublisherConfiguration(JNIEnv
   uint32_t publish_camera;
   set_native_publisher_configuration_from_java_publisher_configuration(env, jpublisherConfiguration,
     &publish_device_pose, &publish_point_cloud, &publish_camera);
-  tango_ros_node->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
+  tango_ros_node_executor.UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
 }
 
 #ifdef __cplusplus

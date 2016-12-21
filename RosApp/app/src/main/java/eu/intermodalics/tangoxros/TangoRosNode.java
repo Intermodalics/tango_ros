@@ -34,7 +34,6 @@ public class TangoRosNode extends NativeNodeMain {
     }
 
     @Override
-    // Note: rosNodeName is actually the name of the loaded library.
     public native void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
 
     @Override
