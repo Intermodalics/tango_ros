@@ -50,6 +50,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private boolean mIsNodeInitialised = false;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private ParameterNode mParameterNode = null;
+    private PrefsFragment mPrefsFragment = null;
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -145,7 +146,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     public boolean initNode() {
         // Update publisher configuration according to current preferences.
-        mPublishConfig = fetchConfigurationFromFragment();
+        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
         if (!mJniInterface.initNode(this, mPublishConfig)) {
             Log.e(TAG, getResources().getString(R.string.tango_node_error));
             Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
@@ -182,14 +183,9 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     public void applySettings() {
         // Update publisher configuration according to current preferences.
-        mPublishConfig = fetchConfigurationFromFragment();
+        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
 
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
-    }
-
-    private PublisherConfiguration fetchConfigurationFromFragment() {
-        PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-        return prefsFragment.getPublisherConfigurationFromPreferences();
     }
 
     @Override
@@ -210,6 +206,8 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     @Override
     protected void onStart() {
         super.onStart();
+        mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
+
         if (mMasterUri.isEmpty()) {
             showSetMasterUriDialog();
         }
