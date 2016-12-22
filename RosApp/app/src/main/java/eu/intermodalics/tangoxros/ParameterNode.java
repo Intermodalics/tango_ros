@@ -76,7 +76,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     }
 
     /**
-     * Syncs the Parameter Server with the all the local shared preferences (app --> server).
+     * Syncs the Parameter Server with the all the current local shared preferences (app --> server).
      * @param sharedPreferences Reference to the preferences to sync.
      */
     private void uploadPreferencesToParameterServer(SharedPreferences sharedPreferences) {

@@ -96,7 +96,7 @@ Java_eu_intermodalics_tangoxros_JNIInterface_updatePublisherConfiguration(JNIEnv
 }
 
 JNIEXPORT void JNICALL Java_eu_intermodalics_tangoxros_TangoRosNode_execute
-  (JNIEnv * env, jobject obj, jstring master_uri_value, jstring slave_ip_value, jstring node_name_value, jobjectArray) {
+  (JNIEnv *, jobject, jstring, jstring, jstring, jobjectArray) {
 	// Implementation pending
 	// This function shall deal with initializing Ros, the node itself, and the Tango Service.
 	// Then, it should start a running loop publishing the data required by the user.

@@ -35,10 +35,17 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
         super.onCreate(savedInstanceState);
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
+
+        // Set listeners to update the UI when shared preferences change.
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
         pref.registerOnSharedPreferenceChangeListener(this);
     }
 
+    /**
+     * Update UI when shared preferences change. This method only supports SwitchPreferences.
+     * @param sharedPreferences Reference to shared preferences.
+     * @param key Reference to the preference that changed.
+     */
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Preference pref = findPreference(key);
         if (pref instanceof SwitchPreference) {

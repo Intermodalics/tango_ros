@@ -16,12 +16,8 @@
 
 package eu.intermodalics.tangoxros;
 
-import android.util.Log;
-
 import org.ros.namespace.GraphName;
-import org.ros.node.ConnectedNode;
 import org.ros.node.NativeNodeMain;
-import org.ros.node.parameter.ParameterTree;
 
 public class TangoRosNode extends NativeNodeMain {
 
@@ -45,5 +41,4 @@ public class TangoRosNode extends NativeNodeMain {
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
     }
-
 }

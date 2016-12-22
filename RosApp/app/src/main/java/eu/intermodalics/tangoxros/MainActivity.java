@@ -38,8 +38,6 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
         TryToReconnectToRosDialog.CallbackListener {
@@ -47,7 +45,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private static final String MASTER_URI_PREFIX = "__master:=";
     private static final String IP_PREFIX = "__ip:=";
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private JNIInterface mJniInterface;
     private String mMasterUri = "";
     private boolean mIsNodeInitialised = false;
@@ -240,6 +237,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
+        // Create parameter synchronization node to be up-to-date with Parameter Server.
         mParameterNode = new ParameterNode(this,
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),

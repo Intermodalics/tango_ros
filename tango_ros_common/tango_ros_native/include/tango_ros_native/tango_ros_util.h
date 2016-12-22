@@ -18,7 +18,6 @@
 #include <ros/ros.h>
 
 namespace tango_ros_util {
-
 // Initializes ros with the correct arguments.
 // @param master_uri, URI of the ros master.
 // @param slave_ip, IP address of the device.
