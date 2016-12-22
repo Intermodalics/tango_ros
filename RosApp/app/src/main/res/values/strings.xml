@@ -11,12 +11,12 @@
     <string name="try_to_reconnect">Try to reconnect now</string>
 
     <string name="publish_device_pose_key">publish_device_pose</string>
-    <string name="publish_pointcloud_key">publish_pointcloud</string>
+    <string name="publish_point_cloud_key">publish_point_cloud</string>
     <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
     <string name="publish_color_camera_key">publish_color_camera</string>
 
     <string name="publish_device_pose">Publish device pose</string>
-    <string name="publish_pointcloud">Publish point cloud</string>
+    <string name="publish_point_cloud">Publish point cloud</string>
     <string name="publish_fisheye_camera">Publish fisheye camera</string>
     <string name="publish_color_camera">Publish color camera</string>
     <string name="apply">Apply</string>

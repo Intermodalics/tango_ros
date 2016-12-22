@@ -41,8 +41,6 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
         TryToReconnectToRosDialog.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -188,10 +186,8 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     public void applySettings() {
         // Update publisher configuration according to current preferences.
         mPublishConfig = fetchConfigurationFromFragment();
+
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
-        if (mParameterNode != null) {
-            mParameterNode.uploadPreferencesToParameterServer(mPublishConfig);
-        }
     }
 
     private PublisherConfiguration fetchConfigurationFromFragment() {
@@ -246,14 +242,11 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
         mParameterNode = new ParameterNode(this,
                 getString(R.string.publish_device_pose_key),
-                getString(R.string.publish_pointcloud_key),
+                getString(R.string.publish_point_cloud_key),
                 getString(R.string.publish_color_camera_key),
                 getString(R.string.publish_fisheye_camera_key));
-        mParameterNode.setPublishConfig(fetchConfigurationFromFragment());
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-        syncPreferencesWithParameterServer();
-
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
@@ -284,18 +277,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         } else {
             Log.e(TAG, "Master URI is null");
         }
-    }
-
-    public void syncPreferencesWithParameterServer() {
-        final Runnable prefSyncTask = new Runnable() {
-            public void run() {
-                PrefsFragment prefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-                PublisherConfiguration publishConfig = mParameterNode.fetchPreferencesFromParameterServer();
-                prefsFragment.setPreferencesFromPublsherConfiguration(publishConfig);
-            }
-        };
-
-        scheduler.scheduleAtFixedRate(prefSyncTask, 1, 1, SECONDS);
     }
 
     @Override

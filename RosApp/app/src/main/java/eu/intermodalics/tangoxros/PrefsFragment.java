@@ -39,8 +39,7 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
         pref.registerOnSharedPreferenceChangeListener(this);
     }
 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-                                          String key) {
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Preference pref = findPreference(key);
         if (pref instanceof SwitchPreference) {
             SwitchPreference swPref = (SwitchPreference) pref;
@@ -52,7 +51,7 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
         SharedPreferences sharedPref = getPreferenceManager().getDefaultSharedPreferences(getActivity());
         PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
         publisherConfiguration.publishDevicePose = sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false);
-        publisherConfiguration.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_pointcloud_key), false);
+        publisherConfiguration.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_point_cloud_key), false);
 
         if(sharedPref.getBoolean(getString(R.string.publish_fisheye_camera_key), false)) {
             publisherConfiguration.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
@@ -67,17 +66,4 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
         Log.i(TAG, publisherConfiguration.toString());
         return publisherConfiguration;
     }
-
-    public void setPreferencesFromPublsherConfiguration(PublisherConfiguration publishConfig) {
-        SharedPreferences sharedPref = getPreferenceManager().getDefaultSharedPreferences(getActivity());
-        SharedPreferences.Editor editor = sharedPref.edit();
-
-        editor.putBoolean(getString(R.string.publish_device_pose_key), publishConfig.publishDevicePose);
-        editor.putBoolean(getString(R.string.publish_pointcloud_key), publishConfig.publishPointCloud);
-        editor.putBoolean(getString(R.string.publish_fisheye_camera_key), (publishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) != 0);
-        editor.putBoolean(getString(R.string.publish_color_camera_key), (publishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) != 0);
-
-        editor.commit();
-    }
-
 }

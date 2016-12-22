@@ -9,8 +9,8 @@
                 android:title="@string/publish_device_pose" />
 
         <SwitchPreference
-            android:key="@string/publish_pointcloud_key"
-            android:title="@string/publish_pointcloud" />
+            android:key="@string/publish_point_cloud_key"
+            android:title="@string/publish_point_cloud" />
 
         <SwitchPreference
             android:key="@string/publish_fisheye_camera_key"

@@ -24,6 +24,7 @@ import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
+import org.ros.node.parameter.ParameterListener;
 import org.ros.node.parameter.ParameterTree;
 
 import java.util.Map;
@@ -32,22 +33,15 @@ import java.util.Map;
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String NODE_NAME = "parameter_node";
-    private final String POSE_PARAM_NAME;
-    private final String POINT_CLOUD_PARAM_NAME;
-    private final String CAMERA_COLOR_PARAM_NAME;
-    private final String CAMERA_FISHEYE_PARAM_NAME;
+    private final String[] PARAM_NAMES;
 
-    private PublisherConfiguration publishConfig = null;
-    private ParameterTree parameterTree = null;
-    private Activity creator;
+    private ParameterTree mParameterTree = null;
+    private Activity mCreatorActivity;
 
-    public ParameterNode(Activity activity, String poseParamName, String pointcloudParamName,
-                         String camcolorParamName, String camFisheyeParamName) {
-        creator = activity;
-        POSE_PARAM_NAME = poseParamName;
-        POINT_CLOUD_PARAM_NAME = pointcloudParamName;
-        CAMERA_COLOR_PARAM_NAME = camcolorParamName;
-        CAMERA_FISHEYE_PARAM_NAME = camFisheyeParamName;
+    public ParameterNode(Activity activity, String poseParamName, String pointCloudParamName,
+                         String camColorParamName, String camFisheyeParamName) {
+        mCreatorActivity = activity;
+        PARAM_NAMES = new String[] {poseParamName, pointCloudParamName, camColorParamName, camFisheyeParamName};
     }
 
     @Override
@@ -55,15 +49,23 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
     @Override
     public void onStart(ConnectedNode connectedNode) {
-        parameterTree = connectedNode.getParameterTree();
+        mParameterTree = connectedNode.getParameterTree();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
+        uploadPreferencesToParameterServer(sharedPreferences);
 
-        if (publishConfig != null) {
-            uploadPreferencesToParameterServer();
+        // Listen to changes in the shared preferences.
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        // Add one listener for each parameter on the parameter server.
+        for (String s : PARAM_NAMES) {
+            addParameterServerListener(s);
         }
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(creator);
-        pref.registerOnSharedPreferenceChangeListener(this);
     }
 
+    /**
+     * Callback that syncs Parameter Server with changes coming from the UI (app --> server).
+     * @param sharedPreferences Reference to SharedPreferences containing the preference change.
+     * @param key Particular preference that changed.
+     */
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
         Object prefValue = prefKeys.get(key);
@@ -73,52 +75,46 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         }
     }
 
-    public void setPublishConfig(PublisherConfiguration publishConfig) {
-        this.publishConfig = publishConfig;
+    /**
+     * Syncs the Parameter Server with the all the local shared preferences (app --> server).
+     * @param sharedPreferences Reference to the preferences to sync.
+     */
+    private void uploadPreferencesToParameterServer(SharedPreferences sharedPreferences) {
+        Map<String,?> prefKeys = sharedPreferences.getAll();
+
+        for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
+            if (entry.getValue().getClass().equals(Boolean.class)) {
+                uploadSingleBooleanParameter(entry.getKey(), ((Boolean)entry.getValue()).booleanValue());
+            }
+        }
     }
 
-    public void uploadPreferencesToParameterServer(PublisherConfiguration configuration) {
-        if (parameterTree == null) {
-            return;
-        }
+    /**
+     * Adds listener to update the UI with changes coming from Parameter Server (app <-- UI)
+     * @param paramName Parameter to which the listener has to be added.
+     */
+    private void addParameterServerListener(final String paramName) {
+        mParameterTree.addParameterListener(buildFullParameterName(paramName), new ParameterListener() {
 
-        setPublishConfig(configuration);
-        uploadPreferencesToParameterServer();
-    }
+            @Override
+            public void onNewValue(Object value) {
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
+                SharedPreferences.Editor editor = sharedPref.edit();
 
-    public PublisherConfiguration fetchPreferencesFromParameterServer() {
-        publishConfig.publishDevicePose = fetchSingleBooleanParameter(POSE_PARAM_NAME);
-        publishConfig.publishPointCloud = fetchSingleBooleanParameter(POINT_CLOUD_PARAM_NAME);
-        if (fetchSingleBooleanParameter(CAMERA_COLOR_PARAM_NAME) == true) {
-            publishConfig.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
-        } else {
-            publishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
-        }
-        if (fetchSingleBooleanParameter(CAMERA_FISHEYE_PARAM_NAME) == true) {
-            publishConfig.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
-        } else {
-            publishConfig.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
-        }
-
-        return publishConfig;
-    }
-
-    private void uploadPreferencesToParameterServer() {
-        uploadSingleBooleanParameter(POSE_PARAM_NAME, publishConfig.publishDevicePose);
-        uploadSingleBooleanParameter(POINT_CLOUD_PARAM_NAME, publishConfig.publishPointCloud);
-        uploadSingleBooleanParameter(CAMERA_COLOR_PARAM_NAME, (publishConfig.publishCamera & PublisherConfiguration.CAMERA_COLOR) != 0);
-        uploadSingleBooleanParameter(CAMERA_FISHEYE_PARAM_NAME, (publishConfig.publishCamera & PublisherConfiguration.CAMERA_FISHEYE) != 0);
+                if (value.getClass().equals(Boolean.class)) {
+                    Boolean bool = (Boolean) value;
+                    editor.putBoolean(paramName, bool.booleanValue());
+                }
+                editor.commit();
+            }
+        });
     }
 
     private void uploadSingleBooleanParameter(String paramName, boolean paramValue) {
-        parameterTree.set(buildFullParameterName(paramName), paramValue);
-    }
-
-    private boolean fetchSingleBooleanParameter(String paramName) {
-        return parameterTree.getBoolean(buildFullParameterName(paramName));
+        mParameterTree.set(buildFullParameterName(paramName), paramValue);
     }
 
     private String buildFullParameterName(String paramName) {
-        return TangoRosNode.NODE_NAME + "/" + paramName;
+        return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }
