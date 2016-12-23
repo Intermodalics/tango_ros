@@ -69,6 +69,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
     }
 
     // An interface to give feedback to the activity on node errors.
+    // This is a workaround to be cleaned when rosjava kinetic is released.
     public interface CallbackListener {
         public void onNativeNodeExecutionError(int errorCode);
     }
