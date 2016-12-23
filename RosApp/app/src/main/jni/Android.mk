@@ -4,7 +4,7 @@ PROJECT_ROOT:= $(call my-dir)/../../../..
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := tango_ros_android_lib
-LOCAL_SRC_FILES := jni_interface.cc tango_helper.cc
+LOCAL_SRC_FILES := jni.cc tango_helper.cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_CFLAGS  += -g3 -ggdb --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
 LOCAL_LDLIBS += -landroid -lm -llog

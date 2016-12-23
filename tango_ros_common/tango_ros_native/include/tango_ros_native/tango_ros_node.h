@@ -68,12 +68,12 @@ struct PublisherConfiguration {
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
-  TangoRosNode(bool publish_device_pose, bool publish_point_cloud, uint32_t publish_camera);
+  TangoRosNode();
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
-  // @return returns true if it ended successfully.
-  bool OnTangoServiceConnected();
+  // @return returns success if it ended successfully.
+  TangoErrorType OnTangoServiceConnected();
   // Disconnects from the tango service.
   void TangoDisconnect();
   // Starts the threads that publish data.

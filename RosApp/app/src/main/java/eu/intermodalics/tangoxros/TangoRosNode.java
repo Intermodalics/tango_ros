@@ -16,15 +16,18 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.app.Activity;
+import android.os.IBinder;
+
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMain;
 
 public class TangoRosNode extends NativeNodeMain {
-
     public static final String NODE_NAME = "tango";
+    public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
 
     public TangoRosNode() {
-        super("tango_ros_android_lib");
+        super(DEFAULT_LIB_NAME);
     }
 
     public TangoRosNode(String libName) {
@@ -32,7 +35,7 @@ public class TangoRosNode extends NativeNodeMain {
     }
 
     @Override
-    public native void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
+    public native int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
 
     @Override
     public native void shutdown();
@@ -41,4 +44,27 @@ public class TangoRosNode extends NativeNodeMain {
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
     }
+
+    /**
+     * Binds to the tango service.
+     *
+     * @param nativeTangoServiceBinder The native binder object.
+     * @return true if binding to the Tango service ended successfully.
+     */
+    public native boolean setBinderTangoService(IBinder nativeTangoServiceBinder);
+
+    /**
+     * Check that the tango version is correct.
+     *
+     * @param callerActivity the caller activity of this function.
+     * @return true if the version of tango is ok.
+     */
+    public native boolean isTangoVersionOk(Activity callerActivity);
+
+    /**
+     * Update the publisher configuration of the tango-ros node.
+     *
+     * @param publisherConfiguration the new publisher configuration.
+     */
+    public native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }

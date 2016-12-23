@@ -175,12 +175,11 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
-                           uint32_t publish_camera) :
+TangoRosNode::TangoRosNode() :
     run_threads_(false) {
-  publisher_config_.publish_device_pose = publish_device_pose;
-  publisher_config_.publish_point_cloud = publish_point_cloud;
-  publisher_config_.publish_camera = publish_camera;
+  publisher_config_.publish_device_pose = false;
+  publisher_config_.publish_point_cloud = false;
+  publisher_config_.publish_camera = CAMERA_NONE;
 
   const  uint32_t queue_size = 1;
   const bool latching = true;
@@ -204,14 +203,16 @@ TangoRosNode::~TangoRosNode() {
   }
 }
 
-bool TangoRosNode::OnTangoServiceConnected() {
-  if (TangoSetupConfig() != TANGO_SUCCESS) {
+TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+  TangoErrorType result = TangoSetupConfig();
+  if (result != TANGO_SUCCESS) {
       LOG(ERROR) << "Error while setting up Tango config.";
-      return false;
+      return result;
   }
-  if (TangoConnect() != TANGO_SUCCESS) {
+  result = TangoConnect();
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while connecting to Tango Service.";
-    return false;
+    return result;
   }
 
   PublishStaticTransforms();
@@ -231,10 +232,10 @@ bool TangoRosNode::OnTangoServiceConnected() {
   }
   if (pose.status_code != TANGO_POSE_VALID) {
     LOG(ERROR) << "Error, could not get a first valid pose.";
-    return false;
+    return TANGO_INVALID;
   }
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
-  return true;
+  return TANGO_SUCCESS;
 }
 
 TangoErrorType TangoRosNode::TangoSetupConfig() {

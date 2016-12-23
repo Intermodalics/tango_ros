@@ -17,11 +17,39 @@
 
 #include <ros/ros.h>
 
+#include <tango_ros_native/tango_ros_node.h>
+
 namespace tango_ros_util {
-// Initializes ros with the correct arguments.
+const int ROS_INIT_SUCCESS = TANGO_SUCCESS;
+const int ROS_INIT_ERROR = TANGO_SUCCESS + 1;
+// Initializes ros with the given arguments.
 // @param master_uri, URI of the ros master.
-// @param slave_ip, IP address of the device.
+// @param host_ip, IP address of the device.
+// @param node_name, name of the node.
 // @return returns true if the ros master was found.
-bool InitRos(const char* master_uri, const char* slave_ip);
+int InitRos(const char* master_uri, const char* host_ip,
+                                   const char* node_name);
+
+class TangoRosNodeExecutor {
+ public:
+  TangoRosNodeExecutor();
+  ~TangoRosNodeExecutor();
+  // Init ros and the tango ros node.
+  // Enters a loop, exits when ros shutdown.
+  // @param master_uri, URI of the ros master.
+  // @param host_ip, IP address of the device.
+  // @param node_name, name of the node.
+  // @return success if ros and the tango ros node successfully initialized.
+  int Execute(const char* master_uri, const char* host_ip, const char* node_name);
+  // Stop the tango ros node and disconnect from the tango service.
+  void Shutdown();
+  // To be removed.
+  void UpdatePublisherConfiguration(bool publish_device_pose,
+                                    bool publish_point_cloud,
+                                    uint32_t publish_camera);
+
+ private:
+  std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;
+};
 } // namespace tango_ros_util
 #endif  // TANGO_ROS_UTIL_H_
