@@ -181,10 +181,11 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         }
     }
 
+    // Note: this function, along with the "Apply" button, shall be removed once the changes
+    // once the native node is ready to listen to changes to the Parameter Server via Dynamic Reconfigure.
     public void applySettings() {
         // Update publisher configuration according to current preferences.
         mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-
         mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 

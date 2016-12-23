@@ -29,19 +29,23 @@ import org.ros.node.parameter.ParameterTree;
 
 import java.util.Map;
 
-
+/**
+ * RosJava node that handles interactions with Parameter Server.
+ * It provides callbacks to update the app's state with changes on the Parameter Server,
+ * and to update the Parameter Server with changes applied on the app's preferences by the user.
+ */
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String NODE_NAME = "parameter_node";
-    private final String[] PARAM_NAMES;
+    private final String[] mParamNames;
 
     private ParameterTree mParameterTree = null;
     private Activity mCreatorActivity;
+    private SharedPreferences mSharedPreferences;
 
-    public ParameterNode(Activity activity, String poseParamName, String pointCloudParamName,
-                         String camColorParamName, String camFisheyeParamName) {
+    public ParameterNode(Activity activity, String... paramNames) {
         mCreatorActivity = activity;
-        PARAM_NAMES = new String[] {poseParamName, pointCloudParamName, camColorParamName, camFisheyeParamName};
+        mParamNames = paramNames;
     }
 
     @Override
@@ -50,13 +54,13 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     @Override
     public void onStart(ConnectedNode connectedNode) {
         mParameterTree = connectedNode.getParameterTree();
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
-        uploadPreferencesToParameterServer(sharedPreferences);
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
+        uploadPreferencesToParameterServer(mSharedPreferences);
 
         // Listen to changes in the shared preferences.
-        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
         // Add one listener for each parameter on the parameter server.
-        for (String s : PARAM_NAMES) {
+        for (String s : mParamNames) {
             addParameterServerListener(s);
         }
     }
@@ -70,27 +74,27 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         Map<String,?> prefKeys = sharedPreferences.getAll();
         Object prefValue = prefKeys.get(key);
 
-        if (prefValue.getClass().equals(Boolean.class)) {
-            uploadSingleBooleanParameter(key,sharedPreferences.getBoolean(key, false));
+        if (prefValue instanceof Boolean) {
+            uploadSingleBooleanParameter(key, sharedPreferences.getBoolean(key, false));
         }
     }
 
     /**
-     * Syncs the Parameter Server with the all the current local shared preferences (app --> server).
+     * Syncs the Parameter Server with all the current local shared preferences (app --> server).
      * @param sharedPreferences Reference to the preferences to sync.
      */
     private void uploadPreferencesToParameterServer(SharedPreferences sharedPreferences) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
 
         for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
-            if (entry.getValue().getClass().equals(Boolean.class)) {
+            if (entry.getValue() instanceof Boolean) {
                 uploadSingleBooleanParameter(entry.getKey(), ((Boolean)entry.getValue()).booleanValue());
             }
         }
     }
 
     /**
-     * Adds listener to update the UI with changes coming from Parameter Server (app <-- UI)
+     * Adds listener to update the UI with changes coming from Parameter Server (app <-- server)
      * @param paramName Parameter to which the listener has to be added.
      */
     private void addParameterServerListener(final String paramName) {
@@ -98,8 +102,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
             @Override
             public void onNewValue(Object value) {
-                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
-                SharedPreferences.Editor editor = sharedPref.edit();
+                SharedPreferences.Editor editor = mSharedPreferences.edit();
 
                 if (value.getClass().equals(Boolean.class)) {
                     Boolean bool = (Boolean) value;
