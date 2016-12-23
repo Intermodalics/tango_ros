@@ -21,11 +21,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -34,23 +32,22 @@ import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
+import org.ros.node.NativeNodeMain;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
-        TryToReconnectToRosDialog.CallbackListener {
+        TangoRosNode.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String MASTER_URI_PREFIX = "__master:=";
-    private static final String IP_PREFIX = "__ip:=";
 
-    private JNIInterface mJniInterface;
+    private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
-    private boolean mIsNodeInitialised = false;
-    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private ParameterNode mParameterNode = null;
     private PrefsFragment mPrefsFragment = null;
+    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
+    private boolean mIsTangoServiceBound = false;
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -75,22 +72,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(getString(R.string.saved_uri_key), mMasterUri);
         editor.commit();
-
-        // Start ROS and node.
-        init();
-        startNode();
-
-        // Start sample node with RosJava interface.
         initAndStartRosJavaNode();
-    }
-
-    /**
-     * Implements TryToReconnectToRosDialog.CallbackListener.
-     */
-    @Override
-    public void onTryToReconnectToRos() {
-        init();
-        startNode();
     }
 
     /**
@@ -110,30 +92,23 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     }
 
     /**
-     * Shows a dialog for trying to reconnect to ros master.
-     */
-    private void showTryToReconnectToRosDialog() {
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
-                getResources().getString(R.string.saved_uri_default));
-        Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri_key), uriValue);
-        FragmentManager manager = getFragmentManager();
-        TryToReconnectToRosDialog setTryToReconnectToRosDialog = new TryToReconnectToRosDialog();
-        setTryToReconnectToRosDialog.setArguments(bundle);
-        setTryToReconnectToRosDialog.show(manager, "TryToReconnectToRosDialog");
-    }
-
-    /**
      * Tango Service connection.
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            if (!mJniInterface.onTangoServiceConnected(service)) {
-                Log.e(TAG, getResources().getString(R.string.tango_service_error));
-                Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+            if (mTangoRosNode.setBinderTangoService(service)) {
+                Log.i(TAG, "Bound to tango service");
+                mIsTangoServiceBound = true;
+            } else {
+                Log.e(TAG, getResources().getString(R.string.tango_bind_error));
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), R.string.tango_bind_error, Toast.LENGTH_SHORT).show();
+                    }
+                });
                 onDestroy();
             }
         }
@@ -144,49 +119,27 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         }
     };
 
-    public boolean initNode() {
-        // Update publisher configuration according to current preferences.
-        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-        if (!mJniInterface.initNode(this, mPublishConfig)) {
-            Log.e(TAG, getResources().getString(R.string.tango_node_error));
-            Toast.makeText(getApplicationContext(), R.string.tango_node_error, Toast.LENGTH_SHORT).show();
-            return false;
+    /**
+     * Implements TangoRosNode.CallbackListener.
+     */
+    public void onNativeNodeExecutionError(int errorCode) {
+        if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+            Log.e(TAG, getResources().getString(R.string.ros_init_error));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if (errorCode < NativeNodeMain.SUCCESS) {
+            Log.e(TAG, getResources().getString(R.string.tango_service_error));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                }
+            });
         }
-        return true;
-    }
-
-    public void init() {
-        if (mMasterUri != null) {
-            WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-            String ip_address = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-            if (mJniInterface.initRos(MASTER_URI_PREFIX + mMasterUri, IP_PREFIX + ip_address)) {
-                mIsNodeInitialised = initNode();
-            } else {
-                Log.e(TAG, getResources().getString(R.string.tango_ros_error));
-                Toast.makeText(getApplicationContext(), R.string.tango_ros_error, Toast.LENGTH_SHORT).show();
-                showTryToReconnectToRosDialog();
-            }
-        } else {
-            Log.e(TAG, "Master URI is null");
-        }
-    }
-
-    public void startNode() {
-        if (mIsNodeInitialised) {
-            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            mJniInterface.startPublishing();
-            applySettings();
-        } else {
-            Log.w(TAG, "Node is not initialized");
-        }
-    }
-
-    // Note: this function, along with the "Apply" button, shall be removed once the native node
-    // is ready to listen to changes on the Parameter Server via Dynamic Reconfigure.
-    public void applySettings() {
-        // Update publisher configuration according to current preferences.
-        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-        mJniInterface.updatePublisherConfiguration(mPublishConfig);
     }
 
     @Override
@@ -208,31 +161,28 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     protected void onStart() {
         super.onStart();
         mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-
         if (mMasterUri.isEmpty()) {
             showSetMasterUriDialog();
         }
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        startNode();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mIsNodeInitialised) {
-            mJniInterface.stopPublishing();
-            mJniInterface.tangoDisconnect();
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mIsTangoServiceBound) {
+            Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
     }
 
+    // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
+    public void applySettings() {
+        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
+        mTangoRosNode.updatePublisherConfiguration(mPublishConfig);
+    }
+
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-        // Create common configuration for nodes to be created
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
@@ -244,23 +194,36 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 getString(R.string.publish_fisheye_camera_key));
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+
+        // Create and start Tango ROS Node
+        nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
+        mTangoRosNode = new TangoRosNode();
+        mTangoRosNode.attachCallbackListener(this);
+        TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+        if (mTangoRosNode.isTangoVersionOk(this)) {
+            nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+        } else {
+            Log.e(TAG, getResources().getString(R.string.tango_version_error));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     // This function allows initialization of the node with RosJava interface without using MasterChooser,
     // and is compatible with current Master Uri setter interface.
     private void initAndStartRosJavaNode() {
-        Log.i(TAG, "Starting node with RosJava interface");
-
         if (mMasterUri != null) {
             URI masterUri;
-
             try {
                 masterUri = URI.create(mMasterUri);
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "Wrong URI: " + e.getMessage());
                 return;
             }
-
             this.nodeMainExecutorService.setMasterUri(masterUri);
 
             new AsyncTask<Void, Void, Void>() {

@@ -1,5 +1,7 @@
 package org.ros.node;
 
+import android.app.Activity;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -12,6 +14,9 @@ import org.apache.commons.logging.LogFactory;
  * File extracted from rosjava_core repository: https://github.com/rosjava/rosjava_core.
  */
 public abstract class NativeNodeMain extends AbstractNodeMain {
+    public static final int SUCCESS = 0;
+    public static final int ROS_CONNECTION_ERROR = 1;
+    public static final String ROS_CONNECTION_ERROR_MSG = "ECONNREFUSED";
 
     private Log log = LogFactory.getLog(NativeNodeMain.class);
     private String libName;
@@ -63,8 +68,23 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
         this(libName, null);
     }
 
+    // An interface to give feedback to the activity on node errors.
+    // This is a workaround to be cleaned when rosjava kinetic is released.
+    public interface CallbackListener {
+        public void onNativeNodeExecutionError(int errorCode);
+    }
+    CallbackListener callbackListener;
+
+    /**
+     *
+     * @param activity The activity owning this node.
+     */
+    public void attachCallbackListener(Activity activity) {
+        callbackListener = (CallbackListener) activity;
+    }
+
     // These methods define the execution model interface for this node.
-    protected abstract void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
+    protected abstract int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
     protected abstract void shutdown();
 
     @Override
@@ -72,13 +92,15 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
         // retain important ROS info
         masterUri = connectedNode.getMasterUri().toString();
         hostName = connectedNode.getUri().getHost();
-        nodeName = this.getDefaultNodeName().toString();
-
+        nodeName = getDefaultNodeName().toString();
         // create a new thread to execute the native code.
         new Thread() {
             @Override
             public void run() {
-                execute(masterUri, hostName, nodeName, remappingArguments);
+                int errorCode = execute(masterUri, hostName, nodeName, remappingArguments);
+                if (errorCode != SUCCESS) {
+                    callbackListener.onNativeNodeExecutionError(errorCode);
+                }
 
                 // node execution has finished so we propagate the shutdown sequence only if we aren't already shutting down for other reasons
                 if(!shuttingDown) {
@@ -92,5 +114,13 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
     public void onShutdown(Node node) {
         shuttingDown = true;
         shutdown();
+    }
+
+    @Override
+    public void onError(Node node, Throwable throwable) {
+        super.onError(node, throwable);
+        if (throwable.getMessage().contains(ROS_CONNECTION_ERROR_MSG)) {
+            callbackListener.onNativeNodeExecutionError(ROS_CONNECTION_ERROR);
+        }
     }
 }
