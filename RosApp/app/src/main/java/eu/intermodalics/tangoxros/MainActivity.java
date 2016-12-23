@@ -98,7 +98,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around MainActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            if(mTangoRosNode.setBinderTangoService(service)) {
+            if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
             } else {
@@ -123,7 +123,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
      * Implements TangoRosNode.CallbackListener.
      */
     public void onNativeNodeExecutionError(int errorCode) {
-        if(errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+        if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             runOnUiThread(new Runnable() {
                 @Override
@@ -188,7 +188,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         mTangoRosNode = new TangoRosNode();
         mTangoRosNode.attachCallbackListener(this);
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-        if(mTangoRosNode.isTangoVersionOk(this)) {
+        if (mTangoRosNode.isTangoVersionOk(this)) {
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
         } else {
             Log.e(TAG, getResources().getString(R.string.tango_version_error));

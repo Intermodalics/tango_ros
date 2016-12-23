@@ -97,7 +97,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
             @Override
             public void run() {
                 int errorCode = execute(masterUri, hostName, nodeName, remappingArguments);
-                if(errorCode != SUCCESS) {
+                if (errorCode != SUCCESS) {
                     callbackListener.onNativeNodeExecutionError(errorCode);
                 }
 
