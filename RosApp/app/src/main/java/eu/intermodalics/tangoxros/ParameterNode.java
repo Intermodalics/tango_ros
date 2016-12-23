@@ -88,7 +88,8 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
         for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
             if (entry.getValue() instanceof Boolean) {
-                uploadSingleBooleanParameter(entry.getKey(), ((Boolean)entry.getValue()).booleanValue());
+                Boolean bool = (Boolean) entry.getValue();
+                uploadSingleBooleanParameter(entry.getKey(), bool.booleanValue());
             }
         }
     }
@@ -104,7 +105,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             public void onNewValue(Object value) {
                 SharedPreferences.Editor editor = mSharedPreferences.edit();
 
-                if (value.getClass().equals(Boolean.class)) {
+                if (value instanceof Boolean) {
                     Boolean bool = (Boolean) value;
                     editor.putBoolean(paramName, bool.booleanValue());
                 }
