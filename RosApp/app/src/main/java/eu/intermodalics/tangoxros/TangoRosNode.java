@@ -35,7 +35,7 @@ public class TangoRosNode extends NativeNodeMain {
     }
 
     @Override
-    public native void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
+    public native int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
 
     @Override
     public native void shutdown();

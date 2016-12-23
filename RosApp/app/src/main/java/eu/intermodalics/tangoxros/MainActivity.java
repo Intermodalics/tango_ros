@@ -32,13 +32,14 @@ import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
+import org.ros.node.NativeNodeMain;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
-        TryToReconnectToRosDialog.CallbackListener {
+        TryToReconnectToRosDialog.CallbackListener, TangoRosNode.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     PrefsFragment mPrefsFragment = new PrefsFragment();
@@ -46,7 +47,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
-    boolean mIsTangoServiceBound = false;
+    private boolean mIsTangoServiceBound = false;
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -180,6 +181,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         mTangoRosNode = new TangoRosNode();
+        mTangoRosNode.attachCallbackListener(this);
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
         if(mTangoRosNode.isTangoVersionOk(this)) {
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
@@ -191,6 +193,31 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                     Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    public void onNativeNodeExecutionError(int errorCode) {
+        switch (errorCode) {
+            case -1:
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e(TAG, getResources().getString(R.string.tango_service_error));
+                        Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+                break;
+            case -2:
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e(TAG, getResources().getString(R.string.ros_error));
+                        Toast.makeText(getApplicationContext(), R.string.ros_error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+                break;
+            default:
+                Log.i(TAG, "Unknown error code: " + errorCode);
         }
     }
 

@@ -21,8 +21,9 @@
     <string name="publish_color_camera">Publish color camera</string>
     <string name="apply">Apply</string>
 
-    <string name="tango_ros_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="ros_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="tango_bind_error">Unable to bind to Tango Service</string>
+    <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
-    <string name="tango_service_error">Unable to bind to Tango Service</string>
 
 </resources>

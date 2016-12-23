@@ -37,7 +37,7 @@ class TangoRosNodeExecutor {
   // @param master_uri, URI of the ros master.
   // @param host_ip, IP address of the device.
   // @param node_name, name of the node.
-  void Execute(const char* master_uri, const char* host_ip, const char* node_name);
+  int Execute(const char* master_uri, const char* host_ip, const char* node_name);
   // Stop the tango ros node and disconnect from the tango service.
   void Shutdown();
   // To be removed.

@@ -1,5 +1,7 @@
 package org.ros.node;
 
+import android.app.Activity;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -64,21 +66,33 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
     }
 
     // These methods define the execution model interface for this node.
-    protected abstract void execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
+    protected abstract int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
     protected abstract void shutdown();
+
+    public interface CallbackListener {
+        public void onNativeNodeExecutionError(int errorCode);
+    }
+    CallbackListener callbackListener;
+
+    public void attachCallbackListener(Activity activity) {
+        callbackListener = (CallbackListener) activity;
+    }
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
         // retain important ROS info
         masterUri = connectedNode.getMasterUri().toString();
         hostName = connectedNode.getUri().getHost();
-        nodeName = getDefaultNodeName().toString();;
-
+        nodeName = getDefaultNodeName().toString();
         // create a new thread to execute the native code.
         new Thread() {
             @Override
             public void run() {
-                execute(masterUri, hostName, nodeName, remappingArguments);
+                int errorCode = execute(masterUri, hostName, nodeName, remappingArguments);
+                if(errorCode != 0) {
+                    log.error("Error while executing the native node: " + errorCode);
+                    callbackListener.onNativeNodeExecutionError(errorCode);
+                }
 
                 // node execution has finished so we propagate the shutdown sequence only if we aren't already shutting down for other reasons
                 if(!shuttingDown) {
@@ -92,5 +106,12 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
     public void onShutdown(Node node) {
         shuttingDown = true;
         shutdown();
+    }
+
+    @Override
+    public void onError(Node node, Throwable throwable) {
+        super.onError(node, throwable);
+        // check the kind of error
+        callbackListener.onNativeNodeExecutionError(-2);
     }
 }
