@@ -18,13 +18,16 @@ package eu.intermodalics.tangoxros;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
+import android.preference.SwitchPreference;
 import android.util.Log;
 
 /**
  * Created by intermodalics on 12/1/16.
  */
-public class PrefsFragment extends PreferenceFragment {
+public class PrefsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = PrefsFragment.class.getSimpleName();
 
     @Override
@@ -32,13 +35,31 @@ public class PrefsFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
+
+        // Set listeners to update the UI when shared preferences change.
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        pref.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    /**
+     * Update UI when shared preferences change. This method only supports SwitchPreferences.
+     * @param sharedPreferences Reference to shared preferences.
+     * @param key Reference to the preference that changed.
+     */
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Preference pref = findPreference(key);
+        if (pref instanceof SwitchPreference) {
+            SwitchPreference swPref = (SwitchPreference) pref;
+            swPref.setChecked(sharedPreferences.getBoolean(key, false));
+        }
     }
 
     public PublisherConfiguration getPublisherConfigurationFromPreferences() {
         SharedPreferences sharedPref = getPreferenceManager().getDefaultSharedPreferences(getActivity());
         PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
         publisherConfiguration.publishDevicePose = sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false);
-        publisherConfiguration.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_pointcloud_key), false);
+        publisherConfiguration.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_point_cloud_key), false);
+
         if(sharedPref.getBoolean(getString(R.string.publish_fisheye_camera_key), false)) {
             publisherConfiguration.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
         } else {

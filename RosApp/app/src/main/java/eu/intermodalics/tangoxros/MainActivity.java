@@ -44,10 +44,10 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
+    private ParameterNode mParameterNode = null;
+    private PrefsFragment mPrefsFragment = null;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private boolean mIsTangoServiceBound = false;
-
-    private PrefsFragment mPrefsFragment = new PrefsFragment();
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -175,6 +175,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         }
     }
 
+    // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
     public void applySettings() {
         mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
         mTangoRosNode.updatePublisherConfiguration(mPublishConfig);
@@ -184,6 +185,17 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     protected void init(NodeMainExecutor nodeMainExecutor) {
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+
+        // Create parameter synchronization node to be up-to-date with Parameter Server.
+        mParameterNode = new ParameterNode(this,
+                getString(R.string.publish_device_pose_key),
+                getString(R.string.publish_point_cloud_key),
+                getString(R.string.publish_color_camera_key),
+                getString(R.string.publish_fisheye_camera_key));
+        nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+
+        // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         mTangoRosNode = new TangoRosNode();
         mTangoRosNode.attachCallbackListener(this);
