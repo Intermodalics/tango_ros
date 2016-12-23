@@ -102,11 +102,11 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
             } else {
-                Log.e(TAG, getResources().getString(R.string.tango_service_error));
+                Log.e(TAG, getResources().getString(R.string.tango_bind_error));
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), R.string.tango_bind_error, Toast.LENGTH_SHORT).show();
                     }
                 });
                 onDestroy();
