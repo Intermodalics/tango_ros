@@ -14,6 +14,9 @@ import org.apache.commons.logging.LogFactory;
  * File extracted from rosjava_core repository: https://github.com/rosjava/rosjava_core.
  */
 public abstract class NativeNodeMain extends AbstractNodeMain {
+    public static final int SUCCESS = 0;
+    public static final int ROS_CONNECTION_ERROR = 1;
+    public static final String ROS_CONNECTION_ERROR_MSG = "ECONNREFUSED";
 
     private Log log = LogFactory.getLog(NativeNodeMain.class);
     private String libName;
@@ -65,18 +68,23 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
         this(libName, null);
     }
 
-    // These methods define the execution model interface for this node.
-    protected abstract int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
-    protected abstract void shutdown();
-
+    // An interface to give feedback to the activity on node errors.
     public interface CallbackListener {
         public void onNativeNodeExecutionError(int errorCode);
     }
     CallbackListener callbackListener;
 
+    /**
+     *
+     * @param activity The activity owning this node.
+     */
     public void attachCallbackListener(Activity activity) {
         callbackListener = (CallbackListener) activity;
     }
+
+    // These methods define the execution model interface for this node.
+    protected abstract int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
+    protected abstract void shutdown();
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
@@ -89,8 +97,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
             @Override
             public void run() {
                 int errorCode = execute(masterUri, hostName, nodeName, remappingArguments);
-                if(errorCode != 0) {
-                    log.error("Error while executing the native node: " + errorCode);
+                if(errorCode != SUCCESS) {
                     callbackListener.onNativeNodeExecutionError(errorCode);
                 }
 
@@ -111,7 +118,8 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         super.onError(node, throwable);
-        // check the kind of error
-        callbackListener.onNativeNodeExecutionError(-2);
+        if (throwable.getMessage().contains(ROS_CONNECTION_ERROR_MSG)) {
+            callbackListener.onNativeNodeExecutionError(ROS_CONNECTION_ERROR);
+        }
     }
 }

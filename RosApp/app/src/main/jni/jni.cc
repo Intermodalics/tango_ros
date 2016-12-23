@@ -53,7 +53,7 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_isTangoVersionOk(
   return tango_helper::IsTangoVersionOk(env, activity);
 }
 
-JNIEXPORT int JNICALL
+JNIEXPORT jint JNICALL
 Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
     jstring master_uri_value, jstring host_ip_value, jstring node_name_value,
     jobjectArray remapping_objects_value) {
@@ -70,8 +70,7 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
   env->ReleaseStringUTFChars(node_name_value, node_name);
 
   tango_ros_node_executor = tango_ros_util::TangoRosNodeExecutor();
-  int err = tango_ros_node_executor.Execute(master.c_str(), host.c_str(), node.c_str());
-  return err;
+  return tango_ros_node_executor.Execute(master.c_str(), host.c_str(), node.c_str());
 }
 
 JNIEXPORT void JNICALL

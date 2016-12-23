@@ -28,12 +28,13 @@ class TangoRosTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
-    ASSERT_TRUE(tango_ros_util::InitRos(master_uri.c_str(), device_ip.c_str(), tango_ros_native::NODE_NAME.c_str()));
+    ASSERT_TRUE(tango_ros_util::InitRos(master_uri.c_str(), device_ip.c_str(),
+      tango_ros_native::NODE_NAME.c_str()) == tango_ros_util::ROS_INIT_SUCCESS);
     bool publish_device_pose = true;
     bool publish_point_cloud = true;
     uint32_t publish_camera = tango_ros_native::CAMERA_FISHEYE | tango_ros_native::CAMERA_COLOR;
     tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
-    ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected());
+    ASSERT_TRUE(tango_ros_node_->OnTangoServiceConnected() == TANGO_SUCCESS);
     connected_to_tango = true;
     tango_ros_node_->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
   }

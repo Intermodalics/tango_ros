@@ -39,15 +39,15 @@ import org.ros.node.NodeMainExecutor;
 import java.net.URI;
 
 public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
-        TryToReconnectToRosDialog.CallbackListener, TangoRosNode.CallbackListener {
+        TangoRosNode.CallbackListener {
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    PrefsFragment mPrefsFragment = new PrefsFragment();
-
-    TangoRosNode mTangoRosNode;
+    private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private boolean mIsTangoServiceBound = false;
+
+    private PrefsFragment mPrefsFragment = new PrefsFragment();
 
     public MainActivity() {
         super("TangoxRos", "TangoxRos");
@@ -76,14 +76,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     }
 
     /**
-     * Implements TryToReconnectToRosDialog.CallbackListener.
-     */
-    @Override
-    public void onTryToReconnectToRos() {
-        initAndStartRosJavaNode();
-    }
-
-    /**
      * Shows a dialog to request master URI from user.
      */
     private void showSetMasterUriDialog() {
@@ -100,21 +92,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     }
 
     /**
-     * Shows a dialog for trying to reconnect to ros master.
-     */
-    private void showTryToReconnectToRosDialog() {
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
-                getResources().getString(R.string.saved_uri_default));
-        Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri_key), uriValue);
-        FragmentManager manager = getFragmentManager();
-        TryToReconnectToRosDialog setTryToReconnectToRosDialog = new TryToReconnectToRosDialog();
-        setTryToReconnectToRosDialog.setArguments(bundle);
-        setTryToReconnectToRosDialog.show(manager, "TryToReconnectToRosDialog");
-    }
-
-    /**
      * Tango Service connection.
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
@@ -126,7 +103,12 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 mIsTangoServiceBound = true;
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_service_error));
-                Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                    }
+                });
                 onDestroy();
             }
         }
@@ -136,6 +118,29 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
             // in the event that Tango itself crashes/gets upgraded while running.
         }
     };
+
+    /**
+     * Implements TangoRosNode.CallbackListener.
+     */
+    public void onNativeNodeExecutionError(int errorCode) {
+        if(errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+            Log.e(TAG, getResources().getString(R.string.ros_init_error));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if (errorCode < NativeNodeMain.SUCCESS) {
+            Log.e(TAG, getResources().getString(R.string.tango_service_error));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -186,38 +191,13 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         if(mTangoRosNode.isTangoVersionOk(this)) {
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
         } else {
+            Log.e(TAG, getResources().getString(R.string.tango_version_error));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e(TAG, getResources().getString(R.string.tango_version_error));
                     Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
                 }
             });
-        }
-    }
-
-    public void onNativeNodeExecutionError(int errorCode) {
-        switch (errorCode) {
-            case -1:
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e(TAG, getResources().getString(R.string.tango_service_error));
-                        Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-                break;
-            case -2:
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e(TAG, getResources().getString(R.string.ros_error));
-                        Toast.makeText(getApplicationContext(), R.string.ros_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-                break;
-            default:
-                Log.i(TAG, "Unknown error code: " + errorCode);
         }
     }
 

@@ -18,7 +18,7 @@
 #include <glog/logging.h>
 
 namespace tango_ros_util {
-bool InitRos(const char* master_uri, const char* host_ip,
+int InitRos(const char* master_uri, const char* host_ip,
                                    const char* node_name) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
@@ -35,9 +35,9 @@ bool InitRos(const char* master_uri, const char* host_ip,
     LOG(INFO) << "ROS MASTER IS UP! ";
   } else {
     LOG(ERROR) << "NO ROS MASTER! ";
-    return false;
+    return ROS_INIT_ERROR;
   }
-  return true;
+  return ROS_INIT_SUCCESS;
 }
 
 TangoRosNodeExecutor::TangoRosNodeExecutor() {}
@@ -47,9 +47,11 @@ TangoRosNodeExecutor::~TangoRosNodeExecutor() {}
 
 int TangoRosNodeExecutor::Execute(const char* master_uri, const char* host_ip,
                                    const char* node_name) {
-  if (InitRos(master_uri, host_ip, node_name)) {
+  int result = InitRos(master_uri, host_ip, node_name);
+  if (result == ROS_INIT_SUCCESS) {
     tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
-    if (tango_ros_node_->OnTangoServiceConnected()) {
+    result = tango_ros_node_->OnTangoServiceConnected();
+    if (result == TANGO_SUCCESS) {
       tango_ros_node_->StartPublishing();
       ros::Rate loop_rate(30);
       while(ros::ok()) {
@@ -58,13 +60,13 @@ int TangoRosNodeExecutor::Execute(const char* master_uri, const char* host_ip,
       }
     } else {
       LOG(ERROR) << "Could not connect to the Tango service.";
-      return -1;
+      return result;
     }
   } else {
     LOG(ERROR) << "Could not init ROS.";
-    return -2;
+    return result;
   }
-  return 0;
+  return TANGO_SUCCESS;
 }
 
 void TangoRosNodeExecutor::Shutdown() {

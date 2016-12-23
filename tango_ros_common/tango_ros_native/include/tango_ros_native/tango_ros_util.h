@@ -20,12 +20,14 @@
 #include <tango_ros_native/tango_ros_node.h>
 
 namespace tango_ros_util {
+const int ROS_INIT_SUCCESS = TANGO_SUCCESS;
+const int ROS_INIT_ERROR = TANGO_SUCCESS + 1;
 // Initializes ros with the given arguments.
 // @param master_uri, URI of the ros master.
 // @param host_ip, IP address of the device.
 // @param node_name, name of the node.
 // @return returns true if the ros master was found.
-bool InitRos(const char* master_uri, const char* host_ip,
+int InitRos(const char* master_uri, const char* host_ip,
                                    const char* node_name);
 
 class TangoRosNodeExecutor {
@@ -37,6 +39,7 @@ class TangoRosNodeExecutor {
   // @param master_uri, URI of the ros master.
   // @param host_ip, IP address of the device.
   // @param node_name, name of the node.
+  // @return success if ros and the tango ros node successfully initialized.
   int Execute(const char* master_uri, const char* host_ip, const char* node_name);
   // Stop the tango ros node and disconnect from the tango service.
   void Shutdown();

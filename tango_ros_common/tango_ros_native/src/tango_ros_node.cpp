@@ -203,14 +203,16 @@ TangoRosNode::~TangoRosNode() {
   }
 }
 
-bool TangoRosNode::OnTangoServiceConnected() {
-  if (TangoSetupConfig() != TANGO_SUCCESS) {
+TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+  TangoErrorType result = TangoSetupConfig();
+  if (result != TANGO_SUCCESS) {
       LOG(ERROR) << "Error while setting up Tango config.";
-      return false;
+      return result;
   }
-  if (TangoConnect() != TANGO_SUCCESS) {
+  result = TangoConnect();
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while connecting to Tango Service.";
-    return false;
+    return result;
   }
 
   PublishStaticTransforms();
@@ -230,10 +232,10 @@ bool TangoRosNode::OnTangoServiceConnected() {
   }
   if (pose.status_code != TANGO_POSE_VALID) {
     LOG(ERROR) << "Error, could not get a first valid pose.";
-    return false;
+    return TANGO_INVALID;
   }
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
-  return true;
+  return TANGO_SUCCESS;
 }
 
 TangoErrorType TangoRosNode::TangoSetupConfig() {
