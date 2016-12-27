@@ -19,6 +19,7 @@ package eu.intermodalics.tangoxros;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
@@ -26,8 +27,6 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.MenuItem;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -96,7 +95,6 @@ public class SettingsActivity extends PreferenceActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new SettingsPreferenceFragment())
@@ -131,21 +129,20 @@ public class SettingsActivity extends PreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_name_key)));
         }
-
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
-            return super.onOptionsItemSelected(item);
-        }
     }
 
+    /**
+     * Finishes current activity and starts previous one.
+     */
     @Override
     public void onBackPressed() {
-        Log.w(TAG, "onBackPressed");
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        boolean previouslyStarted = sharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if(!previouslyStarted) {
+            SharedPreferences.Editor edit = sharedPref.edit();
+            edit.putBoolean(getString(R.string.pref_previously_started_key), Boolean.TRUE);
+            edit.commit();
+        }
         super.onBackPressed();
     }
 }
