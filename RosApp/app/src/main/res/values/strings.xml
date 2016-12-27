@@ -1,29 +1,62 @@
 <resources>
     <string name="app_name">TangoxRos</string>
 
-    <string name="set_master_uri_dialogTitle">Set the Master URI</string>
-    <string name="connect">Connect</string>
-    <string name="uri_hint">http://</string>
-    <string name="saved_uri_default">http://local-desktop:11311</string>
-    <string name="saved_uri_key">saved_uri</string>
-
-    <string name="try_to_reconnect_to_ros_dialogTitle">Try to reconnect to ros master</string>
-    <string name="try_to_reconnect">Try to reconnect now</string>
-
-    <string name="publish_device_pose_key">publish_device_pose</string>
-    <string name="publish_point_cloud_key">publish_point_cloud</string>
-    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
-    <string name="publish_color_camera_key">publish_color_camera</string>
-
-    <string name="publish_device_pose">Publish device pose</string>
-    <string name="publish_point_cloud">Publish point cloud</string>
-    <string name="publish_fisheye_camera">Publish fisheye camera</string>
-    <string name="publish_color_camera">Publish color camera</string>
-    <string name="apply">Apply</string>
+    <!-- Strings related to error messages -->
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
+    <string name="title_activity_settings">Settings</string>
 
+    <!-- Strings related to running preferences -->
+
+    <string name="publish_device_pose">Publish device pose</string>
+    <string name="publish_device_pose_key">publish_device_pose</string>
+
+    <string name="publish_point_cloud">Publish point cloud</string>
+    <string name="publish_point_cloud_key">publish_point_cloud</string>
+
+    <string name="publish_fisheye_camera">Publish fisheye camera</string>
+    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
+
+     <string name="publish_color_camera">Publish color camera</string>
+    <string name="publish_color_camera_key">publish_color_camera</string>
+
+    <string name="apply">Apply</string>
+
+    <!-- Strings related to settings preferences -->
+    
+    <string name="pref_category_ros_title">ROS</string>
+    <string name="pref_category_ros_key">pref_category_ros</string>
+
+    <string name="pref_master_is_remote_title">Remote master</string>
+    <string name="pref_master_is_remote_key">pref_master_is_remote</string>
+    <string name="pref_master_is_remote_summary">Disable if master is running on the device</string>
+
+    <string name="pref_connection_type_title">Connection</string>
+    <string name="pref_connection_type_key">pref_connection_type</string>
+    <string-array name="pref_connection_type_list_titles">
+        <item>Wifi</item>
+        <item>USB tethering</item>
+    </string-array>
+    <string-array name="pref_connection_type_list_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+    <string name="pref_master_uri_title">Master URI</string>
+    <string name="pref_master_uri_key">pref_master_uri</string>
+    <string name="pref_master_uri_default">http://local-desktop:11311</string>
+
+    <string name="pref_category_logging_title">Logging</string>
+    <string name="pref_category_logging_key">pref_category_logging</string>
+
+    <string name="pref_save_log_to_file_title">Save log to file</string>
+    <string name="pref_save_log_to_file_key">pref_save_log_to_file</string>
+
+    <string name="pref_log_file_name_title">File name</string>
+    <string name="pref_log_file_name_key">pref_log_file_name</string>
+
+    <string name="pref_log_file_name_default">tangoxros_log</string>
 </resources>

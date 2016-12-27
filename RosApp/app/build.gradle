@@ -35,14 +35,14 @@ tasks.withType(JavaCompile) {
 task ndkBuild(type: Exec) {
     Properties properties = new Properties()
     properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    def ndkbuild = properties.getProperty('ndk.dir', null)+"/ndk-build"
+    def ndkbuild = properties.getProperty('ndk.dir', null) + "/ndk-build"
     commandLine ndkbuild, '-C', file('src/main/jni').absolutePath
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile ('org.ros.android_core:android_honeycomb_mr2:[0.1,0.2)') {
+    compile('org.ros.android_core:android_honeycomb_mr2:[0.1,0.2)') {
         exclude group: 'junit'
         exclude group: 'xml-apis'
     }
@@ -50,6 +50,7 @@ dependencies {
     compile 'org.ros.rosjava_messages:std_msgs:[0.1,)'
     compile 'org.ros.rosjava_messages:sensor_msgs:[0.1,)'
     compile 'org.ros.rosjava_messages:geometry_msgs:[0.1,)'
+    compile 'com.android.support:support-v4:19.1.0'
 }
 
 repositories {

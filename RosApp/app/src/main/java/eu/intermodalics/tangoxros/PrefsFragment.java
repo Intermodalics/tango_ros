@@ -34,7 +34,7 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Load the preferences from an XML resource
-        addPreferencesFromResource(R.xml.preferences);
+        addPreferencesFromResource(R.xml.pref_running);
 
         // Set listeners to update the UI when shared preferences change.
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
