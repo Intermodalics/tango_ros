@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">TangoxRos</string>
+    <string name="pref_previously_started_key">pref_previously_started</string>
+
 
     <!-- Strings related to error messages -->
 
@@ -11,16 +13,16 @@
 
     <!-- Strings related to running preferences -->
 
-    <string name="publish_device_pose">Publish device pose</string>
+    <string name="publish_device_pose">Device pose</string>
     <string name="publish_device_pose_key">publish_device_pose</string>
 
-    <string name="publish_point_cloud">Publish point cloud</string>
+    <string name="publish_point_cloud">Point cloud</string>
     <string name="publish_point_cloud_key">publish_point_cloud</string>
 
-    <string name="publish_fisheye_camera">Publish fisheye camera</string>
+    <string name="publish_fisheye_camera">Fisheye image</string>
     <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
 
-     <string name="publish_color_camera">Publish color camera</string>
+     <string name="publish_color_camera">Color image</string>
     <string name="publish_color_camera_key">publish_color_camera</string>
 
     <string name="apply">Apply</string>

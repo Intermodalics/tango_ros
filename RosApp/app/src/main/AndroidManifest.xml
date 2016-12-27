@@ -29,8 +29,7 @@
 
         <activity
             android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings"
-            android:parentActivityName=".RunningActivity" >
+            android:label="@string/title_activity_settings">
         </activity>
 
         <!-- To manage to execute nodes like the node handler -->

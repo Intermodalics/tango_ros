@@ -17,13 +17,13 @@
 package eu.intermodalics.tangoxros;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -50,6 +50,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private PrefsFragment mPrefsFragment = null;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private boolean mIsTangoServiceBound = false;
+    private boolean mIsNodeStarted = false;
 
     public RunningActivity() {
         super("TangoxRos", "TangoxRos");
@@ -137,8 +138,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.settings:
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
+                showSettings();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -147,18 +147,28 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     @Override
     protected void onStart() {
+        Log.w(TAG, "onStart");
         super.onStart();
         mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
 
-        SharedPreferences sharedPref = this.getSharedPreferences("eu.intermodalics.tangoxros_preferences", MODE_PRIVATE);
-        mMasterUri =  sharedPref.getString(getString(R.string.pref_master_uri_key),
-                getResources().getString(R.string.pref_master_uri_default));
-        TextView uriTextView;
-        uriTextView = (TextView) findViewById(R.id.master_uri);
-        uriTextView.setText(mMasterUri);
-        Log.w(TAG, mMasterUri);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        boolean previouslyStarted = sharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if(!previouslyStarted) {
+            SharedPreferences.Editor edit = sharedPref.edit();
+            edit.putBoolean(getString(R.string.pref_previously_started_key), Boolean.TRUE);
+            edit.commit();
+            showSettings();
+        }
 
-        initAndStartRosJavaNode();
+        if (!mIsNodeStarted) {
+            mMasterUri =  sharedPref.getString(getString(R.string.pref_master_uri_key),
+                    getResources().getString(R.string.pref_master_uri_default));
+            TextView uriTextView;
+            uriTextView = (TextView) findViewById(R.id.master_uri);
+            uriTextView.setText(mMasterUri);
+            Log.w(TAG, mMasterUri);
+            initAndStartRosJavaNode();
+        }
     }
 
     @Override
@@ -196,6 +206,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mTangoRosNode.attachCallbackListener(this);
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
         if (mTangoRosNode.isTangoVersionOk(this)) {
+            mIsNodeStarted = true;
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
         } else {
             Log.e(TAG, getResources().getString(R.string.tango_version_error));
@@ -239,5 +250,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     @Override
     public void startMasterChooser() {
         // Overriding this method with an empty one prevents MasterChooser from running.
+    }
+
+    public void showSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 }
