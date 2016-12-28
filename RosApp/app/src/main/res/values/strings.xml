@@ -2,7 +2,6 @@
     <string name="app_name">TangoxRos</string>
     <string name="pref_previously_started_key">pref_previously_started</string>
 
-
     <!-- Strings related to error messages -->
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>

@@ -24,12 +24,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,11 +46,14 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private static final String TAG = RunningActivity.class.getSimpleName();
 
     private SharedPreferences mSharedPref;
+    private DrawerLayout mDrawerLayout;
+
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode = null;
     private PrefsFragment mPrefsFragment = null;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
+
     private boolean mIsNodeStarted = true;
     private boolean mIsNodeRunning = false;
     private boolean mIsTangoServiceBound = false;
@@ -117,21 +121,32 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.running_activity);
-        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
-        // Set callback for apply button.
-        Button buttonApply = (Button)findViewById(R.id.apply);
-        buttonApply.setOnClickListener(new View.OnClickListener() {
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
-            public void onClick(View v) {
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
                 applySettings();
             }
+
+            @Override
+            public void onDrawerStateChanged(int newState) {
+            }
         });
+        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.settings_menu, menu);
+        inflater.inflate(R.menu.menu, menu);
         return true;
     }
 
@@ -141,6 +156,12 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             case R.id.settings:
                 runSettingsActivity();
                 return true;
+            case R.id.drawer:
+                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
+                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
+                } else {
+                    mDrawerLayout.openDrawer(Gravity.RIGHT);
+                }
             default:
                 return super.onOptionsItemSelected(item);
         }

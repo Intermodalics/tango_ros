@@ -1,38 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
-
-        <TextView
-            android:id="@+id/master_uri_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Master URI: "
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/master_uri"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="20sp" />
-     </LinearLayout>
-
+    <!-- The main content view -->
     <FrameLayout
-        android:id="@+id/preferencesFrame"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent" >
-    </FrameLayout>
-
-    <Button
-        android:id="@+id/apply"
+        android:id="@+id/content_frame"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="50dp"
-        android:text="@string/apply" />
-</FrameLayout>
+        android:layout_height="match_parent">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/master_uri_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Master URI: "
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/master_uri"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp" />
+        </LinearLayout>
+    </FrameLayout>
+    <!-- The navigation drawer -->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="380dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:background="#282828">
+
+        <FrameLayout
+            android:id="@+id/preferencesFrame"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent" >
+        </FrameLayout>
+    </LinearLayout>
+</android.support.v4.widget.DrawerLayout>
