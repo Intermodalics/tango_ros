@@ -10,68 +10,56 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <LinearLayout
-            android:orientation="vertical"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="horizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
+            <TextView
+                android:id="@+id/master_uri_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Master URI: "
+                android:textSize="20sp" />
 
-                <TextView
-                    android:id="@+id/master_uri_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Master URI: "
-                    android:textSize="25sp" />
+            <TextView
+                android:id="@+id/master_uri"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/master_uri_text"
+                android:textSize="20sp" />
 
-                <TextView
-                    android:id="@+id/master_uri"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="25sp" />
-            </LinearLayout>
+            <TextView
+                android:id="@+id/is_ros_ok_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/master_uri_text"
+                android:text="ROS "
+                android:textSize="20sp" />
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="horizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
+            <ImageView
+                android:id="@+id/is_ros_ok_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/is_ros_ok_text"
+                android:layout_alignLeft="@+id/master_uri"
+                android:src="@drawable/btn_radio_on_red_light" />
 
-                <TextView
-                    android:id="@+id/is_ros_ok_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="ROS: "
-                    android:textSize="25sp" />
+            <TextView
+                android:id="@+id/is_tango_ok_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/is_ros_ok_text"
+                android:text="Tango "
+                android:textSize="20sp" />
 
-                <ImageView
-                    android:id="@+id/is_ros_ok_image"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/btn_radio_on_red_light" />
-            </LinearLayout>
-
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="horizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-
-                <TextView
-                    android:id="@+id/is_tango_ok_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tango: "
-                    android:textSize="25sp" />
-
-                <ImageView
-                    android:id="@+id/is_tango_ok_image"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/btn_radio_on_red_light" />
-            </LinearLayout>
-        </LinearLayout>
+            <ImageView
+                android:id="@+id/is_tango_ok_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/is_tango_ok_text"
+                android:layout_alignLeft="@+id/master_uri"
+                android:src="@drawable/btn_radio_on_red_light" />
+        </RelativeLayout>
     </FrameLayout>
 
     <!-- The navigation drawer -->
