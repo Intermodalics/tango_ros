@@ -40,6 +40,9 @@ import org.ros.node.NativeNodeMain;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
@@ -57,6 +60,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private boolean mIsNodeStarted = true;
     private boolean mIsNodeRunning = false;
     private boolean mIsTangoServiceBound = false;
+
+    private TextView mLogTextView;
+    private Thread logThread;
+    private StringBuilder mLogStringBuilder;
 
     public RunningActivity() {
         super("TangoxRos", "TangoxRos");
@@ -117,6 +124,15 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
+    private void updateLogTextView() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mLogTextView.setText(mLogStringBuilder.toString());
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,6 +157,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             }
         });
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mLogTextView = (TextView)findViewById(R.id.log_view);
     }
 
     @Override
@@ -192,6 +210,34 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 mIsNodeStarted = true;
             }
         }
+        final String cmd = "logcat -d -s " + TAG + ", tango_client_api";
+        logThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Process process = Runtime.getRuntime().exec(cmd);
+                        BufferedReader bufferedReader = new BufferedReader(
+                                new InputStreamReader(process.getInputStream()));
+                        String line = "";
+                        mLogStringBuilder = new StringBuilder();
+                        while ((line = bufferedReader.readLine()) != null) {
+                            mLogStringBuilder.append(line + '\n');
+                        }
+                        mLogStringBuilder.reverse();
+                        mLogStringBuilder.setLength(2000);
+                        mLogStringBuilder.reverse();
+                        updateLogTextView();
+                        logThread.sleep(200);
+                    } catch (IOException e) {
+                        Log.e(TAG, e.toString());
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.toString());
+                    }
+                }
+            }
+        });
+        logThread.start();
     }
 
     @Override
