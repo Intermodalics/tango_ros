@@ -31,6 +31,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +48,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
+    private ImageView mImageViewIsRosOk;
+    private ImageView mImageViewIsTangoOk;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
@@ -56,6 +59,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private boolean mIsNodeStarted = true;
     private boolean mIsNodeRunning = false;
+    private boolean mIsTangoVersionOk = false;
     private boolean mIsTangoServiceBound = false;
 
     public RunningActivity() {
@@ -76,6 +80,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
+                turnTangoLight(mIsTangoVersionOk && mIsTangoServiceBound);
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
                 runOnUiThread(new Runnable() {
@@ -99,6 +104,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      */
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+            turnRosLight(false);
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             runOnUiThread(new Runnable() {
                 @Override
@@ -107,6 +113,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             });
         } else if (errorCode < NativeNodeMain.SUCCESS) {
+            turnTangoLight(false);
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
             runOnUiThread(new Runnable() {
                 @Override
@@ -115,6 +122,32 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             });
         }
+    }
+
+    private void turnTangoLight(final boolean turnGreen) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (turnGreen) {
+                    mImageViewIsTangoOk.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                } else {
+                    mImageViewIsTangoOk.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                }
+            }
+        });
+    }
+
+    private void turnRosLight(final boolean turnGreen) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (turnGreen) {
+                    mImageViewIsRosOk.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                } else {
+                    mImageViewIsRosOk.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                }
+            }
+        });
     }
 
     @Override
@@ -141,6 +174,9 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             }
         });
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mImageViewIsRosOk = (ImageView) findViewById(R.id.is_ros_ok_image);
+        mImageViewIsTangoOk = (ImageView) findViewById(R.id.is_tango_ok_image);
     }
 
     @Override
@@ -229,8 +265,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mTangoRosNode.attachCallbackListener(this);
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
         if (mTangoRosNode.isTangoVersionOk(this)) {
-            mIsNodeRunning = true;
+            mIsTangoVersionOk = true;
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+            mIsNodeRunning = true;
+            turnRosLight(true);
         } else {
             Log.e(TAG, getResources().getString(R.string.tango_version_error));
             runOnUiThread(new Runnable() {
