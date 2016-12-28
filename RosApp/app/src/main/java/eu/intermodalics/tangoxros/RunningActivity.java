@@ -242,6 +242,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
+    /**
+     * This function allows initialization of the node with RosJava interface without using MasterChooser,
+     * and is compatible with current Master Uri setter interface.
+     */
     private void initAndStartRosJavaNode() {
         if (mMasterUri != null) {
             URI masterUri;

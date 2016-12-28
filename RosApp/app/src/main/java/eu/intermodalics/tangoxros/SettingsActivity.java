@@ -18,7 +18,6 @@ package eu.intermodalics.tangoxros;
 
 
 import android.annotation.TargetApi;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -111,7 +110,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     /**
-     * This fragment shows settings preferences only.
+     * Fragment showing settings preferences.
      */
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public static class SettingsPreferenceFragment extends PreferenceFragment {
@@ -131,9 +130,6 @@ public class SettingsActivity extends PreferenceActivity {
         }
     }
 
-    /**
-     * Finishes current activity and starts previous one.
-     */
     @Override
     public void onBackPressed() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
