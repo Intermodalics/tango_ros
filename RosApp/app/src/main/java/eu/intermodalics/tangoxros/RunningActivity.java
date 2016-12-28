@@ -50,7 +50,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private ParameterNode mParameterNode = null;
     private PrefsFragment mPrefsFragment = null;
     private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
-    private boolean mIsNodeStartedOnStartMasterChooser = true;
+    private boolean mIsNodeStarted = true;
     private boolean mIsNodeRunning = false;
     private boolean mIsTangoServiceBound = false;
 
@@ -155,7 +155,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!appPreviouslyStarted) {
             runSettingsActivity();
-            mIsNodeStartedOnStartMasterChooser = false;
+            mIsNodeStarted = false;
         } else {
             // Avoid changing master URI while node is still running.
             if (!mIsNodeRunning) {
@@ -165,9 +165,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 uriTextView = (TextView) findViewById(R.id.master_uri);
                 uriTextView.setText(mMasterUri);
             }
-            //
-            if (!mIsNodeStartedOnStartMasterChooser) {
+            // Avoid restarting the node if it was already started.
+            if (!mIsNodeStarted) {
                 initAndStartRosJavaNode();
+                mIsNodeStarted = true;
             }
         }
     }
@@ -243,8 +244,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     }
 
     /**
-     * Override startMasterChooser to init and start node to be sure that the node main executor
-     * service is connected.
+     * Override startMasterChooser to be sure that the node main executor service is connected
+     * when initializing and starting the node.
      */
     @Override
     public void startMasterChooser() {
