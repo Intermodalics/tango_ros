@@ -59,6 +59,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final long LOG_THREAD_DURATION = 15000; // in ms
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final String LOG_CMD = "logcat -d -s " + TAGS_TO_LOG;
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
@@ -139,36 +140,28 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     }
 
     private void updateLogTextView() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mLogTextView.setText(mLogStringBuilder.toString());
+        try {
+            Process process = Runtime.getRuntime().exec(LOG_CMD);
+            BufferedReader bufferedReader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()));
+            String line = "";
+            while ((line = bufferedReader.readLine()) != null) {
+                mLogStringBuilder.append(line + "\n");
             }
-        });
-    }
-
-    private void displayLog() {
-        String cmd = "logcat -d -s " + TAGS_TO_LOG;
-        long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
-        while (System.currentTimeMillis() <= endTime) {
-            try {
-                Process process = Runtime.getRuntime().exec(cmd);
-                BufferedReader bufferedReader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream()));
-                String line = "";
-                while ((line = bufferedReader.readLine()) != null) {
-                    mLogStringBuilder.append(line + "\n");
+            mLogStringBuilder.reverse();
+            mLogStringBuilder.setLength(LOG_TEXT_MAX_LENGTH);
+            mLogStringBuilder.reverse();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mLogTextView.setText(mLogStringBuilder.toString());
                 }
-                mLogStringBuilder.reverse();
-                mLogStringBuilder.setLength(LOG_TEXT_MAX_LENGTH);
-                mLogStringBuilder.reverse();
-                updateLogTextView();
-                mLogThread.sleep(500);
-            } catch (IOException e) {
-                Log.e(TAG, e.toString());
-            } catch (InterruptedException e) {
-                Log.e(TAG, e.toString());
-            }
+            });
+            mLogThread.sleep(500);
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        } catch (InterruptedException e) {
+            Log.e(TAG, e.toString());
         }
     }
 
@@ -221,7 +214,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mLogThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                displayLog();
+                long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
+                while (System.currentTimeMillis() <= endTime) {
+                    updateLogTextView();
+                }
             }
         });
         Switch logSwitch = (Switch) findViewById(R.id.log_switch);
@@ -236,37 +232,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             }
         });
         mLogThread.start();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-
-        MenuItem share_item = menu.findItem(R.id.share);
-        ShareActionProvider shareActionProvider = (ShareActionProvider) share_item.getActionProvider();
-        shareActionProvider.setShareIntent(mShareIntent);
-
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.settings:
-                runSettingsActivity();
-                return true;
-            case R.id.drawer:
-                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
-                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
-                } else {
-                    mDrawerLayout.openDrawer(Gravity.RIGHT);
-                }
-            case R.id.share:
-                saveLogToFile();
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 
     @Override
@@ -300,6 +265,37 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 initAndStartRosJavaNode();
                 mIsNodeStarted = true;
             }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+
+        MenuItem share_item = menu.findItem(R.id.share);
+        ShareActionProvider shareActionProvider = (ShareActionProvider) share_item.getActionProvider();
+        shareActionProvider.setShareIntent(mShareIntent);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings:
+                runSettingsActivity();
+                return true;
+            case R.id.drawer:
+                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
+                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
+                } else {
+                    mDrawerLayout.openDrawer(Gravity.RIGHT);
+                }
+            case R.id.share:
+                saveLogToFile();
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
