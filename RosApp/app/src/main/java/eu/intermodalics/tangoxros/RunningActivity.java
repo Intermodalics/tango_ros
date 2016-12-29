@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -47,6 +48,10 @@ import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
+    private static final String TAG_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
+            + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
+    private static final long LOG_THREAD_DURATION = 15000; // in ms
+    private static final int LOG_TEXT_MAX_LENGTH = 5000;
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
@@ -62,7 +67,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private boolean mIsTangoServiceBound = false;
 
     private TextView mLogTextView;
-    private Thread logThread;
+    private Thread mLogThread;
     private StringBuilder mLogStringBuilder;
 
     public RunningActivity() {
@@ -133,6 +138,31 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         });
     }
 
+    private void displayLog() {
+        String cmd = "logcat -d -s " + TAG_TO_LOG;
+        long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
+        while (System.currentTimeMillis() <= endTime) {
+            try {
+                Process process = Runtime.getRuntime().exec(cmd);
+                BufferedReader bufferedReader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream()));
+                String line = "";
+                while ((line = bufferedReader.readLine()) != null) {
+                    mLogStringBuilder.append(line + "\n");
+                }
+                mLogStringBuilder.reverse();
+                mLogStringBuilder.setLength(LOG_TEXT_MAX_LENGTH);
+                mLogStringBuilder.reverse();
+                updateLogTextView();
+                mLogThread.sleep(500);
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            } catch (InterruptedException e) {
+                Log.e(TAG, e.toString());
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -159,6 +189,15 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
 
         mLogTextView = (TextView)findViewById(R.id.log_view);
+        mLogTextView.setMovementMethod(new ScrollingMovementMethod());
+        mLogStringBuilder = new StringBuilder();
+        mLogThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                displayLog();
+            }
+        });
+        mLogThread.start();
     }
 
     @Override
@@ -210,34 +249,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 mIsNodeStarted = true;
             }
         }
-        final String cmd = "logcat -d -s " + TAG + ", tango_client_api";
-        logThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Process process = Runtime.getRuntime().exec(cmd);
-                        BufferedReader bufferedReader = new BufferedReader(
-                                new InputStreamReader(process.getInputStream()));
-                        String line = "";
-                        mLogStringBuilder = new StringBuilder();
-                        while ((line = bufferedReader.readLine()) != null) {
-                            mLogStringBuilder.append(line + '\n');
-                        }
-                        mLogStringBuilder.reverse();
-                        mLogStringBuilder.setLength(2000);
-                        mLogStringBuilder.reverse();
-                        updateLogTextView();
-                        logThread.sleep(200);
-                    } catch (IOException e) {
-                        Log.e(TAG, e.toString());
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, e.toString());
-                    }
-                }
-            }
-        });
-        logThread.start();
     }
 
     @Override

@@ -33,7 +33,9 @@
             android:id="@+id/log_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="50dp" />
+            android:layout_marginTop="50dp"
+            android:maxLines="20"
+            android:scrollbars="vertical" />
     </FrameLayout>
     <!-- The navigation drawer -->
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
