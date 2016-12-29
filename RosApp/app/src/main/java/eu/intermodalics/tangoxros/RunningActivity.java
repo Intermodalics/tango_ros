@@ -20,6 +20,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -33,6 +34,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.ShareActionProvider;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -60,6 +62,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
+    private Intent mShareIntent;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
@@ -74,6 +77,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private TextView mLogTextView;
     private Thread mLogThread;
     private StringBuilder mLogStringBuilder;
+    private File mlogFile;
 
     public RunningActivity() {
         super("TangoxRos", "TangoxRos");
@@ -170,19 +174,15 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private void saveLogToFile() {
         String logText = mLogTextView.getText().toString();
-        String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
-                getString(R.string.pref_log_file_default)) + ".txt";
-        String logFilePath = "sdcard/" + logFileName;
-        File logFile = new File(logFilePath);
-        if (!logFile.exists()) {
+        if (!mlogFile.exists()) {
             try {
-                logFile.createNewFile();
+                mlogFile.createNewFile();
             } catch (IOException e) {
                 Log.e(TAG, e.toString());
             }
         }
         try {
-            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, false));
+            BufferedWriter buf = new BufferedWriter(new FileWriter(mlogFile, false));
             buf.write(logText);
             buf.close();
         } catch (IOException e) {
@@ -242,6 +242,11 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
+
+        MenuItem share_item = menu.findItem(R.id.share);
+        ShareActionProvider shareActionProvider = (ShareActionProvider) share_item.getActionProvider();
+        shareActionProvider.setShareIntent(mShareIntent);
+
         return true;
     }
 
@@ -275,13 +280,20 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             runSettingsActivity();
             mIsNodeStarted = false;
         } else {
-            // Avoid changing master URI while node is still running.
+            // Avoid changing settings while node is still running.
             if (!mIsNodeRunning) {
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getString(R.string.pref_master_uri_default));
                 TextView uriTextView;
                 uriTextView = (TextView) findViewById(R.id.master_uri);
                 uriTextView.setText(mMasterUri);
+
+                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                        getString(R.string.pref_log_file_default)) + ".txt";
+                mlogFile = new File("sdcard/" + logFileName);
+                mShareIntent = new Intent(Intent.ACTION_SEND);
+                mShareIntent.setType("text/plain");
+                mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
             }
             // Avoid restarting the node if it was already started.
             if (!mIsNodeStarted) {
