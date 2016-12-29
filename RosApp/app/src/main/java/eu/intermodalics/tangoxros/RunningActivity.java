@@ -32,6 +32,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -195,6 +197,17 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             @Override
             public void run() {
                 displayLog();
+            }
+        });
+        Switch logSwitch = (Switch) findViewById(R.id.log_switch);
+        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isChecked) {
+                    mLogTextView.setVisibility(View.VISIBLE);
+                } else {
+                    mLogTextView.setVisibility(View.INVISIBLE);
+                }
             }
         });
         mLogThread.start();
