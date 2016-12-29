@@ -33,16 +33,10 @@
         android:title="@string/pref_category_logging_title"
         android:key="@string/pref_category_logging_key">
 
-        <SwitchPreference
-            android:title="@string/pref_save_log_to_file_title"
-            android:key="@string/pref_save_log_to_file_key"
-            android:defaultValue="false"
-            android:enabled="false"/>
         <EditTextPreference
-            android:title="@string/pref_log_file_name_title"
-            android:key="@string/pref_log_file_name_key"
-            android:defaultValue="@string/pref_log_file_name_default"
-            android:dependency="@string/pref_save_log_to_file_key"
+            android:title="@string/pref_log_file_title"
+            android:key="@string/pref_log_file_key"
+            android:defaultValue="@string/pref_log_file_default"
             android:inputType="textCapWords"
             android:maxLines="1"
             android:singleLine="true"

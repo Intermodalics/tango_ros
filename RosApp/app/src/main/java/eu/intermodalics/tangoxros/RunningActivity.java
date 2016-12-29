@@ -44,13 +44,16 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
-    private static final String TAG_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
+    private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final long LOG_THREAD_DURATION = 15000; // in ms
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
@@ -91,7 +94,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
             } else {
-                Log.e(TAG, getResources().getString(R.string.tango_bind_error));
+                Log.e(TAG, getString(R.string.tango_bind_error));
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -113,7 +116,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      */
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
-            Log.e(TAG, getResources().getString(R.string.ros_init_error));
+            Log.e(TAG, getString(R.string.ros_init_error));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -121,7 +124,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             });
         } else if (errorCode < NativeNodeMain.SUCCESS) {
-            Log.e(TAG, getResources().getString(R.string.tango_service_error));
+            Log.e(TAG, getString(R.string.tango_service_error));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -141,7 +144,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     }
 
     private void displayLog() {
-        String cmd = "logcat -d -s " + TAG_TO_LOG;
+        String cmd = "logcat -d -s " + TAGS_TO_LOG;
         long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
         while (System.currentTimeMillis() <= endTime) {
             try {
@@ -162,6 +165,28 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             } catch (InterruptedException e) {
                 Log.e(TAG, e.toString());
             }
+        }
+    }
+
+    private void saveLogToFile() {
+        String logText = mLogTextView.getText().toString();
+        String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                getString(R.string.pref_log_file_default)) + ".txt";
+        String logFilePath = "sdcard/" + logFileName;
+        File logFile = new File(logFilePath);
+        if (!logFile.exists()) {
+            try {
+                logFile.createNewFile();
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            }
+        }
+        try {
+            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, false));
+            buf.write(logText);
+            buf.close();
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
         }
     }
 
@@ -232,6 +257,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 } else {
                     mDrawerLayout.openDrawer(Gravity.RIGHT);
                 }
+            case R.id.share:
+                saveLogToFile();
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -251,7 +278,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             // Avoid changing master URI while node is still running.
             if (!mIsNodeRunning) {
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                        getResources().getString(R.string.pref_master_uri_default));
+                        getString(R.string.pref_master_uri_default));
                 TextView uriTextView;
                 uriTextView = (TextView) findViewById(R.id.master_uri);
                 uriTextView.setText(mMasterUri);
@@ -266,12 +293,15 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         if (mIsTangoServiceBound) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
+        saveLogToFile();
+        super.onDestroy();
     }
+
+
 
     // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
     public void applySettings() {
@@ -302,7 +332,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             mIsNodeRunning = true;
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
         } else {
-            Log.e(TAG, getResources().getString(R.string.tango_version_error));
+            Log.e(TAG, getString(R.string.tango_version_error));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
