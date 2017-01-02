@@ -91,7 +91,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         Object prefValue = prefKeys.get(key);
 
         if (prefValue instanceof Boolean) {
-//            uploadSingleBooleanParameter(key, sharedPreferences.getBoolean(key, false));
             final Boolean bool = (Boolean) prefValue;
             new Thread() {
                 @Override

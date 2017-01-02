@@ -19,7 +19,6 @@
     <string name="publish_point_cloud">Publish point cloud</string>
     <string name="publish_fisheye_camera">Publish fisheye camera</string>
     <string name="publish_color_camera">Publish color camera</string>
-    <string name="apply">Apply</string>
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
