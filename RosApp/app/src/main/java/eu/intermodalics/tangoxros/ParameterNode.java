@@ -164,14 +164,14 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage());
+                    Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage(), e);
                 }
             });
 
         } catch (ServiceNotFoundException e) {
-            Log.e(NODE_NAME, "Service not found: " + e.getMessage());
+            Log.e(NODE_NAME, "Service not found: " + e.getMessage(), e);
         } catch (Exception e) {
-            Log.e(NODE_NAME, "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
+            Log.e(NODE_NAME, "Error while calling Dynamic Reconfigure Service: " + e.getMessage(), e);
         }
     }
 
