@@ -47,6 +47,8 @@ import dynamic_reconfigure.ReconfigureResponse;
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String NODE_NAME = "parameter_node";
+    private static final String RECONFIGURE_SRV_TYPE = "dynamic_reconfigure/Reconfigure";
+    private static final String RECONFIGURE_SRV_NAME = "set_parameters";
     private final String[] mParamNames;
 
     private ParameterTree mParameterTree = null;
@@ -66,6 +68,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     public void onStart(ConnectedNode connectedNode) {
         mParameterTree = connectedNode.getParameterTree();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
+        // Overwrite preferences in server with local preferences.
         uploadPreferencesToParameterServer(mSharedPreferences);
 
         // Listen to changes in the shared preferences.
@@ -134,39 +137,42 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         });
     }
 
+    /**
+     * Calls ROS Dynamic Reconfigure service to set a given boolean parameter.
+     * This service request triggers bound callbacks for Dynamic Reconfigure on its response, if any.
+     * @param paramName Name of the parameter to set.
+     * @param paramValue New value for the given parameter name.
+     */
     private void dynamicReconfigure(String paramName, boolean paramValue) {
-        Log.d(NODE_NAME, "######################################\n DYNAMIC RECONFIGURE CB \n ###################################### ");
-        ReconfigureRequest srv_req = mConnectedNode.getServiceRequestMessageFactory().newFromType("dynamic_reconfigure/Reconfigure");
-        ReconfigureResponse srv_resp = mConnectedNode.getServiceResponseMessageFactory().newFromType("dynamic_reconfigure/Reconfigure");
+        ReconfigureRequest srv_req = mConnectedNode.getServiceRequestMessageFactory().newFromType(RECONFIGURE_SRV_TYPE);
         Config config = mConnectedNode.getTopicMessageFactory().newFromType(Config._TYPE);
         BoolParameter boolParameter = mConnectedNode.getTopicMessageFactory().newFromType(BoolParameter._TYPE);
 
         boolParameter.setName(paramName);
-        boolParameter.setValue(paramValue); // set correct value.
+        boolParameter.setValue(paramValue);
         config.getBools().add(boolParameter);
         srv_req.setConfig(config);
         try {
             ServiceClient<ReconfigureRequest, ReconfigureResponse> serviceClient =
-                    mConnectedNode.newServiceClient("/" + TangoRosNode.NODE_NAME + "/set_parameters",
-                    "dynamic_reconfigure/Reconfigure");
+                    mConnectedNode.newServiceClient(buildFullParameterName(RECONFIGURE_SRV_NAME),
+                            RECONFIGURE_SRV_TYPE);
 
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    Log.d(NODE_NAME, "*********************\n RECONFIGURE RESPONSE OK \n ********************* ");
+                    Log.i(NODE_NAME, "Dynamic Reconfigure success");
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    Log.d(NODE_NAME, "*********************\n RECONFIGURE RESPONSE FAILURE\n ********************* ");
+                    Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage());
                 }
             });
 
         } catch (ServiceNotFoundException e) {
-            // log exception.
-            Log.d(NODE_NAME, "*********************\n SERVICE NOT FOUND EXCEPTION \n" + e.getMessage() +  " \n ********************* ");
+            Log.e(NODE_NAME, "Service not found: " + e.getMessage());
         } catch (Exception e) {
-            Log.d(NODE_NAME, "*********************\n OTHER EXCEPTION: \n" + e.getMessage() +  " \n ********************* ");
+            Log.e(NODE_NAME, "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 
