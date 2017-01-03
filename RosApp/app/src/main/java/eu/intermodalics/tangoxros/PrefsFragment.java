@@ -22,7 +22,6 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
-import android.util.Log;
 
 /**
  * Created by intermodalics on 12/1/16.
@@ -52,25 +51,5 @@ public class PrefsFragment extends PreferenceFragment implements SharedPreferenc
             SwitchPreference swPref = (SwitchPreference) pref;
             swPref.setChecked(sharedPreferences.getBoolean(key, false));
         }
-    }
-
-    public PublisherConfiguration getPublisherConfigurationFromPreferences() {
-        SharedPreferences sharedPref = getPreferenceManager().getDefaultSharedPreferences(getActivity());
-        PublisherConfiguration publisherConfiguration = new PublisherConfiguration();
-        publisherConfiguration.publishDevicePose = sharedPref.getBoolean(getString(R.string.publish_device_pose_key), false);
-        publisherConfiguration.publishPointCloud = sharedPref.getBoolean(getString(R.string.publish_point_cloud_key), false);
-
-        if(sharedPref.getBoolean(getString(R.string.publish_fisheye_camera_key), false)) {
-            publisherConfiguration.publishCamera |= PublisherConfiguration.CAMERA_FISHEYE;
-        } else {
-            publisherConfiguration.publishCamera &= ~PublisherConfiguration.CAMERA_FISHEYE;
-        }
-        if(sharedPref.getBoolean(getString(R.string.publish_color_camera_key), false)) {
-            publisherConfiguration.publishCamera |= PublisherConfiguration.CAMERA_COLOR;
-        } else {
-            publisherConfiguration.publishCamera &= ~PublisherConfiguration.CAMERA_COLOR;
-        }
-        Log.i(TAG, publisherConfiguration.toString());
-        return publisherConfiguration;
     }
 }

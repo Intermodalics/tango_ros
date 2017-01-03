@@ -60,11 +60,4 @@ public class TangoRosNode extends NativeNodeMain {
      * @return true if the version of tango is ok.
      */
     public native boolean isTangoVersionOk(Activity callerActivity);
-
-    /**
-     * Update the publisher configuration of the tango-ros node.
-     *
-     * @param publisherConfiguration the new publisher configuration.
-     */
-    public native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }

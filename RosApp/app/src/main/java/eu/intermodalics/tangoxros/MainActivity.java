@@ -25,8 +25,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,8 +43,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode = null;
-    private PrefsFragment mPrefsFragment = null;
-    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
     private boolean mIsTangoServiceBound = false;
 
     public MainActivity() {
@@ -147,20 +143,11 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
-        // Set callback for apply button.
-        Button buttonApply = (Button)findViewById(R.id.apply);
-        buttonApply.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                applySettings();
-            }
-        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
         if (mMasterUri.isEmpty()) {
             showSetMasterUriDialog();
         }
@@ -173,12 +160,6 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
-    }
-
-    // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
-    public void applySettings() {
-        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-        mTangoRosNode.updatePublisherConfiguration(mPublishConfig);
     }
 
     @Override
