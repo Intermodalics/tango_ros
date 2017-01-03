@@ -24,8 +24,6 @@
      <string name="publish_color_camera">Color image</string>
     <string name="publish_color_camera_key">publish_color_camera</string>
 
-    <string name="apply">Apply</string>
-
     <!-- Strings related to settings preferences -->
     
     <string name="pref_category_ros_title">ROS</string>

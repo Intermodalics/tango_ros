@@ -52,7 +52,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private String mMasterUri = "";
     private ParameterNode mParameterNode = null;
     private PrefsFragment mPrefsFragment = null;
-    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
 
     private boolean mIsNodeStarted = true;
     private boolean mIsNodeRunning = false;
@@ -122,24 +121,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                applySettings();
-            }
-
-            @Override
-            public void onDrawerStateChanged(int newState) {
-            }
-        });
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
     }
 
@@ -201,12 +182,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
-    }
-
-    // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
-    public void applySettings() {
-        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-        mTangoRosNode.updatePublisherConfiguration(mPublishConfig);
     }
 
     @Override
