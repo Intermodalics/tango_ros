@@ -30,7 +30,6 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,11 +49,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
-    private ParameterNode mParameterNode = null;
-    private PrefsFragment mPrefsFragment = null;
+    private ParameterNode mParameterNode;
 
-    private boolean mIsNodeStarted = true;
-    private boolean mIsNodeRunning = false;
     private boolean mIsTangoServiceBound = false;
 
     public RunningActivity() {
@@ -122,6 +118,12 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                getResources().getString(R.string.pref_master_uri_default));
+        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
     }
 
     @Override
@@ -151,27 +153,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     @Override
     protected void onStart() {
         super.onStart();
-        mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!appPreviouslyStarted) {
             runSettingsActivity();
-            mIsNodeStarted = false;
-        } else {
-            // Avoid changing master URI while node is still running.
-            if (!mIsNodeRunning) {
-                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                        getResources().getString(R.string.pref_master_uri_default));
-                TextView uriTextView;
-                uriTextView = (TextView) findViewById(R.id.master_uri);
-                uriTextView.setText(mMasterUri);
-            }
-            // Avoid restarting the node if it was already started.
-            if (!mIsNodeStarted) {
-                initAndStartRosJavaNode();
-                mIsNodeStarted = true;
-            }
+            finish();
         }
     }
 
@@ -204,7 +189,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mTangoRosNode.attachCallbackListener(this);
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
         if (mTangoRosNode.isTangoVersionOk(this)) {
-            mIsNodeRunning = true;
             nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
         } else {
             Log.e(TAG, getResources().getString(R.string.tango_version_error));
@@ -218,8 +202,20 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     }
 
     /**
-     * This function allows initialization of the node with RosJava interface without using MasterChooser,
-     * and is compatible with current Master Uri setter interface.
+     * This function is called when the NodeMainExecutorService is connected.
+     * Overriding startMasterChooser allows to be sure that the NodeMainExecutorService is connected
+     * when initializing and starting the node.
+     */
+    @Override
+    public void startMasterChooser() {
+        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if (appPreviouslyStarted) {
+            initAndStartRosJavaNode();
+        }
+    }
+
+    /**
+     * This function initializes the tango ros node with RosJava interface.
      */
     private void initAndStartRosJavaNode() {
         if (mMasterUri != null) {
@@ -240,18 +236,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             }.execute();
         } else {
             Log.e(TAG, "Master URI is null");
-        }
-    }
-
-    /**
-     * Override startMasterChooser to be sure that the node main executor service is connected
-     * when initializing and starting the node.
-     */
-    @Override
-    public void startMasterChooser() {
-        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
-        if (appPreviouslyStarted) {
-            initAndStartRosJavaNode();
         }
     }
 
