@@ -31,6 +31,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -141,6 +142,14 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             }
         });
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        ImageButton aboutButton = (ImageButton) findViewById(R.id.about_button);
+        aboutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startAboutActivity();
+            }
+        });
     }
 
     @Override
@@ -154,7 +163,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                runSettingsActivity();
+                startSettingsActivity();
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -175,7 +184,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!appPreviouslyStarted) {
-            runSettingsActivity();
+            startSettingsActivity();
             mIsNodeStarted = false;
         } else {
             // Avoid changing master URI while node is still running.
@@ -280,8 +289,13 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
-    public void runSettingsActivity() {
+    public void startSettingsActivity() {
         Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
+    }
+
+    public void startAboutActivity() {
+        Intent intent = new Intent(this, AboutActivity.class);
         startActivity(intent);
     }
 }

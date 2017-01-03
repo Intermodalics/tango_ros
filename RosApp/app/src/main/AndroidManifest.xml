@@ -32,6 +32,11 @@
             android:label="@string/title_activity_settings">
         </activity>
 
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/title_activity_about">
+        </activity>
+
         <!-- To manage to execute nodes like the node handler -->
         <service android:name="org.ros.android.NodeMainExecutorService">
             <intent-filter>
