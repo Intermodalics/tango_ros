@@ -24,20 +24,12 @@
         android:textSize="20sp"/>
 
     <Button
-        android:id="@+id/our_website_about"
+        android:id="@+id/app_wiki_about"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:layout_below="@+id/description_about"
-        android:text="Visit our web site"/>
-
-    <Button
-        android:id="@+id/app_wiki_about"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/our_website_about"
         android:text="Visit the app wiki"/>
 
     <Button
@@ -47,4 +39,12 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/app_wiki_about"
         android:text="Rate the app"/>
+
+    <Button
+        android:id="@+id/our_website_about"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/rate_app_about"
+        android:text="Visit our website"/>
 </RelativeLayout>

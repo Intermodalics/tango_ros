@@ -36,16 +36,6 @@ public class AboutActivity extends Activity {
         TextView textView = (TextView) findViewById(R.id.description_about);
         textView.setMovementMethod(LinkMovementMethod.getInstance());
 
-        Button ourWebsiteButton = (Button) findViewById(R.id.our_website_about);
-        ourWebsiteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Uri uri = Uri.parse(getString(R.string.intermodalics_website_address));
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(intent);
-            }
-        });
-
         Button appWikiButton = (Button) findViewById(R.id.app_wiki_about);
         appWikiButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -62,6 +52,16 @@ public class AboutActivity extends Activity {
             @Override
             public void onClick(View view) {
 
+            }
+        });
+
+        Button ourWebsiteButton = (Button) findViewById(R.id.our_website_about);
+        ourWebsiteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse(getString(R.string.intermodalics_website_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
             }
         });
     }
