@@ -6,7 +6,7 @@
 
     <string name="title_activity_about">About</string>
     <string name="description_activity_about">
-        This application is made by Intermodalics BVBA.\nThis work is related to
+        This application is made by Intermodalics BVBA.\nIt is related to
         <a href="http://wiki.ros.org/">ROS</a> and <a href="http://get.google.com/tango/">Tango</a>.</string>
     <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
 
