@@ -139,8 +139,6 @@ public class SettingsActivity extends PreferenceActivity {
             SharedPreferences.Editor edit = sharedPref.edit();
             edit.putBoolean(getString(R.string.pref_previously_started_key), Boolean.TRUE);
             edit.commit();
-            Intent intent = new Intent(this, RunningActivity.class);
-            startActivity(intent);
         }
         super.onBackPressed();
     }
