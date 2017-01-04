@@ -42,15 +42,15 @@ task ndkBuild(type: Exec) {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile ('org.ros.android_core:android_honeycomb_mr2:[0.1,0.2)') {
+    compile ('org.ros.android_core:android_10:[0.3,)') {
         exclude group: 'junit'
         exclude group: 'xml-apis'
     }
     // e.g. official msgs
-    compile 'org.ros.rosjava_messages:std_msgs:[0.1,)'
-    compile 'org.ros.rosjava_messages:sensor_msgs:[0.1,)'
-    compile 'org.ros.rosjava_messages:geometry_msgs:[0.1,)'
-    compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.1,)'
+    compile 'org.ros.rosjava_messages:std_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:sensor_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:geometry_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
 }
 
 repositories {

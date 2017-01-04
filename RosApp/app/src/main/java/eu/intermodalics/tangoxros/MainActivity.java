@@ -30,7 +30,7 @@ import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
-import org.ros.node.NativeNodeMain;
+import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -119,7 +119,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
      * Implements TangoRosNode.CallbackListener.
      */
     public void onNativeNodeExecutionError(int errorCode) {
-        if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+        if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             runOnUiThread(new Runnable() {
                 @Override
@@ -127,7 +127,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                     Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
                 }
             });
-        } else if (errorCode < NativeNodeMain.SUCCESS) {
+        } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
             runOnUiThread(new Runnable() {
                 @Override
