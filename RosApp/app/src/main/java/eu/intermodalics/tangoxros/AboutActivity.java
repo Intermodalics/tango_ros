@@ -51,7 +51,7 @@ public class AboutActivity extends Activity {
         rateAppButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                startRateAppActivity();
             }
         });
 
@@ -64,5 +64,10 @@ public class AboutActivity extends Activity {
                 startActivity(intent);
             }
         });
+    }
+
+    private void startRateAppActivity() {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + this.getPackageName()));
+        this.startActivity(intent);
     }
 }
