@@ -27,13 +27,6 @@ public class TangoRosNode extends NativeNodeMain {
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
 
-    static {
-        if (TangoInitializationHelper.loadTangoSharedLibrary() ==
-                TangoInitializationHelper.ARCH_ERROR) {
-            Log.e("TangoJNINative", "ERROR! Unable to load libtango_client_api.so!");
-        }
-    }
-
     public TangoRosNode() {
         super(DEFAULT_LIB_NAME);
     }
