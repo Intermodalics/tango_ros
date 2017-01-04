@@ -18,7 +18,6 @@ package eu.intermodalics.tangoxros;
 
 import android.app.Activity;
 import android.os.IBinder;
-import android.util.Log;
 
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMain;
