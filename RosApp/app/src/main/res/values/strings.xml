@@ -29,9 +29,9 @@
     <string name="pref_category_ros_title">ROS</string>
     <string name="pref_category_ros_key">pref_category_ros</string>
 
-    <string name="pref_master_is_remote_title">Remote master</string>
-    <string name="pref_master_is_remote_key">pref_master_is_remote</string>
-    <string name="pref_master_is_remote_summary">Disable if master is running on the device</string>
+    <string name="pref_master_is_local_title">Run local master</string>
+    <string name="pref_master_is_local_key">pref_master_is_remote</string>
+    <string name="pref_master_is_local_summary">Enable if master is running on the device</string>
 
     <string name="pref_connection_type_title">Connection</string>
     <string name="pref_connection_type_key">pref_connection_type</string>
