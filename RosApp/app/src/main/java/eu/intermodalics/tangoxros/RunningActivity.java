@@ -40,11 +40,10 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
-import java.util.Map;
 
-public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener,
- SharedPreferences.OnSharedPreferenceChangeListener {
+public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
+    static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
@@ -99,28 +98,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
-    /**
-     * Implements SharedPreferences.OnSharedPreferenceChangeListener to trigger start of node.
-     * The node is started using this way only when the app is running for the first time, otherwise
-     * it is started using startMasterChooser.
-     */
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
-        if (key == getString(R.string.pref_previously_started_key)) {
-            Map<String, ?> prefKeys = sharedPreferences.getAll();
-            Object prefValue = prefKeys.get(key);
-            if (prefValue instanceof Boolean) {
-                final Boolean bool = (Boolean) prefValue;
-                if (bool) {
-                    mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                            getResources().getString(R.string.pref_master_uri_default));
-                    TextView uriTextView = (TextView) findViewById(R.id.master_uri);
-                    uriTextView.setText(mMasterUri);
-                    initAndStartRosJavaNode();
-                }
-            }
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,8 +106,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
 
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        mSharedPref.registerOnSharedPreferenceChangeListener(this);
-
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
         TextView uriTextView = (TextView) findViewById(R.id.master_uri);
@@ -148,7 +123,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                runSettingsActivity();
+                startSettingsActivity();
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -158,15 +133,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             default:
                 return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
-        if(!appPreviouslyStarted) {
-            runSettingsActivity();
         }
     }
 
@@ -223,6 +189,22 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
             initAndStartRosJavaNode();
+        } else {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivityForResult(intent, START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
+            if (resultCode == RESULT_CANCELED) {
+                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                        getResources().getString(R.string.pref_master_uri_default));
+                TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+                uriTextView.setText(mMasterUri);
+                initAndStartRosJavaNode();
+            }
         }
     }
 
@@ -251,7 +233,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
-    public void runSettingsActivity() {
+    public void startSettingsActivity() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
