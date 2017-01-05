@@ -69,6 +69,8 @@ struct PublisherConfiguration {
 class TangoRosNode {
  public:
   TangoRosNode();
+  TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
+               uint32_t publish_camera);
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
@@ -81,11 +83,6 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Updates the publisher configuration by making a ros service call to dynamic
-  // reconfigure.
-  void UpdatePublisherConfiguration(bool publish_device_pose,
-                                    bool publish_point_cloud,
-                                    uint32_t publish_camera);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
