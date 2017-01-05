@@ -5,6 +5,7 @@
     <!-- Strings related to error messages -->
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
@@ -56,6 +57,5 @@
 
     <string name="pref_log_file_name_title">File name</string>
     <string name="pref_log_file_name_key">pref_log_file_name</string>
-
     <string name="pref_log_file_name_default">tangoxros_log</string>
 </resources>

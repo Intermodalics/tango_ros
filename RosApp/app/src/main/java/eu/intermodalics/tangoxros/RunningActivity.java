@@ -75,12 +75,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 mIsTangoServiceBound = true;
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), R.string.tango_bind_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                displayToastMessage(R.string.tango_bind_error);
                 onDestroy();
             }
         }
@@ -97,20 +92,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMain.SUCCESS) {
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage(R.string.tango_service_error);
         }
     }
 
@@ -210,19 +195,21 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
         // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
-        mTangoRosNode = new TangoRosNode();
-        mTangoRosNode.attachCallbackListener(this);
-        TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-        if (mTangoRosNode.isTangoVersionOk(this)) {
-            nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+        if(TangoInitializationHelper.loadTangoSharedLibrary() !=
+                TangoInitializationHelper.ARCH_ERROR) {
+            mTangoRosNode = new TangoRosNode();
+            mTangoRosNode.attachCallbackListener(this);
+            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+            if (mTangoRosNode.isTangoVersionOk(this)) {
+                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+            } else {
+                Log.e(TAG, getResources().getString(R.string.tango_version_error));
+                displayToastMessage(R.string.tango_version_error);
+            }
         } else {
-            Log.e(TAG, getResources().getString(R.string.tango_version_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            Log.e(TAG, getResources().getString(R.string.tango_lib_error));
+            displayToastMessage(R.string.tango_lib_error);
+
         }
     }
 
@@ -267,5 +254,14 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public void runSettingsActivity() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
+    }
+
+    private void displayToastMessage(final int messageId) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

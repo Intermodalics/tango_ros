@@ -18,7 +18,6 @@ package eu.intermodalics.tangoxros;
 
 import android.app.Activity;
 import android.os.IBinder;
-import android.util.Log;
 
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMain;
@@ -26,13 +25,6 @@ import org.ros.node.NativeNodeMain;
 public class TangoRosNode extends NativeNodeMain {
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
-
-    static {
-        if (TangoInitializationHelper.loadTangoSharedLibrary() ==
-                TangoInitializationHelper.ARCH_ERROR) {
-            Log.e("TangoJNINative", "ERROR! Unable to load libtango_client_api.so!");
-        }
-    }
 
     public TangoRosNode() {
         super(DEFAULT_LIB_NAME);
