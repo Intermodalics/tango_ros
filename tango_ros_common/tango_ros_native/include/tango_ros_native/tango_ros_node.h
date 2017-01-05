@@ -63,14 +63,19 @@ struct PublisherConfiguration {
   std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
   std::string color_camera_topic = "tango/camera/color_1/image_raw/compressed";
+
+  PublisherConfiguration() {
+    publish_device_pose = false;
+    publish_point_cloud = false;
+    publish_camera = CAMERA_NONE;
+  }
 };
 
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode();
-  TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
-               uint32_t publish_camera);
+  TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).

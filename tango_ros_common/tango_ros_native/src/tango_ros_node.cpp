@@ -175,15 +175,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : TangoRosNode(false, false, CAMERA_NONE) {}
-
-TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
-                           uint32_t publish_camera) :
-    run_threads_(false) {
-  publisher_config_.publish_device_pose = publish_device_pose;
-  publisher_config_.publish_point_cloud = publish_point_cloud;
-  publisher_config_.publish_camera = publish_camera;
-
+TangoRosNode::TangoRosNode() : run_threads_(false) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -197,6 +189,13 @@ TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
   color_image_publisher_ =
       node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.color_camera_topic,
       queue_size, latching);
+}
+
+TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
+    TangoRosNode() {
+  publisher_config_.publish_device_pose = static_cast<bool>(publisher_config.publish_device_pose);
+  publisher_config_.publish_point_cloud = static_cast<bool>(publisher_config.publish_point_cloud);
+  publisher_config_.publish_camera = static_cast<bool>(publisher_config.publish_camera);
 }
 
 TangoRosNode::~TangoRosNode() {
