@@ -175,9 +175,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() {
-  TangoRosNode(false, false, CAMERA_NONE);
-}
+TangoRosNode::TangoRosNode() : TangoRosNode(false, false, CAMERA_NONE) {}
 
 TangoRosNode::TangoRosNode(bool publish_device_pose, bool publish_point_cloud,
                            uint32_t publish_camera) :
