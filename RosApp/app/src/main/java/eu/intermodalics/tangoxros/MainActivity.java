@@ -99,12 +99,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 mIsTangoServiceBound = true;
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), R.string.tango_bind_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                displayToastMessage(R.string.tango_bind_error);
                 onDestroy();
             }
         }
@@ -121,20 +116,10 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMain.SUCCESS) {
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage(R.string.tango_service_error);
         }
     }
 
@@ -187,21 +172,12 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                displayToastMessage(R.string.tango_version_error);
             }
         } else {
             Log.e(TAG, getResources().getString(R.string.tango_lib_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_lib_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage(R.string.tango_lib_error);
+
         }
     }
 
@@ -234,5 +210,14 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     @Override
     public void startMasterChooser() {
         // onMasterUriConnect already connects to master; overriding this method with an empty one prevents MasterChooser from running.
+    }
+
+    private void displayToastMessage(final int messageId) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
