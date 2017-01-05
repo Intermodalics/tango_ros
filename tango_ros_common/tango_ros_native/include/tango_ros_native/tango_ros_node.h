@@ -51,11 +51,11 @@ const uint32_t CAMERA_COLOR = (1 << 2);
 
 struct PublisherConfiguration {
   // True if pose needs to be published.
-  std::atomic_bool publish_device_pose;
+  std::atomic_bool publish_device_pose{false};
   // True if point cloud needs to be published.
-  std::atomic_bool publish_point_cloud;
+  std::atomic_bool publish_point_cloud{false};
   // Flag corresponding to which cameras need to be published.
-  std::atomic<uint32_t> publish_camera;
+  std::atomic<uint32_t> publish_camera{CAMERA_NONE};
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
@@ -63,12 +63,6 @@ struct PublisherConfiguration {
   std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
   std::string color_camera_topic = "tango/camera/color_1/image_raw/compressed";
-
-  PublisherConfiguration() {
-    publish_device_pose = false;
-    publish_point_cloud = false;
-    publish_camera = CAMERA_NONE;
-  }
 };
 
 // Node collecting tango data and publishing it on ros topics.
