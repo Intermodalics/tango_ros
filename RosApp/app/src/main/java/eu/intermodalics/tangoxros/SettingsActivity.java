@@ -125,7 +125,6 @@ public class SettingsActivity extends PreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_connection_type_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_name_key)));
         }
