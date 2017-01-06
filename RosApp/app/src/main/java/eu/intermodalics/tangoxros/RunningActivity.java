@@ -40,7 +40,7 @@ import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
-import org.ros.node.NativeNodeMain;
+import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -112,10 +112,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      * Implements TangoRosNode.CallbackListener.
      */
     public void onNativeNodeExecutionError(int errorCode) {
-        if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
+        if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getString(R.string.ros_init_error));
             displayToastMessage( R.string.ros_init_error);
-        } else if (errorCode < NativeNodeMain.SUCCESS) {
+        } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
             Log.e(TAG, getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
         }
