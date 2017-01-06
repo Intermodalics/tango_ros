@@ -16,16 +16,21 @@
 
 package eu.intermodalics.tangoxros;
 
-import android.app.FragmentManager;
 import android.content.ComponentName;
-import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,55 +42,25 @@ import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
-public class MainActivity extends RosActivity implements SetMasterUriDialog.CallbackListener,
-        TangoRosNode.CallbackListener {
-    private static final String TAG = MainActivity.class.getSimpleName();
+public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
+    private static final String TAG = RunningActivity.class.getSimpleName();
+    static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
+
+    private SharedPreferences mSharedPref;
+    private DrawerLayout mDrawerLayout;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
-    private ParameterNode mParameterNode = null;
+    private ParameterNode mParameterNode;
+
     private boolean mIsTangoServiceBound = false;
 
-    public MainActivity() {
+    public RunningActivity() {
         super("TangoxRos", "TangoxRos");
     }
 
-    protected MainActivity(String notificationTicker, String notificationTitle) {
+    protected RunningActivity(String notificationTicker, String notificationTitle) {
         super(notificationTicker, notificationTitle);
-    }
-
-    /**
-     * Implements SetMasterUriDialog.CallbackListener.
-     */
-    @Override
-    public void onMasterUriConnect(String uri) {
-        mMasterUri = uri;
-        // Update view.
-        TextView uriTextView;
-        uriTextView = (TextView) findViewById(R.id.master_uri);
-        uriTextView.setText(mMasterUri);
-        // Save URI preference.
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(getString(R.string.saved_uri_key), mMasterUri);
-        editor.commit();
-        initAndStartRosJavaNode();
-    }
-
-    /**
-     * Shows a dialog to request master URI from user.
-     */
-    private void showSetMasterUriDialog() {
-        // Get URI preference or default value if does not exist.
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        String uriValue = sharedPref.getString(getString(R.string.saved_uri_key),
-                getResources().getString(R.string.saved_uri_default));
-        Bundle bundle = new Bundle();
-        bundle.putString(getString(R.string.saved_uri_key), uriValue);
-        FragmentManager manager = getFragmentManager();
-        SetMasterUriDialog setMasterUriDialog = new SetMasterUriDialog();
-        setMasterUriDialog.setArguments(bundle);
-        setMasterUriDialog.show(manager, "MasterUriDialog");
     }
 
     /**
@@ -93,7 +68,7 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
      */
     ServiceConnection mTangoServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
-            // Synchronization around MainActivity object is to avoid
+            // Synchronization around RunningActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
             if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
@@ -127,15 +102,38 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_activity);
+        setContentView(R.layout.running_activity);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                getResources().getString(R.string.pref_master_uri_default));
+        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        if (mMasterUri.isEmpty()) {
-            showSetMasterUriDialog();
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings:
+                startSettingsActivity();
+                return true;
+            case R.id.drawer:
+                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
+                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
+                } else {
+                    mDrawerLayout.openDrawer(Gravity.RIGHT);
+                }
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
@@ -151,7 +149,8 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        setContentView(R.layout.main_activity);
+        setContentView(R.layout.running_activity);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         TextView uriTextView = (TextView) findViewById(R.id.master_uri);
         uriTextView.setText(mMasterUri);
@@ -191,8 +190,38 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
         }
     }
 
-    // This function allows initialization of the node with RosJava interface without using MasterChooser,
-    // and is compatible with current Master Uri setter interface.
+    /**
+     * This function is called when the NodeMainExecutorService is connected.
+     * Overriding startMasterChooser allows to be sure that the NodeMainExecutorService is connected
+     * when initializing and starting the node.
+     */
+    @Override
+    public void startMasterChooser() {
+        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if (appPreviouslyStarted) {
+            initAndStartRosJavaNode();
+        } else {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivityForResult(intent, START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
+            if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
+                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                        getResources().getString(R.string.pref_master_uri_default));
+                TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+                uriTextView.setText(mMasterUri);
+                initAndStartRosJavaNode();
+            }
+        }
+    }
+
+    /**
+     * This function initializes the tango ros node with RosJava interface.
+     */
     private void initAndStartRosJavaNode() {
         if (mMasterUri != null) {
             URI masterUri;
@@ -203,23 +232,21 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
                 return;
             }
             this.nodeMainExecutorService.setMasterUri(masterUri);
-
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {
-                    MainActivity.this.init(nodeMainExecutorService);
+                    RunningActivity.this.init(nodeMainExecutorService);
                     return null;
                 }
             }.execute();
-
         } else {
             Log.e(TAG, "Master URI is null");
         }
     }
 
-    @Override
-    public void startMasterChooser() {
-        // onMasterUriConnect already connects to master; overriding this method with an empty one prevents MasterChooser from running.
+    public void startSettingsActivity() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private void displayToastMessage(final int messageId) {
