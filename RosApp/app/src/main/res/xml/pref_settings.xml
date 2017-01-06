@@ -3,26 +3,17 @@
         android:title="@string/pref_category_ros_title"
         android:key="@string/pref_category_ros_key">
         <CheckBoxPreference
-            android:title="@string/pref_master_is_remote_title"
-            android:key="@string/pref_master_is_remote_key"
-            android:defaultValue="true"
-            android:summary="@string/pref_master_is_remote_summary"/>
-
-        <ListPreference
-            android:title="@string/pref_connection_type_title"
-            android:key="@string/pref_connection_type_key"
-            android:defaultValue="0"
-            android:entries="@array/pref_connection_type_list_titles"
-            android:entryValues="@array/pref_connection_type_list_values"
-            android:negativeButtonText="@null"
-            android:positiveButtonText="@null"
-            android:enabled="false"/>
+            android:title="@string/pref_master_is_local_title"
+            android:key="@string/pref_master_is_local_key"
+            android:defaultValue="false"
+            android:disableDependentsState="true"
+            android:summary="@string/pref_master_is_local_summary"/>
 
         <EditTextPreference
             android:title="@string/pref_master_uri_title"
             android:key="@string/pref_master_uri_key"
             android:defaultValue="@string/pref_master_uri_default"
-            android:dependency="@string/pref_master_is_remote_key"
+            android:dependency="@string/pref_master_is_local_key"
             android:inputType="textCapWords"
             android:maxLines="1"
             android:singleLine="true"

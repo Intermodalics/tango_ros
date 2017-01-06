@@ -55,6 +55,8 @@ import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
+    static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
+
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final long LOG_THREAD_DURATION = 15000; // in ms
@@ -67,12 +69,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
-    private ParameterNode mParameterNode = null;
-    private PrefsFragment mPrefsFragment = null;
-    private PublisherConfiguration mPublishConfig = new PublisherConfiguration();
+    private ParameterNode mParameterNode;
 
-    private boolean mIsNodeStarted = true;
-    private boolean mIsNodeRunning = false;
     private boolean mIsTangoServiceBound = false;
 
     private TextView mLogTextView;
@@ -100,12 +98,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 mIsTangoServiceBound = true;
             } else {
                 Log.e(TAG, getString(R.string.tango_bind_error));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), R.string.tango_bind_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                displayToastMessage(R.string.tango_bind_error);
                 onDestroy();
             }
         }
@@ -122,20 +115,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMain.ROS_CONNECTION_ERROR) {
             Log.e(TAG, getString(R.string.ros_init_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.ros_init_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMain.SUCCESS) {
             Log.e(TAG, getString(R.string.tango_service_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_service_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            displayToastMessage(R.string.tango_service_error);
         }
     }
 
@@ -188,25 +171,20 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerLayout.setDrawerListener(new DrawerLayout.DrawerListener() {
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                applySettings();
-            }
-
-            @Override
-            public void onDrawerStateChanged(int newState) {
-            }
-        });
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                getResources().getString(R.string.pref_master_uri_default));
+        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
+
+        String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                getString(R.string.pref_log_file_default)) + ".txt";
+        mlogFile = new File("sdcard/" + logFileName);
+        mShareIntent = new Intent(Intent.ACTION_SEND);
+        mShareIntent.setType("text/plain");
+        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
 
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
@@ -234,39 +212,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mLogThread.start();
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mPrefsFragment = (PrefsFragment) getFragmentManager().findFragmentById(R.id.preferencesFrame);
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-
-        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
-        if(!appPreviouslyStarted) {
-            runSettingsActivity();
-            mIsNodeStarted = false;
-        } else {
-            // Avoid changing settings while node is still running.
-            if (!mIsNodeRunning) {
-                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                        getString(R.string.pref_master_uri_default));
-                TextView uriTextView;
-                uriTextView = (TextView) findViewById(R.id.master_uri);
-                uriTextView.setText(mMasterUri);
-
-                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
-                        getString(R.string.pref_log_file_default)) + ".txt";
-                mlogFile = new File("sdcard/" + logFileName);
-                mShareIntent = new Intent(Intent.ACTION_SEND);
-                mShareIntent.setType("text/plain");
-                mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
-            }
-            // Avoid restarting the node if it was already started.
-            if (!mIsNodeStarted) {
-                initAndStartRosJavaNode();
-                mIsNodeStarted = true;
-            }
-        }
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -276,7 +221,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         MenuItem share_item = menu.findItem(R.id.share);
         ShareActionProvider shareActionProvider = (ShareActionProvider) share_item.getActionProvider();
         shareActionProvider.setShareIntent(mShareIntent);
-
         return true;
     }
 
@@ -284,7 +228,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                runSettingsActivity();
+                startSettingsActivity();
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -309,14 +253,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         super.onDestroy();
     }
 
-
-
-    // This function shall be removed once Dynamic Reconfigure is implemented on the Java side of the app.
-    public void applySettings() {
-        mPublishConfig = mPrefsFragment.getPublisherConfigurationFromPreferences();
-        mTangoRosNode.updatePublisherConfiguration(mPublishConfig);
-    }
-
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
@@ -333,26 +269,58 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
         // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
-        mTangoRosNode = new TangoRosNode();
-        mTangoRosNode.attachCallbackListener(this);
-        TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-        if (mTangoRosNode.isTangoVersionOk(this)) {
-            mIsNodeRunning = true;
-            nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+        if(TangoInitializationHelper.loadTangoSharedLibrary() !=
+                TangoInitializationHelper.ARCH_ERROR) {
+            mTangoRosNode = new TangoRosNode();
+            mTangoRosNode.attachCallbackListener(this);
+            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+            if (mTangoRosNode.isTangoVersionOk(this)) {
+                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+            } else {
+                Log.e(TAG, getResources().getString(R.string.tango_version_error));
+                displayToastMessage(R.string.tango_version_error);
+            }
         } else {
-            Log.e(TAG, getString(R.string.tango_version_error));
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), R.string.tango_version_error, Toast.LENGTH_SHORT).show();
-                }
-            });
+            Log.e(TAG, getString(R.string.tango_lib_error));
+            displayToastMessage(R.string.tango_lib_error);
+
         }
     }
 
     /**
-     * This function allows initialization of the node with RosJava interface without using MasterChooser,
-     * and is compatible with current Master Uri setter interface.
+     * This function is called when the NodeMainExecutorService is connected.
+     * Overriding startMasterChooser allows to be sure that the NodeMainExecutorService is connected
+     * when initializing and starting the node.
+     */
+    @Override
+    public void startMasterChooser() {
+        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if (appPreviouslyStarted) {
+            initAndStartRosJavaNode();
+        } else {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivityForResult(intent, START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
+            if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
+                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                        getResources().getString(R.string.pref_master_uri_default));
+                TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+                uriTextView.setText(mMasterUri);
+                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                        getString(R.string.pref_log_file_default)) + ".txt";
+                mlogFile = new File("sdcard/" + logFileName);
+                initAndStartRosJavaNode();
+            }
+        }
+    }
+
+    /**
+     * This function initializes the tango ros node with RosJava interface.
      */
     private void initAndStartRosJavaNode() {
         if (mMasterUri != null) {
@@ -376,20 +344,17 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
-    /**
-     * Override startMasterChooser to be sure that the node main executor service is connected
-     * when initializing and starting the node.
-     */
-    @Override
-    public void startMasterChooser() {
-        boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
-        if (appPreviouslyStarted) {
-            initAndStartRosJavaNode();
-        }
-    }
-
-    public void runSettingsActivity() {
+    public void startSettingsActivity() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
+    }
+
+    private void displayToastMessage(final int messageId) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

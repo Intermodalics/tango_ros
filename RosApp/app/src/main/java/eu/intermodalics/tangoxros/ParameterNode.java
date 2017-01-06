@@ -19,15 +19,25 @@ package eu.intermodalics.tangoxros;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
+import org.ros.exception.RemoteException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.parameter.ParameterListener;
 import org.ros.node.parameter.ParameterTree;
+import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseListener;
 
 import java.util.Map;
+
+import dynamic_reconfigure.BoolParameter;
+import dynamic_reconfigure.Config;
+import dynamic_reconfigure.ReconfigureRequest;
+import dynamic_reconfigure.ReconfigureResponse;
 
 /**
  * RosJava node that handles interactions with Parameter Server.
@@ -37,11 +47,14 @@ import java.util.Map;
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String NODE_NAME = "parameter_node";
+    private static final String RECONFIGURE_SRV_TYPE = "dynamic_reconfigure/Reconfigure";
+    private static final String RECONFIGURE_SRV_NAME = "set_parameters";
     private final String[] mParamNames;
 
     private ParameterTree mParameterTree = null;
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
+    private ConnectedNode mConnectedNode;
 
     public ParameterNode(Activity activity, String... paramNames) {
         mCreatorActivity = activity;
@@ -55,6 +68,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     public void onStart(ConnectedNode connectedNode) {
         mParameterTree = connectedNode.getParameterTree();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
+        // Overwrite preferences in server with local preferences.
         uploadPreferencesToParameterServer(mSharedPreferences);
 
         // Listen to changes in the shared preferences.
@@ -63,6 +77,8 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         for (String s : mParamNames) {
             addParameterServerListener(s);
         }
+
+        mConnectedNode = connectedNode;
     }
 
     /**
@@ -70,12 +86,18 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
      * @param sharedPreferences Reference to SharedPreferences containing the preference change.
      * @param key Particular preference that changed.
      */
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
         Object prefValue = prefKeys.get(key);
 
         if (prefValue instanceof Boolean) {
-            uploadSingleBooleanParameter(key, sharedPreferences.getBoolean(key, false));
+            final Boolean bool = (Boolean) prefValue;
+            new Thread() {
+                @Override
+                public void run() {
+                    dynamicReconfigure(key, bool.booleanValue());
+                }
+            }.start();
         }
     }
 
@@ -112,6 +134,45 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                 editor.commit();
             }
         });
+    }
+
+    /**
+     * Calls ROS Dynamic Reconfigure service to set a given boolean parameter.
+     * This service request triggers bound callbacks for Dynamic Reconfigure on its response, if any.
+     * @param paramName Name of the parameter to set.
+     * @param paramValue New value for the given parameter name.
+     */
+    private void dynamicReconfigure(String paramName, boolean paramValue) {
+        ReconfigureRequest srv_req = mConnectedNode.getServiceRequestMessageFactory().newFromType(RECONFIGURE_SRV_TYPE);
+        Config config = mConnectedNode.getTopicMessageFactory().newFromType(Config._TYPE);
+        BoolParameter boolParameter = mConnectedNode.getTopicMessageFactory().newFromType(BoolParameter._TYPE);
+
+        boolParameter.setName(paramName);
+        boolParameter.setValue(paramValue);
+        config.getBools().add(boolParameter);
+        srv_req.setConfig(config);
+        try {
+            ServiceClient<ReconfigureRequest, ReconfigureResponse> serviceClient =
+                    mConnectedNode.newServiceClient(buildFullParameterName(RECONFIGURE_SRV_NAME),
+                            RECONFIGURE_SRV_TYPE);
+
+            serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
+                @Override
+                public void onSuccess(ReconfigureResponse reconfigureResponse) {
+                    Log.i(NODE_NAME, "Dynamic Reconfigure success");
+                }
+
+                @Override
+                public void onFailure(RemoteException e) {
+                    Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage(), e);
+                }
+            });
+
+        } catch (ServiceNotFoundException e) {
+            Log.e(NODE_NAME, "Service not found: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Log.e(NODE_NAME, "Error while calling Dynamic Reconfigure Service: " + e.getMessage(), e);
+        }
     }
 
     private void uploadSingleBooleanParameter(String paramName, boolean paramValue) {
