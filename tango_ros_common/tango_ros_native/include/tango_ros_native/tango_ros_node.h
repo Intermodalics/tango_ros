@@ -51,11 +51,11 @@ const uint32_t CAMERA_COLOR = (1 << 2);
 
 struct PublisherConfiguration {
   // True if pose needs to be published.
-  std::atomic_bool publish_device_pose;
+  std::atomic_bool publish_device_pose{false};
   // True if point cloud needs to be published.
-  std::atomic_bool publish_point_cloud;
+  std::atomic_bool publish_point_cloud{false};
   // Flag corresponding to which cameras need to be published.
-  std::atomic<uint32_t> publish_camera;
+  std::atomic<uint32_t> publish_camera{CAMERA_NONE};
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
@@ -69,6 +69,7 @@ struct PublisherConfiguration {
 class TangoRosNode {
  public:
   TangoRosNode();
+  TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
@@ -81,11 +82,6 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Updates the publisher configuration by making a ros service call to dynamic
-  // reconfigure.
-  void UpdatePublisherConfiguration(bool publish_device_pose,
-                                    bool publish_point_cloud,
-                                    uint32_t publish_camera);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);

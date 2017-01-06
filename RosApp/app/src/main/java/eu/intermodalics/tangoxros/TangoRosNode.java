@@ -20,9 +20,9 @@ import android.app.Activity;
 import android.os.IBinder;
 
 import org.ros.namespace.GraphName;
-import org.ros.node.NativeNodeMain;
+import org.ros.node.NativeNodeMainBeta;
 
-public class TangoRosNode extends NativeNodeMain {
+public class TangoRosNode extends NativeNodeMainBeta {
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
 
@@ -60,11 +60,4 @@ public class TangoRosNode extends NativeNodeMain {
      * @return true if the version of tango is ok.
      */
     public native boolean isTangoVersionOk(Activity callerActivity);
-
-    /**
-     * Update the publisher configuration of the tango-ros node.
-     *
-     * @param publisherConfiguration the new publisher configuration.
-     */
-    public native void updatePublisherConfiguration(PublisherConfiguration publisherConfiguration);
 }
