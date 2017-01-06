@@ -18,7 +18,6 @@ package eu.intermodalics.tangoxros;
 
 
 import android.annotation.TargetApi;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +26,9 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+
+import com.nispok.snackbar.Snackbar;
+import com.nispok.snackbar.SnackbarManager;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -41,6 +43,8 @@ import android.preference.PreferenceManager;
  */
 public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = SettingsActivity.class.getSimpleName();
+
+    private SharedPreferences mSharedPref;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -99,6 +103,21 @@ public class SettingsActivity extends PreferenceActivity {
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new SettingsPreferenceFragment())
                 .commit();
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if(!previouslyStarted) {
+            // TODO: Use android.support.design.widget.Snackbar when switching to Material design.
+            Snackbar snackbar = Snackbar.with(this);
+            snackbar.text(getString(R.string.snackbar_text_first_run));
+            snackbar.textColor(0xff33b5e5); // default light blue.
+            snackbar.duration(Snackbar.SnackbarDuration.LENGTH_LONG);
+            SnackbarManager.show(snackbar);
+        }
     }
 
     /**
@@ -132,10 +151,9 @@ public class SettingsActivity extends PreferenceActivity {
 
     @Override
     public void onBackPressed() {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        boolean previouslyStarted = sharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
-            SharedPreferences.Editor edit = sharedPref.edit();
+            SharedPreferences.Editor edit = mSharedPref.edit();
             edit.putBoolean(getString(R.string.pref_previously_started_key), Boolean.TRUE);
             edit.commit();
         }

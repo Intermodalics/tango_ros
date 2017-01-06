@@ -47,4 +47,6 @@
     <string name="pref_log_file_name_title">File name</string>
     <string name="pref_log_file_name_key">pref_log_file_name</string>
     <string name="pref_log_file_name_default">tangoxros_log</string>
+
+    <string name="snackbar_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
 </resources>
