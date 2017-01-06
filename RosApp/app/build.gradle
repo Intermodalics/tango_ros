@@ -50,6 +50,7 @@ dependencies {
     compile 'org.ros.rosjava_messages:std_msgs:[0.1,)'
     compile 'org.ros.rosjava_messages:sensor_msgs:[0.1,)'
     compile 'org.ros.rosjava_messages:geometry_msgs:[0.1,)'
+    compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.1,)'
     compile 'com.android.support:support-v4:19.1.0'
 }
 

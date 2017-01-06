@@ -175,12 +175,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() :
-    run_threads_(false) {
-  publisher_config_.publish_device_pose = false;
-  publisher_config_.publish_point_cloud = false;
-  publisher_config_.publish_camera = CAMERA_NONE;
-
+TangoRosNode::TangoRosNode() : run_threads_(false) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -194,6 +189,13 @@ TangoRosNode::TangoRosNode() :
   color_image_publisher_ =
       node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.color_camera_topic,
       queue_size, latching);
+}
+
+TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
+    TangoRosNode() {
+  publisher_config_.publish_device_pose = static_cast<bool>(publisher_config.publish_device_pose);
+  publisher_config_.publish_point_cloud = static_cast<bool>(publisher_config.publish_point_cloud);
+  publisher_config_.publish_camera = static_cast<bool>(publisher_config.publish_camera);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -343,35 +345,6 @@ void TangoRosNode::TangoDisconnect() {
   TangoConfig_free(tango_config_);
   tango_config_ = nullptr;
   TangoService_disconnect();
-}
-
-void TangoRosNode::UpdatePublisherConfiguration(bool publish_device_pose,
-                                                bool publish_point_cloud,
-                                                uint32_t publish_camera) {
-  dynamic_reconfigure::ReconfigureRequest srv_req;
-  dynamic_reconfigure::ReconfigureResponse srv_resp;
-  dynamic_reconfigure::Config config;
-  dynamic_reconfigure::ConfigTools config_tools;
-  std::string dynamic_parameter_name = "publish_device_pose";
-  bool dynamic_parameter_value = publish_device_pose;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  dynamic_parameter_name = "publish_point_cloud";
-  dynamic_parameter_value = publish_point_cloud;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  dynamic_parameter_name = "publish_fisheye_camera";
-  dynamic_parameter_value = publish_camera & CAMERA_FISHEYE;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  dynamic_parameter_name = "publish_color_camera";
-  dynamic_parameter_value = publish_camera & CAMERA_COLOR;
-  config_tools.appendParameter(config, dynamic_parameter_name, dynamic_parameter_value);
-
-  srv_req.config = config;
-  if(!ros::service::call("/" + NODE_NAME + "/set_parameters", srv_req, srv_resp)) {
-    LOG(ERROR) << "Service call failed, could not update dynamic reconfigure parameters.";
-  }
 }
 
 void TangoRosNode::PublishStaticTransforms() {

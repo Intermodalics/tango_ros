@@ -74,9 +74,4 @@ void TangoRosNodeExecutor::Shutdown() {
   tango_ros_node_->TangoDisconnect();
 }
 
-void TangoRosNodeExecutor::UpdatePublisherConfiguration(bool publish_device_pose,
-                                                        bool publish_point_cloud,
-                                                        uint32_t publish_camera) {
-  tango_ros_node_->UpdatePublisherConfiguration(publish_device_pose, publish_point_cloud, publish_camera);
-}
 }  // namespace tango_ros_util
