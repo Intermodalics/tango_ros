@@ -19,7 +19,8 @@ import org.apache.commons.logging.LogFactory;
 public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     public static final int SUCCESS = 0;
     public static final int ROS_CONNECTION_ERROR = 1;
-    public static final String ROS_CONNECTION_ERROR_MSG = "ECONNREFUSED";
+    public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
+    public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
 
     private Log log = LogFactory.getLog(NativeNodeMainBeta.class);
     private String libName;
@@ -122,7 +123,8 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     @Override
     public void onError(Node node, Throwable throwable) {
         super.onError(node, throwable);
-        if (throwable.getMessage().contains(ROS_CONNECTION_ERROR_MSG)) {
+        if (throwable.getMessage().contains(ROS_CONNECTION_FAILURE_ERROR_MSG) ||
+                throwable.getMessage().contains(ROS_WRONG_HOST_NAME_ERROR_MSG)) {
             callbackListener.onNativeNodeExecutionError(ROS_CONNECTION_ERROR);
         }
     }

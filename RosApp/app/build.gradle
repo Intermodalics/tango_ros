@@ -35,7 +35,7 @@ tasks.withType(JavaCompile) {
 task ndkBuild(type: Exec) {
     Properties properties = new Properties()
     properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    def ndkbuild = properties.getProperty('ndk.dir', null)+"/ndk-build"
+    def ndkbuild = properties.getProperty('ndk.dir', null) + "/ndk-build"
     commandLine ndkbuild, '-C', file('src/main/jni').absolutePath
 }
 
@@ -51,6 +51,7 @@ dependencies {
     compile 'org.ros.rosjava_messages:sensor_msgs:[0.3,)'
     compile 'org.ros.rosjava_messages:geometry_msgs:[0.3,)'
     compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
+    compile 'com.android.support:support-v4:19.1.0'
 }
 
 repositories {
