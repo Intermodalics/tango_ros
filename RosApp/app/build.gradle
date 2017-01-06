@@ -42,7 +42,7 @@ task ndkBuild(type: Exec) {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile ('org.ros.android_core:android_10:[0.3,)') {
+    compile('org.ros.android_core:android_10:[0.3,)') {
         exclude group: 'junit'
         exclude group: 'xml-apis'
     }
