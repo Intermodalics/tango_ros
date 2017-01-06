@@ -34,7 +34,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
-import android.widget.ShareActionProvider;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,6 +55,7 @@ import java.net.URI;
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
+    static final int START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST = 2;
 
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -65,7 +65,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
-    private Intent mShareIntent;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
@@ -131,6 +130,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             while ((line = bufferedReader.readLine()) != null) {
                 mLogStringBuilder.append(line + "\n");
             }
+            // The following allows to keep only the end of the logcat text.
             mLogStringBuilder.reverse();
             mLogStringBuilder.setLength(LOG_TEXT_MAX_LENGTH);
             mLogStringBuilder.reverse();
@@ -160,6 +160,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         try {
             BufferedWriter buf = new BufferedWriter(new FileWriter(mlogFile, false));
             buf.write(logText);
+            Log.i(TAG, "Saved log to file: " + mlogFile.getAbsolutePath());
             buf.close();
         } catch (IOException e) {
             Log.e(TAG, e.toString());
@@ -182,9 +183,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default)) + ".txt";
         mlogFile = new File("sdcard/" + logFileName);
-        mShareIntent = new Intent(Intent.ACTION_SEND);
-        mShareIntent.setType("text/plain");
-        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
 
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
@@ -212,15 +210,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mLogThread.start();
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
-
-        MenuItem share_item = menu.findItem(R.id.share);
-        ShareActionProvider shareActionProvider = (ShareActionProvider) share_item.getActionProvider();
-        shareActionProvider.setShareIntent(mShareIntent);
         return true;
     }
 
@@ -228,7 +221,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                startSettingsActivity();
+                Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
+                startActivityForResult(settingsActivityIntent, START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST);
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -238,6 +232,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             case R.id.share:
                 saveLogToFile();
+                Intent shareFileIntent = new Intent(Intent.ACTION_SEND);
+                shareFileIntent.setType("text/plain");
+                shareFileIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
+                startActivity(shareFileIntent);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -245,12 +243,12 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     @Override
     protected void onDestroy() {
+        super.onDestroy();
         if (mIsTangoServiceBound) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
         saveLogToFile();
-        super.onDestroy();
     }
 
     @Override
@@ -305,8 +303,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
-            if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
+        if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
+            if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
                 TextView uriTextView = (TextView) findViewById(R.id.master_uri);
@@ -315,6 +313,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                         getString(R.string.pref_log_file_default)) + ".txt";
                 mlogFile = new File("sdcard/" + logFileName);
                 initAndStartRosJavaNode();
+            } else if (requestCode == START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST) {
+                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                        getString(R.string.pref_log_file_default)) + ".txt";
+                mlogFile = new File("sdcard/" + logFileName);
             }
         }
     }
@@ -342,11 +344,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         } else {
             Log.e(TAG, "Master URI is null");
         }
-    }
-
-    public void startSettingsActivity() {
-        Intent intent = new Intent(this, SettingsActivity.class);
-        startActivity(intent);
     }
 
     private void displayToastMessage(final int messageId) {
