@@ -12,14 +12,17 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author ecorbellini@creativa77.com.ar (Ernesto Corbellini)
  * File extracted from rosjava_core repository: https://github.com/rosjava/rosjava_core.
+ *
+ * @note Standard code for NativeNodeMain was modified to use error codes for this particular application on Execute function.
+ * This code shall be removed once a standard way of handling error codes is published to the public code of NativeNodeMain.
  */
-public abstract class NativeNodeMain extends AbstractNodeMain {
+public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     public static final int SUCCESS = 0;
     public static final int ROS_CONNECTION_ERROR = 1;
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
     public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
 
-    private Log log = LogFactory.getLog(NativeNodeMain.class);
+    private Log log = LogFactory.getLog(NativeNodeMainBeta.class);
     private String libName;
     private String masterUri = null;
     private String hostName = null;
@@ -34,7 +37,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
      *  @param remappings
      *    A string array with ROS argument remapping pairs in each element.
      **/
-    public NativeNodeMain(String libName, String[] remappings) {
+    public NativeNodeMainBeta(String libName, String[] remappings) {
         this.libName = libName;
 
         // if no remapping is needed, create an empty array
@@ -65,7 +68,7 @@ public abstract class NativeNodeMain extends AbstractNodeMain {
      *  @param libName
      *    The name of the library to load.
      **/
-    public NativeNodeMain(String libName) {
+    public NativeNodeMainBeta(String libName) {
         this(libName, null);
     }
 
