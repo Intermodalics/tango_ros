@@ -56,7 +56,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private ParameterNode mParameterNode;
 
     private boolean mIsTangoVersionOk = false;
-
     private boolean mIsTangoServiceBound = false;
 
     public RunningActivity() {
@@ -204,6 +203,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (mTangoRosNode.isTangoVersionOk(this)) {
+                mIsTangoVersionOk = true;
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
                 turnRosLight(true);
             } else {
