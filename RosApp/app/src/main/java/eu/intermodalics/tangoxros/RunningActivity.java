@@ -198,7 +198,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
-            if (resultCode == RESULT_CANCELED) {
+            if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
                 TextView uriTextView = (TextView) findViewById(R.id.master_uri);
