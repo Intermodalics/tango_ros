@@ -7,17 +7,19 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
-        android:supportsRtl="true">
-         <uses-library
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <uses-library
             android:name="com.projecttango.libtango_device2"
             android:required="true" />
+
         <activity
-            android:name="eu.intermodalics.tangoxros.MainActivity"
+            android:name=".RunningActivity"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,8 +27,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings">
+        </activity>
+
         <!-- To manage to execute nodes like the node handler -->
-        <service android:name="org.ros.android.NodeMainExecutorService" >
+        <service android:name="org.ros.android.NodeMainExecutorService">
             <intent-filter>
                 <action android:name="org.ros.android.NodeMainExecutorService" />
             </intent-filter>
