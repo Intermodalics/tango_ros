@@ -314,6 +314,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 mlogFile = new File("sdcard/" + logFileName);
                 initAndStartRosJavaNode();
             } else if (requestCode == START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST) {
+                // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default)) + ".txt";
                 mlogFile = new File("sdcard/" + logFileName);
