@@ -52,6 +52,7 @@ dependencies {
     compile 'org.ros.rosjava_messages:geometry_msgs:[0.3,)'
     compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
     compile 'com.android.support:support-v4:19.1.0'
+    compile 'com.nispok:snackbar:2.6.1'
 }
 
 repositories {
