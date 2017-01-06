@@ -21,6 +21,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -145,6 +146,15 @@ public class MainActivity extends RosActivity implements SetMasterUriDialog.Call
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setContentView(R.layout.main_activity);
+        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
     }
 
     @Override
