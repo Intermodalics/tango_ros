@@ -47,13 +47,26 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private static final String TAG = RunningActivity.class.getSimpleName();
     static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
 
+    enum LightStatus {
+        GREEN,
+        RED;
+
+        static public LightStatus fromBoolean(boolean status) {
+            if (status) {
+                return GREEN;
+            } else {
+                return RED;
+            }
+        }
+    }
+
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
 
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
-    private boolean mIsRosLightGreen  = false;
-    private boolean mIsTangoLightGreen  = false;
+    private LightStatus mRosStatus = LightStatus.RED;
+    private LightStatus mTangoStatus = LightStatus.RED;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
@@ -80,8 +93,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
-                mIsTangoLightGreen = mIsTangoVersionOk && mIsTangoServiceBound;
-                turnLight(mTangoLightImageView, mIsTangoLightGreen);
+                updateTangoStatus(LightStatus.fromBoolean(mIsTangoVersionOk && mIsTangoServiceBound));
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
                 displayToastMessage(R.string.tango_bind_error);
@@ -100,34 +112,46 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      */
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
-            mIsRosLightGreen = false;
-            turnLight(mRosLightImageView, mIsRosLightGreen);
+            updateRosStatus(LightStatus.RED);
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
-            mIsTangoLightGreen = false;
-            turnLight(mTangoLightImageView, mIsTangoLightGreen);
+            updateTangoStatus(LightStatus.RED);
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
         }
     }
 
     /**
-     * Function that turns an image view into green or red light.
+     * Function that switches an image view to green or red light.
      * @param imageView image view to update.
-     * @param turnGreen true to turn green, false to turn red.
+     * @param status status representing which color the light should switch to.
      */
-    private void turnLight(final ImageView imageView, final boolean turnGreen) {
+    private void switchLight(final ImageView imageView, final LightStatus status) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (turnGreen) {
+                if (status == LightStatus.GREEN) {
                     imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
-                } else {
+                } else if (status == LightStatus.RED) {
                     imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
                 }
             }
         });
+    }
+
+    private void updateRosStatus(LightStatus status) {
+        if (mRosStatus != status) {
+            mRosStatus = status;
+            switchLight(mRosLightImageView, status);
+        }
+    }
+
+    private void updateTangoStatus(LightStatus status) {
+        if (mTangoStatus != status) {
+            mTangoStatus = status;
+            switchLight(mTangoLightImageView, status);
+        }
     }
 
     @Override
@@ -190,8 +214,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         uriTextView.setText(mMasterUri);
         mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
         mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
-        turnLight(mRosLightImageView, mIsRosLightGreen);
-        turnLight(mTangoLightImageView, mIsTangoLightGreen);
+        switchLight(mRosLightImageView, mRosStatus);
+        switchLight(mTangoLightImageView, mTangoStatus);
     }
 
     @Override
@@ -218,8 +242,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.isTangoVersionOk(this)) {
                 mIsTangoVersionOk = true;
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
-                mIsRosLightGreen = true;
-                turnLight(mRosLightImageView, mIsRosLightGreen);
+                updateRosStatus(LightStatus.GREEN);
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
                 displayToastMessage(R.string.tango_version_error);
