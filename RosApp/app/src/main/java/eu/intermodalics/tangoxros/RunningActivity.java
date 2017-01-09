@@ -268,12 +268,14 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 } else {
                     mDrawerLayout.openDrawer(Gravity.RIGHT);
                 }
+                return true;
             case R.id.share:
                 saveLogToFile();
                 Intent shareFileIntent = new Intent(Intent.ACTION_SEND);
                 shareFileIntent.setType("text/plain");
                 shareFileIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
                 startActivity(shareFileIntent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
