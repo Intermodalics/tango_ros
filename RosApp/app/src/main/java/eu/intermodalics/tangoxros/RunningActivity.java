@@ -56,8 +56,11 @@ import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
-    static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
-    static final int START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST = 2;
+
+    public static class startSettingsActivityRequest {
+        public static final int FIRST_RUN = 1;
+        public static final int STANDARD_RUN = 2;
+    }
 
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -273,7 +276,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         switch (item.getItemId()) {
             case R.id.settings:
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
-                startActivityForResult(settingsActivityIntent, START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST);
+                startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -353,14 +356,14 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
-            startActivityForResult(intent, START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST);
+            startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
-            if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
+            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
                 mUriTextView.setText(mMasterUri);
@@ -368,7 +371,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                         getString(R.string.pref_log_file_default)) + ".txt";
                 mlogFile = new File("sdcard/" + logFileName);
                 initAndStartRosJavaNode();
-            } else if (requestCode == START_SETTINGS_ACTIVITY_NOT_FIRST_RUN_REQUEST) {
+            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default)) + ".txt";
