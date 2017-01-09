@@ -31,6 +31,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,10 +50,16 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
 
+    private ImageView mRosLightImageView;
+    private ImageView mTangoLightImageView;
+    private boolean mIsRosLightGreen  = false;
+    private boolean mIsTangoLightGreen  = false;
+
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
 
+    private boolean mIsTangoVersionOk = false;
     private boolean mIsTangoServiceBound = false;
 
     public RunningActivity() {
@@ -73,6 +80,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
+                mIsTangoLightGreen = mIsTangoVersionOk && mIsTangoServiceBound;
+                turnLight(mTangoLightImageView, mIsTangoLightGreen);
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
                 displayToastMessage(R.string.tango_bind_error);
@@ -91,12 +100,34 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      */
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
+            mIsRosLightGreen = false;
+            turnLight(mRosLightImageView, mIsRosLightGreen);
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
+            mIsTangoLightGreen = false;
+            turnLight(mTangoLightImageView, mIsTangoLightGreen);
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
         }
+    }
+
+    /**
+     * Function that turns an image view into green or red light.
+     * @param imageView image view to update.
+     * @param turnGreen true to turn green, false to turn red.
+     */
+    private void turnLight(final ImageView imageView, final boolean turnGreen) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (turnGreen) {
+                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                } else {
+                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                }
+            }
+        });
     }
 
     @Override
@@ -105,6 +136,9 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+
+        mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
+        mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
 
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
@@ -154,6 +188,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         TextView uriTextView = (TextView) findViewById(R.id.master_uri);
         uriTextView.setText(mMasterUri);
+        mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
+        mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
+        turnLight(mRosLightImageView, mIsRosLightGreen);
+        turnLight(mTangoLightImageView, mIsTangoLightGreen);
     }
 
     @Override
@@ -178,7 +216,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (mTangoRosNode.isTangoVersionOk(this)) {
+                mIsTangoVersionOk = true;
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+                mIsRosLightGreen = true;
+                turnLight(mRosLightImageView, mIsRosLightGreen);
             } else {
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
                 displayToastMessage(R.string.tango_version_error);
