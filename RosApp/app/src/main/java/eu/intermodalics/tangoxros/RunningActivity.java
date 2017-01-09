@@ -84,6 +84,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private Thread mLogThread;
     private StringBuilder mLogStringBuilder;
     private File mlogFile;
+    private boolean mDisplayLog = false;
 
     public RunningActivity() {
         super("TangoxRos", "TangoxRos");
@@ -236,8 +237,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if (isChecked) {
+                    mDisplayLog = true;
                     mLogTextView.setVisibility(View.VISIBLE);
                 } else {
+                    mDisplayLog = false;
                     mLogTextView.setVisibility(View.INVISIBLE);
                 }
             }
@@ -298,6 +301,21 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
         turnLight(mRosLightImageView, mIsRosLightGreen);
         turnLight(mTangoLightImageView, mIsTangoLightGreen);
+        mLogTextView = (TextView)findViewById(R.id.log_view);
+        mLogTextView.setMovementMethod(new ScrollingMovementMethod());
+        mLogTextView.setText(mLogStringBuilder.toString());
+        Switch logSwitch = (Switch) findViewById(R.id.log_switch);
+        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isChecked) {
+                    mLogTextView.setVisibility(View.VISIBLE);
+                } else {
+                    mLogTextView.setVisibility(View.INVISIBLE);
+                }
+            }
+        });
+        logSwitch.setChecked(mDisplayLog);
     }
 
     @Override
