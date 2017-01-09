@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
    )
 
 find_package(cmake_modules REQUIRED)
-find_package(Eigen REQUIRED)
 find_package(OpenCV 2 REQUIRED)
 
 generate_dynamic_reconfigure_options(
@@ -25,13 +24,12 @@ catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS dynamic_reconfigure glog_catkin roscpp sensor_msgs tango_client_api tf tf2_ros
   LIBRARIES tango_ros_native
-  DEPENDS Eigen OpenCV
+  DEPENDS OpenCV
   )
-  
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake
 )
@@ -43,7 +41,6 @@ add_library(tango_ros_native SHARED
 
 target_link_libraries(tango_ros_native
   ${catkin_LIBRARIES}
-  ${Eigen_LIBRARIES}
   ${OpenCV_LIBRARIES}
   )
 
