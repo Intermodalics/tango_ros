@@ -20,6 +20,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -171,6 +172,16 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setContentView(R.layout.running_activity);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
+        uriTextView.setText(mMasterUri);
     }
 
     @Override
