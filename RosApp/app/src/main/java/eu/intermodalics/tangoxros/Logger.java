@@ -16,8 +16,11 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.app.Activity;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -33,18 +36,50 @@ import java.util.Date;
  */
 public class Logger {
     private static final String TAG = Logger.class.getSimpleName();
+    private static final long LOG_THREAD_DURATION = 15000; // ms
+    private static final int LOG_THREAD_SLEEP_DURATION = 500; // ms
 
+    private Activity mActivity;
+    TextView mLogTextView;
     private String mLogCommand;
     private String mLogFileName;
     private int mLogTextMaxLength;
     private StringBuilder mLogStringBuilder;
     private File mLogFile;
+    private Thread mLogThread;
 
-    public Logger(String tagsToLog, String logFileName, int logTextMaxLength) {
+    public Logger(Activity activity, TextView logTextView, String tagsToLog,
+                  String logFileName, int logTextMaxLength) {
+        mActivity = activity;
+        mLogTextView = logTextView;
         mLogCommand = "logcat -d -s " + tagsToLog;
         mLogFileName = logFileName;
         mLogTextMaxLength = logTextMaxLength;
         mLogStringBuilder = new StringBuilder();
+        mLogThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
+                while (System.currentTimeMillis() <= endTime) {
+                    updateLogText();
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLogTextView.setText(getLogText());
+                        }
+                    });
+                    try {
+                        mLogThread.sleep(LOG_THREAD_SLEEP_DURATION);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.toString());
+                    }
+                }
+            }
+        });
+    }
+
+    public void start() {
+        mLogThread.start();
     }
 
     public void updateLogText() {
@@ -96,7 +131,14 @@ public class Logger {
 
     public File getLogFile() {
         if (mLogFile == null) {
-            return new File("");
+            Log.e(TAG, "Log file is null");
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mActivity.getApplicationContext(), "Unexpected error : log file is null", Toast.LENGTH_SHORT).show();
+                }
+            });
+            return null;
         }
         return mLogFile;
     }

@@ -50,12 +50,9 @@ import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
-
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
-    private static final long LOG_THREAD_DURATION = 15000; // ms
-    private static final int LOG_THREAD_SLEEP_DURATION = 500; // ms
 
     public static class startSettingsActivityRequest {
         public static final int FIRST_RUN = 1;
@@ -68,9 +65,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private ParameterNode mParameterNode;
     private boolean mIsTangoVersionOk = false;
     private boolean mIsTangoServiceBound = false;
-
     private Logger mLogger;
-    private Thread mLogThread;
 
     // UI objects and their state.
     private DrawerLayout mDrawerLayout;
@@ -192,28 +187,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 getResources().getString(R.string.pref_master_uri_default));
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default));
-        mLogger = new Logger(TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
-        mLogThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
-                while (System.currentTimeMillis() <= endTime) {
-                    mLogger.updateLogText();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mLogTextView.setText(mLogger.getLogText());
-                        }
-                    });
-                    try {
-                        mLogThread.sleep(LOG_THREAD_SLEEP_DURATION);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, e.toString());
-                    }
-                }
-            }
-        });
         setupUI();
+        mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
     }
 
     @Override
@@ -279,7 +254,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
-                mLogThread.start();
+                mLogger.start();
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
@@ -336,7 +311,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public void startMasterChooser() {
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
-            mLogThread.start();
+            mLogger.start();
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
