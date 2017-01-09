@@ -233,8 +233,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setupUI();
-
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
@@ -251,6 +249,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             }
         });
+        setupUI();
         mLogThread.start();
     }
 

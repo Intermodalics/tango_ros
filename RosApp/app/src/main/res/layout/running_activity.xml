@@ -65,7 +65,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/is_tango_ok_text"
-                android:layout_marginTop="30dp"
                 android:text="Display log"
                 android:checked="false" />
 
