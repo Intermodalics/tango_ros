@@ -67,6 +67,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
 
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
+    private Switch mlogSwitch;
+    private TextView mUriTextView;
 
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -200,40 +202,16 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         });
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private void setupUI() {
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
-
+        mUriTextView = (TextView) findViewById(R.id.master_uri);
+        mUriTextView.setText(mMasterUri);
         mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
         mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
-
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                getResources().getString(R.string.pref_master_uri_default));
-        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
-        uriTextView.setText(mMasterUri);
-
-        String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
-                getString(R.string.pref_log_file_default)) + ".txt";
-        mlogFile = new File("sdcard/" + logFileName);
-
-        mLogTextView = (TextView)findViewById(R.id.log_view);
-        mLogTextView.setMovementMethod(new ScrollingMovementMethod());
-        mLogStringBuilder = new StringBuilder();
-        mLogThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
-                while (System.currentTimeMillis() <= endTime) {
-                    updateLogTextView();
-                }
-            }
-        });
-        Switch logSwitch = (Switch) findViewById(R.id.log_switch);
-        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mlogSwitch = (Switch) findViewById(R.id.log_switch);
+        mlogSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if (isChecked) {
@@ -245,7 +223,42 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
             }
         });
+        mLogTextView = (TextView)findViewById(R.id.log_view);
+        mLogTextView.setMovementMethod(new ScrollingMovementMethod());
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setupUI();
+
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                getResources().getString(R.string.pref_master_uri_default));
+        String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                getString(R.string.pref_log_file_default)) + ".txt";
+        mlogFile = new File("sdcard/" + logFileName);
+        mLogStringBuilder = new StringBuilder();
+        mLogThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
+                while (System.currentTimeMillis() <= endTime) {
+                    updateLogTextView();
+                }
+            }
+        });
         mLogThread.start();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setupUI();
+        turnLight(mRosLightImageView, mIsRosLightGreen);
+        turnLight(mTangoLightImageView, mIsTangoLightGreen);
+        mlogSwitch.setChecked(mDisplayLog);
+        mLogTextView.setText(mLogStringBuilder.toString());
     }
 
     @Override
@@ -289,35 +302,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             unbindService(mTangoServiceConnection);
         }
         saveLogToFile();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setContentView(R.layout.running_activity);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
-        TextView uriTextView = (TextView) findViewById(R.id.master_uri);
-        uriTextView.setText(mMasterUri);
-        mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
-        mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
-        turnLight(mRosLightImageView, mIsRosLightGreen);
-        turnLight(mTangoLightImageView, mIsTangoLightGreen);
-        mLogTextView = (TextView)findViewById(R.id.log_view);
-        mLogTextView.setMovementMethod(new ScrollingMovementMethod());
-        mLogTextView.setText(mLogStringBuilder.toString());
-        Switch logSwitch = (Switch) findViewById(R.id.log_switch);
-        logSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if (isChecked) {
-                    mLogTextView.setVisibility(View.VISIBLE);
-                } else {
-                    mLogTextView.setVisibility(View.INVISIBLE);
-                }
-            }
-        });
-        logSwitch.setChecked(mDisplayLog);
     }
 
     @Override
@@ -379,8 +363,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (requestCode == START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST) {
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
-                TextView uriTextView = (TextView) findViewById(R.id.master_uri);
-                uriTextView.setText(mMasterUri);
+                mUriTextView.setText(mMasterUri);
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default)) + ".txt";
                 mlogFile = new File("sdcard/" + logFileName);
