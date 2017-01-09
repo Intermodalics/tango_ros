@@ -46,50 +46,42 @@ import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 
 public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
+
+    private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
+            + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
+    private static final String LOG_FILE_DIRECTORY = "sdcard/";
+    private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final long LOG_THREAD_DURATION = 15000; // in ms
 
     public static class startSettingsActivityRequest {
         public static final int FIRST_RUN = 1;
         public static final int STANDARD_RUN = 2;
     }
 
-    private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
-            + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
-    private static final long LOG_THREAD_DURATION = 15000; // in ms
-    private static final int LOG_TEXT_MAX_LENGTH = 5000;
-    private static final String LOG_CMD = "logcat -d -s " + TAGS_TO_LOG;
-
     private SharedPreferences mSharedPref;
-    private DrawerLayout mDrawerLayout;
-    private Switch mlogSwitch;
-    private TextView mUriTextView;
-
-    private ImageView mRosLightImageView;
-    private ImageView mTangoLightImageView;
-    private boolean mIsRosLightGreen  = false;
-    private boolean mIsTangoLightGreen  = false;
-
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
-
     private boolean mIsTangoVersionOk = false;
     private boolean mIsTangoServiceBound = false;
 
-    private TextView mLogTextView;
+    private Logger mLogger;
     private Thread mLogThread;
-    private StringBuilder mLogStringBuilder;
-    private File mlogFile;
+
+    // UI objects and their state.
+    private DrawerLayout mDrawerLayout;
+    private TextView mUriTextView;
+    private ImageView mRosLightImageView;
+    private boolean mIsRosLightGreen  = false;
+    private ImageView mTangoLightImageView;
+    private boolean mIsTangoLightGreen  = false;
+    private Switch mlogSwitch;
     private boolean mDisplayLog = false;
+    private TextView mLogTextView;
 
     public RunningActivity() {
         super("TangoxRos", "TangoxRos");
@@ -141,52 +133,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         }
     }
 
-    private void updateLogTextView() {
-        try {
-            Process process = Runtime.getRuntime().exec(LOG_CMD);
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
-            String line = "";
-            while ((line = bufferedReader.readLine()) != null) {
-                mLogStringBuilder.append(line + "\n");
-            }
-            // The following allows to keep only the end of the logcat text.
-            mLogStringBuilder.reverse();
-            mLogStringBuilder.setLength(LOG_TEXT_MAX_LENGTH);
-            mLogStringBuilder.reverse();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mLogTextView.setText(mLogStringBuilder.toString());
-                }
-            });
-            mLogThread.sleep(500);
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-        } catch (InterruptedException e) {
-            Log.e(TAG, e.toString());
-        }
-    }
-
-    private void saveLogToFile() {
-        String logText = mLogTextView.getText().toString();
-        if (!mlogFile.exists()) {
-            try {
-                mlogFile.createNewFile();
-            } catch (IOException e) {
-                Log.e(TAG, e.toString());
-            }
-        }
-        try {
-            BufferedWriter buf = new BufferedWriter(new FileWriter(mlogFile, false));
-            buf.write(logText);
-            Log.i(TAG, "Saved log to file: " + mlogFile.getAbsolutePath());
-            buf.close();
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-        }
-    }
-
     /**
      * Function that turns an image view into green or red light.
      * @param imageView image view to update.
@@ -201,6 +147,19 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 } else {
                     imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
                 }
+            }
+        });
+    }
+
+    /**
+     * Display a toast message with the given message.
+     * @param messageId String id of the message to display.
+     */
+    private void displayToastMessage(final int messageId) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -238,19 +197,28 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 getResources().getString(R.string.pref_master_uri_default));
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default)) + ".txt";
-        mlogFile = new File("sdcard/" + logFileName);
-        mLogStringBuilder = new StringBuilder();
+        mLogger = new Logger(TAGS_TO_LOG, LOG_FILE_DIRECTORY + logFileName, LOG_TEXT_MAX_LENGTH);
         mLogThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 long endTime = System.currentTimeMillis() + (LOG_THREAD_DURATION);
                 while (System.currentTimeMillis() <= endTime) {
-                    updateLogTextView();
+                    mLogger.updateLogText();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLogTextView.setText(mLogger.getLogText());
+                        }
+                    });
+                    try {
+                        mLogThread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.toString());
+                    }
                 }
             }
         });
         setupUI();
-        mLogThread.start();
     }
 
     @Override
@@ -260,7 +228,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         turnLight(mRosLightImageView, mIsRosLightGreen);
         turnLight(mTangoLightImageView, mIsTangoLightGreen);
         mlogSwitch.setChecked(mDisplayLog);
-        mLogTextView.setText(mLogStringBuilder.toString());
+        mLogTextView.setText(mLogger.getLogText());
     }
 
     @Override
@@ -285,10 +253,10 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
                 }
                 return true;
             case R.id.share:
-                saveLogToFile();
+                mLogger.saveLogToFile();
                 Intent shareFileIntent = new Intent(Intent.ACTION_SEND);
                 shareFileIntent.setType("text/plain");
-                shareFileIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mlogFile));
+                shareFileIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mLogger.getLogFile()));
                 startActivity(shareFileIntent);
                 return true;
             default:
@@ -303,7 +271,28 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
         }
-        saveLogToFile();
+        mLogger.saveLogToFile();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
+            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
+                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                        getResources().getString(R.string.pref_master_uri_default));
+                mUriTextView.setText(mMasterUri);
+                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                        getString(R.string.pref_log_file_default)) + ".txt";
+                mLogger.setLogFilePath(LOG_FILE_DIRECTORY + logFileName);
+                mLogThread.start();
+                initAndStartRosJavaNode();
+            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
+                // It is ok to change the log file name at runtime.
+                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
+                        getString(R.string.pref_log_file_default)) + ".txt";
+                mLogger.setLogFilePath(LOG_FILE_DIRECTORY + logFileName);
+            }
+        }
     }
 
     @Override
@@ -352,30 +341,11 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     public void startMasterChooser() {
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
+            mLogThread.start();
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
-            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
-                mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
-                        getResources().getString(R.string.pref_master_uri_default));
-                mUriTextView.setText(mMasterUri);
-                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
-                        getString(R.string.pref_log_file_default)) + ".txt";
-                mlogFile = new File("sdcard/" + logFileName);
-                initAndStartRosJavaNode();
-            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
-                // It is ok to change the log file name at runtime.
-                String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
-                        getString(R.string.pref_log_file_default)) + ".txt";
-                mlogFile = new File("sdcard/" + logFileName);
-            }
         }
     }
 
@@ -402,14 +372,5 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         } else {
             Log.e(TAG, "Master URI is null");
         }
-    }
-
-    private void displayToastMessage(final int messageId) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }
