@@ -16,6 +16,7 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -24,6 +25,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * This class is responsible for retrieving the logcat text and writing it to file.
@@ -32,15 +35,16 @@ public class Logger {
     private static final String TAG = Logger.class.getSimpleName();
 
     private String mLogCommand;
+    private String mLogFileName;
+    private int mLogTextMaxLength;
     private StringBuilder mLogStringBuilder;
     private File mLogFile;
-    private int mLogTextMaxLength;
 
     public Logger(String tagsToLog, String logFileName, int logTextMaxLength) {
         mLogCommand = "logcat -d -s " + tagsToLog;
-        mLogFile = new File(logFileName);
-        mLogStringBuilder = new StringBuilder();
+        mLogFileName = logFileName;
         mLogTextMaxLength = logTextMaxLength;
+        mLogStringBuilder = new StringBuilder();
     }
 
     public void updateLogText() {
@@ -61,7 +65,18 @@ public class Logger {
         }
     }
 
+    public void setLogFileName(String logFileName) {
+        mLogFileName = logFileName;
+    }
+
+    public String getLogText() {
+        return mLogStringBuilder.toString();
+    }
+
     public void saveLogToFile() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+        mLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + mLogFileName
+                + "_" + dateFormat.format(new Date()) + ".txt");
         if (!mLogFile.exists()) {
             try {
                 mLogFile.createNewFile();
@@ -79,15 +94,10 @@ public class Logger {
         }
     }
 
-    public void setLogFilePath(String logFileName) {
-        mLogFile = new File(logFileName);
-    }
-
     public File getLogFile() {
+        if (mLogFile == null) {
+            return new File("");
+        }
         return mLogFile;
-    }
-
-    public String getLogText() {
-        return mLogStringBuilder.toString();
     }
 }
