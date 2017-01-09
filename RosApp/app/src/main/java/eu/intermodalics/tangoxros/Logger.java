@@ -75,7 +75,7 @@ public class Logger {
 
     public void saveLogToFile() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
-        mLogFile = new File(Environment.getExternalStorageDirectory().getPath() + "/" + mLogFileName
+        mLogFile = new File(Environment.getExternalStorageDirectory().getPath(), mLogFileName
                 + "_" + dateFormat.format(new Date()) + ".txt");
         if (!mLogFile.exists()) {
             try {
