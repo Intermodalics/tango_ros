@@ -40,7 +40,7 @@ public class Logger {
     private static final int LOG_THREAD_SLEEP_DURATION = 500; // ms
 
     private Activity mActivity;
-    TextView mLogTextView;
+    private TextView mLogTextView;
     private String mLogCommand;
     private String mLogFileName;
     private int mLogTextMaxLength;
@@ -121,7 +121,7 @@ public class Logger {
         }
         try {
             BufferedWriter buf = new BufferedWriter(new FileWriter(mLogFile, false));
-            buf.write(mLogStringBuilder.toString());
+            buf.write(getLogText());
             Log.i(TAG, "Saved log to file: " + mLogFile.getAbsolutePath());
             buf.close();
         } catch (IOException e) {
