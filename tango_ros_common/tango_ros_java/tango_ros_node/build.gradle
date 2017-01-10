@@ -64,10 +64,13 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-
     // e.g. official msgs
     compile 'org.ros.rosjava_core:rosjava:[0.3.0]'
+}
+
+android.packagingOptions {
+    exclude 'META-INF/LICENSE.txt'
+    exclude 'META-INF/NOTICE.txt'
 }
 
 // Publish artifacts to workspace repository

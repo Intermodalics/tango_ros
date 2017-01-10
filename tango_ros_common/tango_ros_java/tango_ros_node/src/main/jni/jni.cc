@@ -24,19 +24,19 @@ extern "C" {
 #endif
 
 JNIEXPORT jboolean JNICALL
-Java_eu_intermodalics_tangoxros_TangoRosNode_setBinderTangoService(
+Java_com_rosjava_tangoxros_TangoRosNode_setBinderTangoService(
     JNIEnv* env, jobject /*obj*/, jobject binder) {
   return tango_helper::SetBinder(env, binder);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_eu_intermodalics_tangoxros_TangoRosNode_isTangoVersionOk(
+Java_com_rosjava_tangoxros_TangoRosNode_isTangoVersionOk(
     JNIEnv* env, jobject /*obj*/, jobject activity) {
   return tango_helper::IsTangoVersionOk(env, activity);
 }
 
 JNIEXPORT jint JNICALL
-Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
+Java_com_rosjava_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
     jstring master_uri_value, jstring host_ip_value, jstring node_name_value,
     jobjectArray remapping_objects_value) {
   const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
@@ -56,7 +56,7 @@ Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*
 }
 
 JNIEXPORT void JNICALL
-Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
+Java_com_rosjava_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
   tango_ros_node_executor.Shutdown();
 }
 
