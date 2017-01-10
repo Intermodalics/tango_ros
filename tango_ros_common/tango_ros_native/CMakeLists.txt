@@ -61,6 +61,7 @@ add_custom_command(
   DEPENDS ${dynamic_reconfigure_header_LOCATION}
   COMMAND cmake -E copy ${dynamic_reconfigure_header_LOCATION} ${dynamic_reconfigure_header_DESTINATION}
 )
+add_custom_target(copy ALL DEPENDS ${dynamic_reconfigure_header_DESTINATION})
 
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(${PROJECT_NAME}_test_tango_ros test/test_tango_ros_msg.cpp)
