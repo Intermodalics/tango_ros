@@ -9,3 +9,4 @@ git clone --recursive git@github.com:Intermodalics/tango_ros.git
 cd ~/tango_ros_ws
 catkin build
 ```  
+To build the app: see [here](https://github.com/Intermodalics/tango_ros/blob/master/RosApp/README.md).  
