@@ -59,6 +59,22 @@
                 android:layout_alignTop="@+id/is_tango_ok_text"
                 android:layout_alignLeft="@+id/master_uri"
                 android:src="@drawable/btn_radio_on_red_light" />
+
+            <Switch
+                android:id="@+id/log_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/is_tango_ok_text"
+                android:text="Display log"
+                android:checked="false" />
+
+            <TextView
+                android:id="@+id/log_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/log_switch"
+                android:scrollbars="vertical"
+                android:visibility="invisible"/>
         </RelativeLayout>
     </FrameLayout>
 
