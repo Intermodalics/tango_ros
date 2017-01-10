@@ -47,13 +47,25 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
     private static final String TAG = RunningActivity.class.getSimpleName();
     static final int START_SETTINGS_ACTIVITY_FIRST_RUN_REQUEST = 1;
 
+    enum RosStatus {
+        MASTER_NOT_CONNECTED,
+        NODE_RUNNING
+    }
+
+    enum TangoStatus {
+        SERVICE_NOT_BOUND,
+        SERVICE_NOT_CONNECTED,
+        VERSION_NOT_SUPPORTED,
+        SERVICE_RUNNING,
+    }
+
     private SharedPreferences mSharedPref;
     private DrawerLayout mDrawerLayout;
 
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
-    private boolean mIsRosLightGreen  = false;
-    private boolean mIsTangoLightGreen  = false;
+    private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
+    private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
 
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
@@ -80,9 +92,13 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
-                mIsTangoLightGreen = mIsTangoVersionOk && mIsTangoServiceBound;
-                turnLight(mTangoLightImageView, mIsTangoLightGreen);
+                if (mIsTangoVersionOk) {
+                    updateTangoStatus(TangoStatus.SERVICE_RUNNING);
+                } else {
+                    updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                }
             } else {
+                updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
                 Log.e(TAG, getResources().getString(R.string.tango_bind_error));
                 displayToastMessage(R.string.tango_bind_error);
                 onDestroy();
@@ -100,31 +116,51 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
      */
     public void onNativeNodeExecutionError(int errorCode) {
         if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
-            mIsRosLightGreen = false;
-            turnLight(mRosLightImageView, mIsRosLightGreen);
+            updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getResources().getString(R.string.ros_init_error));
             displayToastMessage( R.string.ros_init_error);
         } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
-            mIsTangoLightGreen = false;
-            turnLight(mTangoLightImageView, mIsTangoLightGreen);
+            updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getResources().getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
         }
     }
 
-    /**
-     * Function that turns an image view into green or red light.
-     * @param imageView image view to update.
-     * @param turnGreen true to turn green, false to turn red.
-     */
-    private void turnLight(final ImageView imageView, final boolean turnGreen) {
+    private void updateRosStatus(RosStatus status) {
+        if (mRosStatus != status) {
+            mRosStatus = status;
+            switchRosLight(status);
+        }
+    }
+
+    private void switchRosLight(final RosStatus status) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (turnGreen) {
-                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                if (status == RosStatus.NODE_RUNNING) {
+                    mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                 } else {
-                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                    mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                }
+            }
+        });
+    }
+
+    private void updateTangoStatus(TangoStatus status) {
+        if (mTangoStatus != status) {
+            mTangoStatus = status;
+            switchTangoLight(status);
+        }
+    }
+
+    private void switchTangoLight(final TangoStatus status) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (status == TangoStatus.SERVICE_RUNNING) {
+                    mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                } else {
+                    mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
                 }
             }
         });
@@ -177,6 +213,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         if (mIsTangoServiceBound) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
+            updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
         }
     }
 
@@ -190,8 +227,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         uriTextView.setText(mMasterUri);
         mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);
         mTangoLightImageView = (ImageView) findViewById(R.id.is_tango_ok_image);
-        turnLight(mRosLightImageView, mIsRosLightGreen);
-        turnLight(mTangoLightImageView, mIsTangoLightGreen);
+        switchRosLight(mRosStatus);
+        switchTangoLight(mTangoStatus);
     }
 
     @Override
@@ -218,9 +255,9 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
             if (mTangoRosNode.isTangoVersionOk(this)) {
                 mIsTangoVersionOk = true;
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
-                mIsRosLightGreen = true;
-                turnLight(mRosLightImageView, mIsRosLightGreen);
+                updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
+                updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
                 displayToastMessage(R.string.tango_version_error);
             }
