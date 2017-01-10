@@ -3,8 +3,8 @@
     <string name="pref_previously_started_key">pref_previously_started</string>
 
     <string name="welcome_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
-    <string name="snackbar_text_first_run">These settings will be used as default the next time you run the app.</string>
-    <string name="snackbar_action_text_first_run">OK</string>
+    <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
+    <string name="snackbar_action_text_first_run">Done</string>
 
     <!-- Strings related to error messages -->
 

@@ -107,49 +107,14 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.settings_activity);
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mSettingsPreferenceFragment = new SettingsPreferenceFragment();
         getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, mSettingsPreferenceFragment)
+                .replace(R.id.fragment_container, mSettingsPreferenceFragment)
                 .commit();
-        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        // Get the root container of the preferences list.
-        LinearLayout root = (LinearLayout)findViewById(android.R.id.list).getParent().getParent().getParent();
-        mToolbar = (Toolbar) LayoutInflater.from(this).inflate(R.layout.toolbar, root, false);
-        root.addView(mToolbar, 0); // Insert at top.
-        /*mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });*/
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
-        if (!previouslyStarted) {
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.menu_settings, menu);
-        }
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.done:
-                Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_first_run), Snackbar.LENGTH_INDEFINITE);
-                snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        onBackPressed();
-                    }
-                });
-                snackbar.show();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
     }
 
     @Override
@@ -163,6 +128,14 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     Toast.makeText(getApplicationContext(), R.string.welcome_text_first_run, Toast.LENGTH_LONG).show();
                 }
             });
+            Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_first_run), Snackbar.LENGTH_INDEFINITE);
+            snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onBackPressed();
+                }
+            });
+            snackbar.show();
         }
     }
 
