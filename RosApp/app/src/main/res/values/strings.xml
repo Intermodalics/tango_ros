@@ -2,6 +2,10 @@
     <string name="app_name">TangoxRos</string>
     <string name="pref_previously_started_key">pref_previously_started</string>
 
+    <string name="welcome_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
+    <string name="snackbar_text_first_run">These settings will be used as default the next time you run the app.</string>
+    <string name="snackbar_action_text_first_run">OK</string>
+
     <!-- Strings related to error messages -->
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
@@ -41,14 +45,7 @@
     <string name="pref_category_logging_title">Logging</string>
     <string name="pref_category_logging_key">pref_category_logging</string>
 
-    <string name="pref_save_log_to_file_title">Save log to file</string>
-    <string name="pref_save_log_to_file_key">pref_save_log_to_file</string>
-
-    <string name="pref_log_file_name_title">File name</string>
-    <string name="pref_log_file_name_key">pref_log_file_name</string>
-    <string name="pref_log_file_name_default">tangoxros_log</string>
-
-    <string name="welcome_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
-    <string name="snackbar_text_first_run">These settings will be used as default the next time you run the app.</string>
-    <string name="snackbar_action_text_first_run">OK</string>
+    <string name="pref_log_file_title">File name</string>
+    <string name="pref_log_file_key">pref_log_file_name</string>
+    <string name="pref_log_file_default">tangoxros_log</string>
 </resources>
