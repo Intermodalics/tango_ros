@@ -133,7 +133,7 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
             updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.ros_init_error));
-            displayToastMessage( R.string.ros_init_error);
+            displayToastMessage(R.string.ros_init_error);
         } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
             updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.tango_service_error));
