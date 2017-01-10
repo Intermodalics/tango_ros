@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tangoxros;
 
-
 import android.annotation.TargetApi;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -26,9 +25,15 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-
-import com.nispok.snackbar.Snackbar;
-import com.nispok.snackbar.SnackbarManager;
+import android.support.design.widget.Snackbar;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -41,10 +46,12 @@ import com.nispok.snackbar.SnackbarManager;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends PreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity {
     private static final String TAG = SettingsActivity.class.getSimpleName();
 
     private SharedPreferences mSharedPref;
+    private SettingsPreferenceFragment mSettingsPreferenceFragment;
+    private Toolbar mToolbar;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -100,10 +107,49 @@ public class SettingsActivity extends PreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSettingsPreferenceFragment = new SettingsPreferenceFragment();
         getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new SettingsPreferenceFragment())
+                .replace(android.R.id.content, mSettingsPreferenceFragment)
                 .commit();
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        // Get the root container of the preferences list.
+        LinearLayout root = (LinearLayout)findViewById(android.R.id.list).getParent().getParent().getParent();
+        mToolbar = (Toolbar) LayoutInflater.from(this).inflate(R.layout.toolbar, root, false);
+        root.addView(mToolbar, 0); // Insert at top.
+        /*mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });*/
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if (!previouslyStarted) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.menu_settings, menu);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.done:
+                Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_first_run), Snackbar.LENGTH_INDEFINITE);
+                snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        onBackPressed();
+                    }
+                });
+                snackbar.show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -111,12 +157,12 @@ public class SettingsActivity extends PreferenceActivity {
         super.onStart();
         boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
-            // TODO: Use android.support.design.widget.Snackbar when switching to Material design.
-            Snackbar snackbar = Snackbar.with(this);
-            snackbar.text(getString(R.string.snackbar_text_first_run));
-            snackbar.textColor(0xff33b5e5); // default light blue.
-            snackbar.duration(Snackbar.SnackbarDuration.LENGTH_LONG);
-            SnackbarManager.show(snackbar);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.welcome_text_first_run, Toast.LENGTH_LONG).show();
+                }
+            });
         }
     }
 
