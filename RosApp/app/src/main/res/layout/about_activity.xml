@@ -24,27 +24,35 @@
         android:textSize="20sp"/>
 
     <Button
-        android:id="@+id/app_wiki_about"
+        android:id="@+id/ros_wiki_about"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:layout_below="@+id/description_about"
-        android:text="Visit the app wiki"/>
+        android:text="Visit the ROS wiki"/>
 
     <Button
         android:id="@+id/rate_app_about"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_below="@+id/app_wiki_about"
+        android:layout_below="@+id/ros_wiki_about"
         android:text="Rate the app"/>
 
     <Button
-        android:id="@+id/our_website_about"
+        android:id="@+id/intermodalics_website_about"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/rate_app_about"
-        android:text="Visit our website"/>
+        android:text="Visit Intermodalics website"/>
+
+    <Button
+        android:id="@+id/ekumen_website_about"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/intermodalics_website_about"
+        android:text="Visit Ekumen website"/>
 </RelativeLayout>

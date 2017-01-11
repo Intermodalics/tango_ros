@@ -36,11 +36,11 @@ public class AboutActivity extends Activity {
         TextView textView = (TextView) findViewById(R.id.description_about);
         textView.setMovementMethod(LinkMovementMethod.getInstance());
 
-        Button appWikiButton = (Button) findViewById(R.id.app_wiki_about);
-        appWikiButton.setOnClickListener(new View.OnClickListener() {
+        Button rosWikiButton = (Button) findViewById(R.id.ros_wiki_about);
+        rosWikiButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //TODO: Add address to app wiki.
+                //TODO: Add address to ros wiki.
                 //Uri uri = Uri.parse(getString(R.string.app_wiki_address));
                 //Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 //startActivity(intent);
@@ -55,11 +55,21 @@ public class AboutActivity extends Activity {
             }
         });
 
-        Button ourWebsiteButton = (Button) findViewById(R.id.our_website_about);
-        ourWebsiteButton.setOnClickListener(new View.OnClickListener() {
+        Button intermodalicsWebsiteButton = (Button) findViewById(R.id.intermodalics_website_about);
+        intermodalicsWebsiteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Uri uri = Uri.parse(getString(R.string.intermodalics_website_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            }
+        });
+
+        Button ekumenWebsiteButton = (Button) findViewById(R.id.ekumen_website_about);
+        ekumenWebsiteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse(getString(R.string.ekumen_website_address));
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
             }
