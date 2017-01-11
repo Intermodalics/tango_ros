@@ -19,6 +19,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 19
+    buildToolsVersion "21.1.2"
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 19
@@ -65,7 +66,10 @@ repositories {
 
 dependencies {
     // e.g. official msgs
-    compile 'org.ros.rosjava_core:rosjava:[0.3.0]'
+    compile('org.ros.rosjava_core:rosjava:[0.3.0]') {
+        exclude group: 'junit'
+        exclude group: 'xml-apis'
+    }
 }
 
 android.packagingOptions {
@@ -79,7 +83,7 @@ apply plugin: 'maven'
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: "file://${projectDir}/../../../../../devel/share/maven/")
+            repository(url: "file://${projectDir}/../../../../devel/share/maven/")
         }
     }
 }
