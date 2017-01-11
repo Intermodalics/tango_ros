@@ -37,7 +37,7 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="20dp"
             android:layout_below="@+id/description_about"
-            android:text="Visit the ROS wiki"/>
+            android:text="Online documentation"/>
 
         <Button
             android:id="@+id/rate_app_about"
@@ -47,20 +47,38 @@
             android:layout_below="@+id/ros_wiki_about"
             android:text="Rate the app"/>
 
-        <Button
-            android:id="@+id/intermodalics_website_about"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/text_intermodalics_about"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/rate_app_about"
-            android:text="Visit Intermodalics website"/>
+            android:layout_marginTop="20dp"
+            android:text="Brought to you by"/>
 
-        <Button
-            android:id="@+id/ekumen_website_about"
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/image_intermodalics_about"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/intermodalics_website_about"
-            android:text="Visit Ekumen website"/>
+            android:layout_below="@+id/text_intermodalics_about"
+            android:background="@drawable/logo_intermodalics" />
+
+        <TextView
+            android:id="@+id/text_ekumen_about"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/image_intermodalics_about"
+            android:layout_marginTop="20dp"
+            android:text="in collaboration with"/>
+
+        <ImageButton
+            android:id="@+id/image_ekumen_about"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/text_ekumen_about"
+            android:background="@drawable/logo_ekumen" />
     </RelativeLayout>
 </LinearLayout>

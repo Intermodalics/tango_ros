@@ -7,10 +7,10 @@
     <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
     <string name="snackbar_action_text_first_run">Done</string>
 
-    <string name="title_activity_about">About</string>
+    <string name="title_activity_about">About the app</string>
     <string name="description_activity_about">
-        This application is made by Intermodalics in collaboration with Ekumen.\nIt is related to
-        <a href="http://wiki.ros.org/">ROS</a> and <a href="http://get.google.com/tango/">Tango</a>.</string>
+        This application exposes <a href="http://get.google.com/tango/">Tango</a> data to
+        <a href="http://wiki.ros.org/">ROS</a>.</string>
     <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
     <string name="ekumen_website_address">http://www.ekumenlabs.com/</string>
 

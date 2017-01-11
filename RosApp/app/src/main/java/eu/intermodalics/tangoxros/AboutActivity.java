@@ -25,6 +25,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class AboutActivity extends AppCompatActivity {
@@ -59,7 +60,7 @@ public class AboutActivity extends AppCompatActivity {
             }
         });
 
-        Button intermodalicsWebsiteButton = (Button) findViewById(R.id.intermodalics_website_about);
+        ImageButton intermodalicsWebsiteButton = (ImageButton) findViewById(R.id.image_intermodalics_about);
         intermodalicsWebsiteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -69,7 +70,7 @@ public class AboutActivity extends AppCompatActivity {
             }
         });
 
-        Button ekumenWebsiteButton = (Button) findViewById(R.id.ekumen_website_about);
+        ImageButton ekumenWebsiteButton = (ImageButton) findViewById(R.id.image_ekumen_about);
         ekumenWebsiteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
