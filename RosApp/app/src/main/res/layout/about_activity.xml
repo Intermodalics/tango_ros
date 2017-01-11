@@ -1,58 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/image_about"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:src="@drawable/ic_help_white_24dp"/>
+    <include layout="@layout/toolbar" />
 
-    <TextView
-        android:id="@+id/description_about"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        android:layout_below="@+id/image_about"
-        android:text="@string/description_activity_about"
-        android:textSize="20sp"/>
-
-    <Button
-        android:id="@+id/ros_wiki_about"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:layout_below="@+id/description_about"
-        android:text="Visit the ROS wiki"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
 
-    <Button
-        android:id="@+id/rate_app_about"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/ros_wiki_about"
-        android:text="Rate the app"/>
+        <ImageView
+            android:id="@+id/image_about"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/ic_help_white_24dp"/>
 
-    <Button
-        android:id="@+id/intermodalics_website_about"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/rate_app_about"
-        android:text="Visit Intermodalics website"/>
+        <TextView
+            android:id="@+id/description_about"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:layout_below="@+id/image_about"
+            android:text="@string/description_activity_about"
+            android:textSize="20sp"/>
 
-    <Button
-        android:id="@+id/ekumen_website_about"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/intermodalics_website_about"
-        android:text="Visit Ekumen website"/>
-</RelativeLayout>
+        <Button
+            android:id="@+id/ros_wiki_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:layout_below="@+id/description_about"
+            android:text="Visit the ROS wiki"/>
+
+        <Button
+            android:id="@+id/rate_app_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/ros_wiki_about"
+            android:text="Rate the app"/>
+
+        <Button
+            android:id="@+id/intermodalics_website_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/rate_app_about"
+            android:text="Visit Intermodalics website"/>
+
+        <Button
+            android:id="@+id/ekumen_website_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/intermodalics_website_about"
+            android:text="Visit Ekumen website"/>
+    </RelativeLayout>
+</LinearLayout>

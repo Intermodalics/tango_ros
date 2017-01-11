@@ -46,7 +46,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     private SharedPreferences mSharedPref;
     private SettingsPreferenceFragment mSettingsPreferenceFragment;
-    private Toolbar mToolbar;
 
     /**
      * A preference value change listener that updates the preference's summary
