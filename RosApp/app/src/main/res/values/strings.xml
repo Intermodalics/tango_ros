@@ -48,10 +48,7 @@
     <string name="pref_category_logging_title">Logging</string>
     <string name="pref_category_logging_key">pref_category_logging</string>
 
-    <string name="pref_save_log_to_file_title">Save log to file</string>
-    <string name="pref_save_log_to_file_key">pref_save_log_to_file</string>
-
-    <string name="pref_log_file_name_title">File name</string>
-    <string name="pref_log_file_name_key">pref_log_file_name</string>
-    <string name="pref_log_file_name_default">tangoxros_log</string>
+    <string name="pref_log_file_title">File name</string>
+    <string name="pref_log_file_key">pref_log_file_name</string>
+    <string name="pref_log_file_default">tangoxros_log</string>
 </resources>

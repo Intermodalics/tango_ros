@@ -16,6 +16,7 @@ LOCAL_LDLIBS += -landroid -lm -llog
 LOCAL_STATIC_LIBRARIES += roscpp_android_ndk miniglog
 LOCAL_SHARED_LIBRARIES := tango_client_api tango_support_api
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_DISABLE_FATAL_LINKER_WARNINGS=true
 include $(BUILD_SHARED_LIBRARY)
 
 include $(PROJECT_ROOT)/../third_party/miniglog/Android.mk

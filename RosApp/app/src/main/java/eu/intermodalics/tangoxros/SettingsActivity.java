@@ -126,7 +126,7 @@ public class SettingsActivity extends PreferenceActivity {
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
-            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_name_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
         }
     }
 

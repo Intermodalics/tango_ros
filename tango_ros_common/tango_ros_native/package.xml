@@ -10,7 +10,6 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>eigen</build_depend>
   <build_depend>glog_catkin</build_depend>
   <build_depend>opencv2</build_depend>
   <build_depend>roscpp</build_depend>
@@ -18,10 +17,9 @@
   <build_depend>tango_client_api</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>tf2_ros</build_depend>
-  
+
   <run_depend>cmake_modules</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>eigen</run_depend>
   <run_depend>glog_catkin</run_depend>
   <run_depend>opencv2</run_depend>
   <run_depend>roscpp</run_depend>
