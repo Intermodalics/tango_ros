@@ -6,6 +6,9 @@
     <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
     <string name="snackbar_action_text_first_run">Done</string>
 
+    <string name="snackbar_text_restart">You need to restart the node to apply your new settings.</string>
+    <string name="snackbar_action_text_restart">RESTART NOW</string>
+
     <!-- Strings related to error messages -->
 
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>

@@ -16,8 +16,11 @@
 
 package eu.intermodalics.tangoxros;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -54,6 +57,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
 
+    public static final String STOP_NODE_ALERT = "stop_node_alert";
+
     public static class startSettingsActivityRequest {
         public static final int FIRST_RUN = 1;
         public static final int STANDARD_RUN = 2;
@@ -74,6 +79,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
+    BroadcastReceiver mStopNodeAlertReceiver;
     private boolean mIsTangoVersionOk = false;
     private boolean mIsTangoServiceBound = false;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
@@ -216,9 +222,21 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
     }
 
+    private void stopNodeServiceAndActivity() {
+        this.nodeMainExecutorService.forceShutdown();
+        finish();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mStopNodeAlertReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                stopNodeServiceAndActivity();
+            }
+        };
+        this.registerReceiver(this.mStopNodeAlertReceiver, new IntentFilter(STOP_NODE_ALERT));
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
@@ -277,9 +295,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         if (mIsTangoServiceBound) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
+            mIsTangoServiceBound = false;
             updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
         }
         mLogger.saveLogToFile();
+        this.nodeMainExecutorService.forceShutdown();
+        this.unregisterReceiver(mStopNodeAlertReceiver);
     }
 
     @Override

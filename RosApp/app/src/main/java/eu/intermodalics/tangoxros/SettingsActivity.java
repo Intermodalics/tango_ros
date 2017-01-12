@@ -17,9 +17,11 @@
 package eu.intermodalics.tangoxros;
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -41,7 +43,8 @@ import android.widget.Toast;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends AppCompatPreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity implements
+        SharedPreferences.OnSharedPreferenceChangeListener{
     private static final String TAG = SettingsActivity.class.getSimpleName();
 
     private SharedPreferences mSharedPref;
@@ -99,11 +102,33 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                         .getString(preference.getKey(), ""));
     }
 
+    /**
+    * Implements SharedPreferences.OnSharedPreferenceChangeListener to trigger a snackbar if the
+    * change requires to restart the running activity to be applied.
+    */
+   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
+       if (key == getString(R.string.pref_master_is_local_key) ||
+           key == getString(R.string.pref_master_uri_key)) {
+           boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+           if (previouslyStarted) {
+               Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
+               snackbar.setAction(getString(R.string.snackbar_action_text_restart), new View.OnClickListener() {
+                   @Override
+                   public void onClick(View view) {
+                       restartRunningActivity();
+                   }
+               });
+               snackbar.show();
+           }
+       }
+   }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mSharedPref.registerOnSharedPreferenceChangeListener(this);
         mSettingsPreferenceFragment = new SettingsPreferenceFragment();
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, mSettingsPreferenceFragment)
@@ -172,5 +197,24 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             edit.commit();
         }
         super.onBackPressed();
+    }
+
+    public void startRunningActivity() {
+        Intent intent = new Intent(this, RunningActivity.class);
+        startActivity(intent);
+    }
+
+    public void restartRunningActivity() {
+        Intent intent = new Intent(RunningActivity.STOP_NODE_ALERT);
+        this.sendBroadcast(intent);
+        final Handler handler = new Handler();
+        final Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                startRunningActivity();
+            }
+        };
+        // Wait some time for node service to completely shutdown;
+        handler.postDelayed(task, 10000);
     }
 }
