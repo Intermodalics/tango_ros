@@ -13,8 +13,8 @@
 
         <ImageView
             android:id="@+id/image_about"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="20dp"
             android:src="@drawable/ic_help_white_24dp"/>
@@ -35,9 +35,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
             android:layout_below="@+id/description_about"
-            android:text="Online documentation"/>
+            android:layout_marginTop="20dp"
+            android:text="Online documentation"
+            android:background="@android:color/darker_gray"/>
 
         <Button
             android:id="@+id/rate_app_about"
@@ -45,7 +46,9 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/online_doc_about"
-            android:text="Rate the app"/>
+            android:layout_marginTop="10dp"
+            android:text="Rate the app"
+            android:background="@android:color/darker_gray"/>
 
         <TextView
             android:id="@+id/text_intermodalics_about"
@@ -57,37 +60,41 @@
             android:text="Brought to you by"/>
 
         <ImageButton
-            android:id="@+id/image_intermodalics_about"
+            android:id="@+id/logo_intermodalics_about"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/text_intermodalics_about"
-            android:background="@drawable/logo_intermodalics" />
+            android:layout_marginTop="10dp"
+            android:src="@drawable/logo_intermodalics"
+            android:background="@android:color/darker_gray"/>
 
         <TextView
             android:id="@+id/text_ekumen_about"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/image_intermodalics_about"
+            android:layout_below="@+id/logo_intermodalics_about"
             android:layout_marginTop="20dp"
             android:text="in collaboration with"/>
 
         <ImageButton
-            android:id="@+id/image_ekumen_about"
+            android:id="@+id/logo_ekumen_about"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/text_ekumen_about"
-            android:background="@drawable/logo_ekumen" />
+            android:layout_marginTop="10dp"
+            android:src="@drawable/logo_ekumen"
+            android:background="@android:color/darker_gray"/>
 
         <TextView
             android:id="@+id/text_powered_about"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-            android:layout_below="@+id/image_ekumen_about"
-            android:layout_marginTop="40dp"
+            android:layout_below="@+id/logo_ekumen_about"
+            android:layout_marginTop="30dp"
             android:text="Powered by"/>
 
         <TextView

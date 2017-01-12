@@ -63,7 +63,7 @@ public class AboutActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton intermodalicsWebsiteButton = (ImageButton) findViewById(R.id.image_intermodalics_about);
+        ImageButton intermodalicsWebsiteButton = (ImageButton) findViewById(R.id.logo_intermodalics_about);
         intermodalicsWebsiteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -73,7 +73,7 @@ public class AboutActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton ekumenWebsiteButton = (ImageButton) findViewById(R.id.image_ekumen_about);
+        ImageButton ekumenWebsiteButton = (ImageButton) findViewById(R.id.logo_ekumen_about);
         ekumenWebsiteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
