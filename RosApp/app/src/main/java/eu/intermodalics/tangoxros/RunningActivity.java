@@ -222,18 +222,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
     }
 
-    private void stopNodeServiceAndActivity() {
-        this.nodeMainExecutorService.forceShutdown();
-        finish();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mStopNodeAlertReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                stopNodeServiceAndActivity();
+                nodeMainExecutorService.forceShutdown();
             }
         };
         this.registerReceiver(this.mStopNodeAlertReceiver, new IntentFilter(STOP_NODE_ALERT));

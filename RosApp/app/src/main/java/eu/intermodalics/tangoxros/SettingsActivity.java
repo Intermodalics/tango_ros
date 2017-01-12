@@ -214,7 +214,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 startRunningActivity();
             }
         };
-        // Wait some time for node service to completely shutdown;
+        // Wait some time for node service to completely shutdown.
         handler.postDelayed(task, 10000);
     }
 }
