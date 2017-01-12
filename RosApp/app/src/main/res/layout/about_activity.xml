@@ -9,7 +9,9 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical" >
+        android:orientation="vertical"
+        android:theme="@style/AboutAppTheme"
+        android:background="@android:color/background_light">
 
         <ImageView
             android:id="@+id/image_about"
@@ -17,7 +19,7 @@
             android:layout_height="30dp"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="20dp"
-            android:src="@drawable/ic_help_white_24dp"/>
+            android:src="@drawable/ic_help_black_24dp"/>
 
         <TextView
             android:id="@+id/description_about"
@@ -37,8 +39,7 @@
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/description_about"
             android:layout_marginTop="20dp"
-            android:text="Online documentation"
-            android:background="@android:color/darker_gray"/>
+            android:text="Online documentation"/>
 
         <Button
             android:id="@+id/rate_app_about"
@@ -46,9 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/online_doc_about"
-            android:layout_marginTop="10dp"
-            android:text="Rate the app"
-            android:background="@android:color/darker_gray"/>
+            android:text="Rate the app"/>
 
         <TextView
             android:id="@+id/text_intermodalics_about"
@@ -66,8 +65,7 @@
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/text_intermodalics_about"
             android:layout_marginTop="10dp"
-            android:src="@drawable/logo_intermodalics"
-            android:background="@android:color/darker_gray"/>
+            android:background="@drawable/logo_intermodalics"/>
 
         <TextView
             android:id="@+id/text_ekumen_about"
@@ -85,8 +83,7 @@
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/text_ekumen_about"
             android:layout_marginTop="10dp"
-            android:src="@drawable/logo_ekumen"
-            android:background="@android:color/darker_gray"/>
+            android:background="@drawable/logo_ekumen"/>
 
         <TextView
             android:id="@+id/text_powered_about"
@@ -103,7 +100,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/text_powered_about"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="10dp"
             android:text="@string/ros_about"/>
 
         <TextView
