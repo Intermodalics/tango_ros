@@ -40,6 +40,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.rosjava.tangoxros.TangoInitializationHelper;
 import com.rosjava.tangoxros.TangoRosNode;
 
 import org.ros.address.InetAddressFactory;
@@ -336,7 +337,6 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         } else {
             Log.e(TAG, getString(R.string.tango_lib_error));
             displayToastMessage(R.string.tango_lib_error);
-
         }
     }
 
