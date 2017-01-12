@@ -9,10 +9,12 @@
 
     <string name="title_activity_about">About the app</string>
     <string name="description_activity_about">
-        This application exposes <a href="http://get.google.com/tango/">Tango</a> data to
-        <a href="http://wiki.ros.org/">ROS</a>.</string>
+        This application provides Tango data to the ROS ecosystem</string>
     <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
     <string name="ekumen_website_address">http://www.ekumenlabs.com/</string>
+    <string name="tango_about"><a href="http://get.google.com/tango/">Tango</a></string>
+    <string name="ros_about"> <a href="http://wiki.ros.org/">ROS</a></string>
+    <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <!-- Strings related to error messages -->
 

@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tangoxros;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,12 +36,16 @@ public class AboutActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Make links in text view clickable.
-        TextView textView = (TextView) findViewById(R.id.description_about);
-        textView.setMovementMethod(LinkMovementMethod.getInstance());
+        // Make links in text views clickable.
+        TextView textViewRos = (TextView) findViewById(R.id.text_ros_about);
+        textViewRos.setMovementMethod(LinkMovementMethod.getInstance());
+        TextView textViewTango = (TextView) findViewById(R.id.text_tango_about);
+        textViewTango.setMovementMethod(LinkMovementMethod.getInstance());
+        TextView textViewRosjava = (TextView) findViewById(R.id.text_rosjava_about);
+        textViewRosjava.setMovementMethod(LinkMovementMethod.getInstance());
 
-        Button rosWikiButton = (Button) findViewById(R.id.ros_wiki_about);
-        rosWikiButton.setOnClickListener(new View.OnClickListener() {
+        Button onlineDocButton = (Button) findViewById(R.id.online_doc_about);
+        onlineDocButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //TODO: Add address to ros wiki.
