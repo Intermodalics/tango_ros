@@ -45,16 +45,13 @@ public class TangoInitializationHelper {
     public static final int ARCH_X86_64 = 3;
     public static final int ARCH_X86 = 4;
 
-    protected static boolean isTangoServiceBound;
-    protected static boolean isTangoVersionOk;
+    protected static boolean mIsTangoServiceBound;
+    protected static boolean mIsTangoVersionOk;
 
     static {
-        try
-        {
+        try {
             System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e(TangoInitializationHelper.class.getName(),
                     "Error loading library " + TangoRosNode.DEFAULT_LIB_NAME, e);
         }
@@ -78,11 +75,11 @@ public class TangoInitializationHelper {
 
     // Getters for Tango Status variables
     public static boolean isTangoServiceBound() {
-        return isTangoServiceBound;
+        return mIsTangoServiceBound;
     }
 
     public static boolean isTangoVersionOk() {
-        return isTangoVersionOk;
+        return mIsTangoVersionOk;
     }
 
     /**
@@ -203,16 +200,16 @@ public class TangoInitializationHelper {
      * @return True if Tango Version is Ok.
      */
     public static boolean checkTangoVersionOk(Activity activity) {
-        isTangoVersionOk = isTangoVersionOk(activity);
-        return isTangoVersionOk;
+        mIsTangoVersionOk = isTangoVersionOk(activity);
+        return mIsTangoVersionOk;
     }
 
     /**
      * Class that simplifies the second stage of the Tango binding process.
      * An instance of this connection can be sent to {@link #bindTangoService} for default behaviour.
      * A callback can be executed by overriding {@link AfterConnectionCallback} when creating
-     * an instance of this object. At that point, state variables {@link #isTangoServiceBound} and
-     * {@link #isTangoVersionOk} should be already set, so that different cases can be handled.
+     * an instance of this object. At that point, state variables {@link #mIsTangoServiceBound} and
+     * {@link #mIsTangoVersionOk} should be already set, so that different cases can be handled.
      */
     public static class DefaultServiceConnection implements ServiceConnection {
 
@@ -229,7 +226,7 @@ public class TangoInitializationHelper {
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around RunningActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            isTangoServiceBound = setBinderTangoService(service);
+            mIsTangoServiceBound = setBinderTangoService(service);
 
             if (connectionErrorCallback != null) {
                 connectionErrorCallback.execute();
