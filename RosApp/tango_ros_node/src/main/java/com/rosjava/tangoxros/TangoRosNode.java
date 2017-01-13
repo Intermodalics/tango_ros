@@ -16,9 +16,6 @@
 
 package com.rosjava.tangoxros;
 
-import android.app.Activity;
-import android.os.IBinder;
-
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMainBeta;
 
@@ -44,20 +41,4 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
     }
-
-    /**
-     * Binds to the tango service.
-     *
-     * @param nativeTangoServiceBinder The native binder object.
-     * @return true if binding to the Tango service ended successfully.
-     */
-    public native boolean setBinderTangoService(IBinder nativeTangoServiceBinder);
-
-    /**
-     * Check that the tango version is correct.
-     *
-     * @param callerActivity the caller activity of this function.
-     * @return true if the version of tango is ok.
-     */
-    public native boolean isTangoVersionOk(Activity callerActivity);
 }

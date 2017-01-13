@@ -16,9 +16,12 @@
 
 package com.rosjava.tangoxros;
 
+import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.util.Log;
 
 import java.io.File;
@@ -26,6 +29,12 @@ import java.io.File;
 /**
  * Functions for simplifying the process of initializing TangoService, and function
  * handles loading correct libtango_client_api.so.
+ * To run the TangoRosNode correctly:
+ * - Load the Tango Shared library using {@link #loadTangoSharedLibrary}. Return code shall be
+ * different from {@link #ARCH_ERROR}.
+ * - Bind to the Tango Service using {@link #bindTangoService} providing a {@link ServiceConnection}.
+ * See {@link DefaultServiceConnection} for a default handle.
+ * - Create and execute node in the standard RosJava way.
  */
 public class TangoInitializationHelper {
     public static final int ARCH_ERROR = -2;
@@ -35,6 +44,46 @@ public class TangoInitializationHelper {
     public static final int ARCH_ARM32 = 2;
     public static final int ARCH_X86_64 = 3;
     public static final int ARCH_X86 = 4;
+
+    protected static boolean isTangoServiceBound;
+    protected static boolean isTangoVersionOk;
+
+    static {
+        try
+        {
+            System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
+        }
+        catch (Exception e)
+        {
+            Log.e(TangoInitializationHelper.class.getName(),
+                    "Error loading library " + TangoRosNode.DEFAULT_LIB_NAME, e);
+        }
+    }
+
+    /**
+     * Binds to the tango service.
+     *
+     * @param nativeTangoServiceBinder The native binder object.
+     * @return true if binding to the Tango service ended successfully.
+     */
+    protected static native boolean setBinderTangoService(IBinder nativeTangoServiceBinder);
+
+    /**
+     * Check if the tango version is correct.
+     *
+     * @param callerActivity the caller activity of this function.
+     * @return true if the version of tango is ok.
+     */
+    protected static native boolean isTangoVersionOk(Activity callerActivity);
+
+    // Getters for Tango Status variables
+    public static boolean isTangoServiceBound() {
+        return isTangoServiceBound;
+    }
+
+    public static boolean isTangoVersionOk() {
+        return isTangoVersionOk;
+    }
 
     /**
      * Only for apps using the C API:
@@ -128,5 +177,68 @@ public class TangoInitializationHelper {
             }
         }
         return loadedSoId;
+    }
+
+    /**
+     * Creates a DefaultServiceConnection with no callback.
+     * @return New ServiceConnection handler that can be used with {@link #bindTangoService}
+     */
+    public static ServiceConnection NewDefaultServiceConnection() {
+        return new TangoInitializationHelper.DefaultServiceConnection(null);
+    }
+
+    /**
+     * Creates a DefaultServiceConnection with a custom callback.
+     * @param callback Function to be called after connection attempt is finished.
+     * @return New ServiceConnection handler that can be used with {@link #bindTangoService}
+     */
+    public static ServiceConnection NewDefaultServiceConnection(
+            DefaultServiceConnection.AfterConnectionCallback callback) {
+        return new TangoInitializationHelper.DefaultServiceConnection(callback);
+    }
+
+    /**
+     * Checks if Tango Version is ok using native functions, and sets status variable.
+     * @param activity Caller activity.
+     * @return True if Tango Version is Ok.
+     */
+    public static boolean checkTangoVersionOk(Activity activity) {
+        isTangoVersionOk = isTangoVersionOk(activity);
+        return isTangoVersionOk;
+    }
+
+    /**
+     * Class that simplifies the second stage of the Tango binding process.
+     * An instance of this connection can be sent to {@link #bindTangoService} for default behaviour.
+     * A callback can be executed by overriding {@link AfterConnectionCallback} when creating
+     * an instance of this object. At that point, state variables {@link #isTangoServiceBound} and
+     * {@link #isTangoVersionOk} should be already set, so that different cases can be handled.
+     */
+    public static class DefaultServiceConnection implements ServiceConnection {
+
+        private AfterConnectionCallback connectionErrorCallback;
+
+        public DefaultServiceConnection(AfterConnectionCallback callback) {
+            connectionErrorCallback = callback;
+        }
+
+        public static interface AfterConnectionCallback {
+            public void execute();
+        }
+
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // Synchronization around RunningActivity object is to avoid
+            // Tango disconnect in the middle of the connecting operation.
+            isTangoServiceBound = setBinderTangoService(service);
+
+            if (connectionErrorCallback != null) {
+                connectionErrorCallback.execute();
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            // Handle this if you need to gracefully shutdown/retry
+            // in the event that Tango itself crashes/gets upgraded while running.
+        }
     }
 }

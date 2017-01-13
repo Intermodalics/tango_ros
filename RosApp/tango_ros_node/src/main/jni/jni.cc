@@ -24,14 +24,14 @@ extern "C" {
 #endif
 
 JNIEXPORT jboolean JNICALL
-Java_com_rosjava_tangoxros_TangoRosNode_setBinderTangoService(
-    JNIEnv* env, jobject /*obj*/, jobject binder) {
+Java_com_rosjava_tangoxros_TangoInitializationHelper_setBinderTangoService(
+    JNIEnv* env, jclass /*class*/, jobject binder) {
   return tango_helper::SetBinder(env, binder);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_rosjava_tangoxros_TangoRosNode_isTangoVersionOk(
-    JNIEnv* env, jobject /*obj*/, jobject activity) {
+Java_com_rosjava_tangoxros_TangoInitializationHelper_isTangoVersionOk(
+    JNIEnv* env, jclass /*class*/, jobject activity) {
   return tango_helper::IsTangoVersionOk(env, activity);
 }
 
