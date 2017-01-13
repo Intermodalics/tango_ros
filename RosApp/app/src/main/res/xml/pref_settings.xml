@@ -34,4 +34,15 @@
             android:selectAllOnFocus="true"/>
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/pref_category_app_title"
+        android:key="@string/pref_category_app_key">
+
+        <CheckBoxPreference
+            android:title="@string/pref_run_at_device_boot_title"
+            android:key="@string/pref_run_at_device_boot_key"
+            android:defaultValue="false"
+            android:summary="@string/pref_run_at_device_boot_summary"/>
+    </PreferenceCategory>
+
 </PreferenceScreen>

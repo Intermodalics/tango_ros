@@ -48,4 +48,11 @@
     <string name="pref_log_file_title">File name</string>
     <string name="pref_log_file_key">pref_log_file_name</string>
     <string name="pref_log_file_default">tangoxros_log</string>
+
+    <string name="pref_category_app_title">App</string>
+    <string name="pref_category_app_key">pref_category_app</string>
+
+    <string name="pref_run_at_device_boot_title">Run app after boot</string>
+    <string name="pref_run_at_device_boot_key">pref_run_at_device_boot</string>
+    <string name="pref_run_at_device_boot_summary">Enable to start the app automatically after the device boot</string>
 </resources>
