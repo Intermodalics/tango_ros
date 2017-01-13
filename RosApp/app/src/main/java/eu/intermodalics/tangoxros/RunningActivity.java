@@ -100,7 +100,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     /**
      * Tango Service connection.
      */
-
     ServiceConnection mTangoServiceConnection = new DefaultServiceConnection(
         new DefaultServiceConnection.AfterConnectionCallback() {
             @Override
