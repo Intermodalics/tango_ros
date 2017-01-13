@@ -25,6 +25,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.widget.Toolbar;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -43,14 +44,13 @@ import com.rosjava.tangoxros.TangoInitializationHelper.DefaultServiceConnection;
 import com.rosjava.tangoxros.TangoRosNode;
 
 import org.ros.address.InetAddressFactory;
-import org.ros.android.RosActivity;
 import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
-public class RunningActivity extends RosActivity implements TangoRosNode.CallbackListener {
+public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -193,6 +193,8 @@ public class RunningActivity extends RosActivity implements TangoRosNode.Callbac
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         mUriTextView = (TextView) findViewById(R.id.master_uri);
         mUriTextView.setText(mMasterUri);
         mRosLightImageView = (ImageView) findViewById(R.id.is_ros_ok_image);

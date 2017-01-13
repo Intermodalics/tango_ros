@@ -16,9 +16,7 @@
 
 package eu.intermodalics.tangoxros;
 
-
 import android.annotation.TargetApi;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +25,10 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
+import android.support.v7.widget.Toolbar;
+import android.view.View;
+import android.widget.Toast;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -39,8 +41,12 @@ import android.preference.PreferenceManager;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends PreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity {
     private static final String TAG = SettingsActivity.class.getSimpleName();
+
+    private SharedPreferences mSharedPref;
+    private SettingsPreferenceFragment mSettingsPreferenceFragment;
+    private Toolbar mToolbar;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -96,9 +102,36 @@ public class SettingsActivity extends PreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.settings_activity);
+        mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mSettingsPreferenceFragment = new SettingsPreferenceFragment();
         getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new SettingsPreferenceFragment())
+                .replace(R.id.fragment_container, mSettingsPreferenceFragment)
                 .commit();
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        if(!previouslyStarted) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.welcome_text_first_run, Toast.LENGTH_LONG).show();
+                }
+            });
+            Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_first_run), Snackbar.LENGTH_INDEFINITE);
+            snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onBackPressed();
+                }
+            });
+            snackbar.show();
+        }
     }
 
     /**
@@ -132,10 +165,9 @@ public class SettingsActivity extends PreferenceActivity {
 
     @Override
     public void onBackPressed() {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        boolean previouslyStarted = sharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+        boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
-            SharedPreferences.Editor edit = sharedPref.edit();
+            SharedPreferences.Editor edit = mSharedPref.edit();
             edit.putBoolean(getString(R.string.pref_previously_started_key), Boolean.TRUE);
             edit.commit();
         }
