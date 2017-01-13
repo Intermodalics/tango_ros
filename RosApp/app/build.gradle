@@ -15,17 +15,6 @@ android {
     }
 }
 
-repositories {
-    maven {
-        url 'https://github.com/rosjava/rosjava_mvn_repo/raw/master'
-    }
-    maven {
-        url '../../../../devel/share/maven'
-    }
-    mavenLocal()
-    mavenCentral()
-}
-
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -40,9 +29,4 @@ dependencies {
     compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
     compile 'com.android.support:support-v4:19.1.0'
     compile project(':tango_ros_node')
-}
-
-android.packagingOptions {
-    exclude 'META-INF/LICENSE.txt'
-    exclude 'META-INF/NOTICE.txt'
 }

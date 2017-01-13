@@ -57,33 +57,10 @@ task ndkBuild(type: Exec) {
     commandLine ndkbuild, '-C', file('src/main/jni').absolutePath
 }
 
-repositories {
-    maven {
-        url 'https://github.com/rosjava/rosjava_mvn_repo/raw/master'
-    }
-    mavenCentral()
-}
-
 dependencies {
     // e.g. official msgs
     compile('org.ros.rosjava_core:rosjava:[0.3.0]') {
         exclude group: 'junit'
         exclude group: 'xml-apis'
-    }
-}
-
-android.packagingOptions {
-    exclude 'META-INF/LICENSE.txt'
-    exclude 'META-INF/NOTICE.txt'
-}
-
-// Publish artifacts to workspace repository
-apply plugin: 'maven'
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: "file://${projectDir}/../../../../devel/share/maven/")
-        }
     }
 }
