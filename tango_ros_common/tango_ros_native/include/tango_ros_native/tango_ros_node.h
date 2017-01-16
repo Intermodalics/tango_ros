@@ -56,6 +56,8 @@ struct PublisherConfiguration {
   std::atomic_bool publish_point_cloud{false};
   // Flag corresponding to which cameras need to be published.
   std::atomic<uint32_t> publish_camera{CAMERA_NONE};
+  //
+  std::atomic_bool enable_drift_correction{true};
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";

@@ -26,8 +26,11 @@
     <string name="publish_fisheye_camera">Fisheye image</string>
     <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
 
-     <string name="publish_color_camera">Color image</string>
+    <string name="publish_color_camera">Color image</string>
     <string name="publish_color_camera_key">publish_color_camera</string>
+
+    <string name="enable_drift_correction">Drift correction</string>
+    <string name="enable_drift_correction_key">enable_drift_correction</string>
 
     <!-- Strings related to settings preferences -->
     

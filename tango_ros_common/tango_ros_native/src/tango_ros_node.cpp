@@ -195,6 +195,7 @@ TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
   publisher_config_.publish_device_pose = static_cast<bool>(publisher_config.publish_device_pose);
   publisher_config_.publish_point_cloud = static_cast<bool>(publisher_config.publish_point_cloud);
   publisher_config_.publish_camera = static_cast<bool>(publisher_config.publish_camera);
+  publisher_config_.enable_drift_correction = static_cast<bool>(publisher_config.enable_drift_correction);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -257,7 +258,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_drift_correction = "config_enable_drift_correction";
-  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction,
+                               publisher_config_.enable_drift_correction);
   if(result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_drift_correction << " error: " << result;
@@ -526,6 +528,7 @@ void TangoRosNode::PublishColorImage() {
 }
 
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
+  LOG(ERROR) << "DynamicReconfigureCallback";
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
   if (config.publish_fisheye_camera) {
@@ -537,6 +540,13 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
     publisher_config_.publish_camera |= CAMERA_COLOR;
   } else {
     publisher_config_.publish_camera &= ~CAMERA_COLOR;
+  }
+
+  if (publisher_config_.enable_drift_correction != config.enable_drift_correction) {
+    LOG(ERROR) << "enable drift correction update";
+    TangoDisconnect();
+    publisher_config_.enable_drift_correction = config.enable_drift_correction;
+    //OnTangoServiceConnected();
   }
   PublishStaticTransforms();
 }

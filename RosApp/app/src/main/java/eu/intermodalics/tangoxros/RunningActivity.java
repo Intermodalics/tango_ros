@@ -313,7 +313,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),
                 getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key));
+                getString(R.string.publish_fisheye_camera_key),
+                getString(R.string.enable_drift_correction_key));
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
 
