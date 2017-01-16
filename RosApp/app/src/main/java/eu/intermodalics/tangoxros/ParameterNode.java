@@ -57,6 +57,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
     private final String[] mDynamicParamNames;
+    private boolean mParameterNodeCalledDynamicReconfigure = false;
 
     public ParameterNode(Activity activity, String... paramNames) {
         mCreatorActivity = activity;
@@ -83,14 +84,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             @Override
             public void onNewMessage(Config config) {
                 Log.w(TAG, "Parameter update");
-                SharedPreferences.Editor editor = mSharedPreferences.edit();
-                for (BoolParameter boolParam : config.getBools()) {
-                    if (Arrays.asList(mDynamicParamNames).contains(boolParam.getName())) {
-                        Log.w(TAG, "onNewMessage, key: " + boolParam.getName() + " value: " + boolParam.getValue());
-                        editor.putBoolean(boolParam.getName(), boolParam.getValue());
+                if (!mParameterNodeCalledDynamicReconfigure) {
+                    SharedPreferences.Editor editor = mSharedPreferences.edit();
+                    for (BoolParameter boolParam : config.getBools()) {
+                        if (Arrays.asList(mDynamicParamNames).contains(boolParam.getName())) {
+                            Log.w(TAG, "onNewMessage, key: " + boolParam.getName() + " value: " + boolParam.getValue());
+                            editor.putBoolean(boolParam.getName(), boolParam.getValue());
+                        }
                     }
+                    editor.commit();
                 }
-                editor.commit();
             }
         });
     }
@@ -156,6 +159,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
                     Log.i(NODE_NAME, "Dynamic Reconfigure success");
+                    mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
@@ -163,7 +167,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                     Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage(), e);
                 }
             });
-
+            mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
             Log.e(NODE_NAME, "Service not found: " + e.getMessage(), e);
         } catch (Exception e) {
