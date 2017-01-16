@@ -308,7 +308,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        // Create parameter synchronization node to be up-to-date with Parameter Server.
+        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
         mParameterNode = new ParameterNode(this,
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),

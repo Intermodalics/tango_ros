@@ -42,9 +42,9 @@ import dynamic_reconfigure.ReconfigureRequest;
 import dynamic_reconfigure.ReconfigureResponse;
 
 /**
- * RosJava node that handles interactions with Parameter Server.
- * It provides callbacks to update the app's state with changes on the Parameter Server,
- * and to update the Parameter Server with changes applied on the app's preferences by the user.
+ * RosJava node that handles interactions with Dynamic Reconfigure.
+ * It provides callbacks to update the app's state with changes on Dynamic Reconfigure,
+ * and to update Dynamic Reconfigure with changes applied on the app's preferences by the user.
  */
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = ParameterNode.class.getSimpleName();
@@ -73,7 +73,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
 
         // Overwrite preferences in server with local preferences.
-        uploadPreferencesToParameterServer(mSharedPreferences);
+        uploadPreferencesToDynamicReconfigure(mSharedPreferences);
 
         // Listen to changes in the shared preferences.
         mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
@@ -110,7 +110,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             new Thread() {
                 @Override
                 public void run() {
-                    dynamicReconfigure(key, bool.booleanValue());
+                    callDynamicReconfigure(key, bool.booleanValue());
                 }
             }.start();
         }
@@ -120,13 +120,13 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
      * Syncs the Parameter Server with all the current local shared preferences (app --> server).
      * @param sharedPreferences Reference to the preferences to sync.
      */
-    private void uploadPreferencesToParameterServer(SharedPreferences sharedPreferences) {
+    private void uploadPreferencesToDynamicReconfigure(SharedPreferences sharedPreferences) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
 
         for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
             if (entry.getValue() instanceof Boolean) {
                 Boolean bool = (Boolean) entry.getValue();
-                dynamicReconfigure(entry.getKey(), bool.booleanValue());
+                callDynamicReconfigure(entry.getKey(), bool.booleanValue());
             }
         }
     }
@@ -137,7 +137,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
      * @param paramName Name of the parameter to set.
      * @param paramValue New value for the given parameter name.
      */
-    private void dynamicReconfigure(String paramName, boolean paramValue) {
+    private void callDynamicReconfigure(String paramName, boolean paramValue) {
         ReconfigureRequest srv_req = mConnectedNode.getServiceRequestMessageFactory().newFromType(Reconfigure._TYPE);
         Config config = mConnectedNode.getTopicMessageFactory().newFromType(Config._TYPE);
         BoolParameter boolParameter = mConnectedNode.getTopicMessageFactory().newFromType(BoolParameter._TYPE);
