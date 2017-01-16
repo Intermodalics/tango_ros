@@ -42,6 +42,11 @@ public class TangoInitializationHelper {
     protected static boolean mIsTangoServiceBound;
     protected static boolean mIsTangoVersionOk;
 
+    /**
+     * {@link TangoInitializationHelper} depends on the same library as {@link TangoRosNode}.
+     * This code is added to ensure that the native functions will be properly linked;
+     * loading the same library twice has no side effects.
+     */
     static {
         try {
             System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
