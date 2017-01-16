@@ -78,17 +78,15 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         // Listen to changes in the shared preferences.
         mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-        // Listen to updates of the dynamic reconfigure server.
-        Subscriber<Config> subscriber = mConnectedNode.newSubscriber(buildFullParameterName(RECONFIGURE_TOPIC_NAME), Config._TYPE);
+        // Listen to updates of the dynamic reconfigure server via the update parameters topic.
+        Subscriber<Config> subscriber = mConnectedNode.newSubscriber(BuildTangoRosNodeNamespaceName(RECONFIGURE_TOPIC_NAME), Config._TYPE);
         subscriber.addMessageListener(new MessageListener<Config>() {
             @Override
             public void onNewMessage(Config config) {
-                Log.w(TAG, "Parameter update");
                 if (!mParameterNodeCalledDynamicReconfigure) {
                     SharedPreferences.Editor editor = mSharedPreferences.edit();
                     for (BoolParameter boolParam : config.getBools()) {
                         if (Arrays.asList(mDynamicParamNames).contains(boolParam.getName())) {
-                            Log.w(TAG, "onNewMessage, key: " + boolParam.getName() + " value: " + boolParam.getValue());
                             editor.putBoolean(boolParam.getName(), boolParam.getValue());
                         }
                     }
@@ -112,7 +110,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             new Thread() {
                 @Override
                 public void run() {
-                    Log.w(TAG, "onSharedPreferenceChanged, key: " + key + " value: " + bool);
                     dynamicReconfigure(key, bool.booleanValue());
                 }
             }.start();
@@ -129,7 +126,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
             if (entry.getValue() instanceof Boolean) {
                 Boolean bool = (Boolean) entry.getValue();
-                Log.w(TAG, "uploadPreferencesToParameterServer, key: " + entry.getKey() + " value: " + bool);
                 dynamicReconfigure(entry.getKey(), bool.booleanValue());
             }
         }
@@ -152,30 +148,30 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         srv_req.setConfig(config);
         try {
             ServiceClient<ReconfigureRequest, ReconfigureResponse> serviceClient =
-                    mConnectedNode.newServiceClient(buildFullParameterName(RECONFIGURE_SRV_NAME),
+                    mConnectedNode.newServiceClient(BuildTangoRosNodeNamespaceName(RECONFIGURE_SRV_NAME),
                             Reconfigure._TYPE);
 
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    Log.i(NODE_NAME, "Dynamic Reconfigure success");
+                    Log.i(TAG, "Dynamic Reconfigure success");
                     mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    Log.e(NODE_NAME, "Dynamic Reconfigure failure: " + e.getMessage(), e);
+                    Log.e(TAG, "Dynamic Reconfigure failure: " + e.getMessage(), e);
                 }
             });
             mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
-            Log.e(NODE_NAME, "Service not found: " + e.getMessage(), e);
+            Log.e(TAG, "Service not found: " + e.getMessage(), e);
         } catch (Exception e) {
-            Log.e(NODE_NAME, "Error while calling Dynamic Reconfigure Service: " + e.getMessage(), e);
+            Log.e(TAG, "Error while calling Dynamic Reconfigure Service: " + e.getMessage(), e);
         }
     }
 
-    private String buildFullParameterName(String paramName) {
+    private String BuildTangoRosNodeNamespaceName(String paramName) {
         return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }
