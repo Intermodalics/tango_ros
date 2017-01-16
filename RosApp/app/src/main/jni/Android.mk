@@ -6,7 +6,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := tango_ros_android_lib
 LOCAL_SRC_FILES := jni.cc tango_helper.cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
-LOCAL_CFLAGS  += -O3 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
+LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
 LOCAL_LDLIBS += -landroid -lm -llog
 LOCAL_STATIC_LIBRARIES += roscpp_android_ndk
 LOCAL_SHARED_LIBRARIES := tango_client_api tango_support_api tango_ros_native
@@ -15,7 +15,7 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := test_tango_ros_native
 LOCAL_SRC_FILES := test/test_tango_ros_api.cc
-LOCAL_CFLAGS  += -O3 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
+LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
 LOCAL_STATIC_LIBRARIES += roscpp_android_ndk googletest_main
 LOCAL_SHARED_LIBRARIES := tango_client_api tango_ros_native
 include $(BUILD_EXECUTABLE)
