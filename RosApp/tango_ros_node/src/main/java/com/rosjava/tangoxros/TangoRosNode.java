@@ -16,9 +16,19 @@
 
 package com.rosjava.tangoxros;
 
+import android.content.ServiceConnection;
+
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMainBeta;
 
+/**
+ *  * To run the TangoRosNode correctly:
+ * - Load the Tango Shared library using {@link TangoInitializationHelper#loadTangoSharedLibrary}. Return code shall be
+ * different from {@link TangoInitializationHelper#ARCH_ERROR}.
+ * - Bind to the Tango Service using {@link TangoInitializationHelper#bindTangoService} providing a {@link ServiceConnection}.
+ * See {@link TangoInitializationHelper.DefaultTangoServiceConnection} for a default handle.
+ * - Create and execute node in the standard RosJava way.
+ */
 public class TangoRosNode extends NativeNodeMainBeta {
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";

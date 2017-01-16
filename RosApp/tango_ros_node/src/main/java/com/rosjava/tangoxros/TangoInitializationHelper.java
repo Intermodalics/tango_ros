@@ -29,12 +29,6 @@ import java.io.File;
 /**
  * Functions for simplifying the process of initializing TangoService, and function
  * handles loading correct libtango_client_api.so.
- * To run the TangoRosNode correctly:
- * - Load the Tango Shared library using {@link #loadTangoSharedLibrary}. Return code shall be
- * different from {@link #ARCH_ERROR}.
- * - Bind to the Tango Service using {@link #bindTangoService} providing a {@link ServiceConnection}.
- * See {@link DefaultServiceConnection} for a default handle.
- * - Create and execute node in the standard RosJava way.
  */
 public class TangoInitializationHelper {
     public static final int ARCH_ERROR = -2;
@@ -177,21 +171,21 @@ public class TangoInitializationHelper {
     }
 
     /**
-     * Creates a DefaultServiceConnection with no callback.
+     * Creates a DefaultTangoServiceConnection with no callback.
      * @return New ServiceConnection handler that can be used with {@link #bindTangoService}
      */
     public static ServiceConnection NewDefaultServiceConnection() {
-        return new TangoInitializationHelper.DefaultServiceConnection(null);
+        return new DefaultTangoServiceConnection(null);
     }
 
     /**
-     * Creates a DefaultServiceConnection with a custom callback.
+     * Creates a DefaultTangoServiceConnection with a custom callback.
      * @param callback Function to be called after connection attempt is finished.
      * @return New ServiceConnection handler that can be used with {@link #bindTangoService}
      */
     public static ServiceConnection NewDefaultServiceConnection(
-            DefaultServiceConnection.AfterConnectionCallback callback) {
-        return new TangoInitializationHelper.DefaultServiceConnection(callback);
+            DefaultTangoServiceConnection.AfterConnectionCallback callback) {
+        return new DefaultTangoServiceConnection(callback);
     }
 
     /**
@@ -211,11 +205,11 @@ public class TangoInitializationHelper {
      * an instance of this object. At that point, state variables {@link #mIsTangoServiceBound} and
      * {@link #mIsTangoVersionOk} should be already set, so that different cases can be handled.
      */
-    public static class DefaultServiceConnection implements ServiceConnection {
+    public static class DefaultTangoServiceConnection implements ServiceConnection {
 
         private AfterConnectionCallback connectionErrorCallback;
 
-        public DefaultServiceConnection(AfterConnectionCallback callback) {
+        public DefaultTangoServiceConnection(AfterConnectionCallback callback) {
             connectionErrorCallback = callback;
         }
 

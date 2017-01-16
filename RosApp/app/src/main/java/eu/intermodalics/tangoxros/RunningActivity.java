@@ -40,7 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rosjava.tangoxros.TangoInitializationHelper;
-import com.rosjava.tangoxros.TangoInitializationHelper.DefaultServiceConnection;
+import com.rosjava.tangoxros.TangoInitializationHelper.DefaultTangoServiceConnection;
 import com.rosjava.tangoxros.TangoRosNode;
 
 import org.ros.address.InetAddressFactory;
@@ -100,8 +100,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     /**
      * Tango Service connection.
      */
-    ServiceConnection mTangoServiceConnection = new DefaultServiceConnection(
-        new DefaultServiceConnection.AfterConnectionCallback() {
+    ServiceConnection mTangoServiceConnection = new DefaultTangoServiceConnection(
+        new DefaultTangoServiceConnection.AfterConnectionCallback() {
             @Override
             public void execute() {
                 if (TangoInitializationHelper.isTangoServiceBound()) {
