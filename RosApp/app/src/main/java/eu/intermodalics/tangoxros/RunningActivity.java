@@ -42,13 +42,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
-import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
-public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
+public class RunningActivity extends AppCompatRosActivity implements RosAppNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -71,7 +70,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     }
 
     private SharedPreferences mSharedPref;
-    private TangoRosNode mTangoRosNode;
+    private RosAppNode mRosAppNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
     private boolean mIsTangoVersionOk = false;
@@ -104,7 +103,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         public void onServiceConnected(ComponentName name, IBinder service) {
             // Synchronization around RunningActivity object is to avoid
             // Tango disconnect in the middle of the connecting operation.
-            if (mTangoRosNode.setBinderTangoService(service)) {
+            if (mRosAppNode.setBinderTangoService(service)) {
                 Log.i(TAG, "Bound to tango service");
                 mIsTangoServiceBound = true;
                 if (mIsTangoVersionOk) {
@@ -127,14 +126,14 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     };
 
     /**
-     * Implements TangoRosNode.CallbackListener.
+     * Implements RosAppNode.CallbackListener.
      */
-    public void onNativeNodeExecutionError(int errorCode) {
-        if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
+    public void onPostNativeNodeExecution(int returnCode) {
+        if (returnCode == RosAppNode.ROS_CONNECTION_ERROR) {
             updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.ros_init_error));
             displayToastMessage(R.string.ros_init_error);
-        } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
+        } else if (returnCode < RosAppNode.SUCCESS) {
             updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
@@ -321,12 +320,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         if(TangoInitializationHelper.loadTangoSharedLibrary() !=
                 TangoInitializationHelper.ARCH_ERROR) {
-            mTangoRosNode = new TangoRosNode();
-            mTangoRosNode.attachCallbackListener(this);
+            mRosAppNode = new RosAppNode();
+            mRosAppNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            if (mTangoRosNode.isTangoVersionOk(this)) {
+            if (mRosAppNode.isTangoVersionOk(this)) {
                 mIsTangoVersionOk = true;
-                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+                nodeMainExecutor.execute(mRosAppNode, nodeConfiguration);
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
                 updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);

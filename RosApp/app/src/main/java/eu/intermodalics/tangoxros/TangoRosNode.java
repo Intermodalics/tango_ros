@@ -38,7 +38,7 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public native int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
 
     @Override
-    public native void shutdown();
+    public native int shutdown();
 
     @Override
     public GraphName getDefaultNodeName() {
