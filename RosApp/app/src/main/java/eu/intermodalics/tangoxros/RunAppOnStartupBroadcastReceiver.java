@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Intermodalics All Rights Reserved.
+ * Copyright 2017 Intermodalics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,10 @@ public class RunAppOnStartupBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         boolean runAtBoot = sharedPreferences.getBoolean(context.getString(R.string.pref_run_at_device_boot_key), false);
-        if (runAtBoot) {
-            if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
-                Intent startRunningActivityIntent = new Intent(context, RunningActivity.class);
-                startRunningActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(startRunningActivityIntent);
-            }
+        if (runAtBoot && intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
+            Intent startRunningActivityIntent = new Intent(context, RunningActivity.class);
+            startRunningActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(startRunningActivityIntent);
         }
     }
 }
