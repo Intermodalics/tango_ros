@@ -38,6 +38,10 @@
             android:key="@string/pref_run_at_device_boot_key"
             android:defaultValue="false"
             android:summary="@string/pref_run_at_device_boot_summary"/>
+
+        <Preference
+            android:title="@string/pref_about_app_title"
+            android:key="@string/pref_about_app_key"/>
     </PreferenceCategory>
 
 </PreferenceScreen>

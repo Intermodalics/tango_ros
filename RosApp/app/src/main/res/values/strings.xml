@@ -2,9 +2,19 @@
     <string name="app_name">TangoxRos</string>
     <string name="pref_previously_started_key">pref_previously_started</string>
 
+    <string name="title_activity_settings">Settings</string>
     <string name="welcome_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
     <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
     <string name="snackbar_action_text_first_run">Done</string>
+
+    <string name="title_activity_about">About the app</string>
+    <string name="description_activity_about">
+        This application provides Tango data to the ROS ecosystem</string>
+    <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
+    <string name="ekumen_website_address">http://www.ekumenlabs.com/</string>
+    <string name="tango_about"><a href="http://get.google.com/tango/">Tango</a></string>
+    <string name="ros_about"> <a href="http://wiki.ros.org/">ROS</a></string>
+    <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <!-- Strings related to error messages -->
 
@@ -13,7 +23,6 @@
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
-    <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to running preferences -->
 
@@ -52,4 +61,7 @@
     <string name="pref_run_at_device_boot_title">Auto start app after boot</string>
     <string name="pref_run_at_device_boot_key">pref_run_at_device_boot</string>
     <string name="pref_run_at_device_boot_summary">Enable to start the app automatically after the device boot</string>
+
+    <string name="pref_about_app_title">About TangoXRos</string>
+    <string name="pref_about_app_key">pref_about_app</string>
 </resources>
