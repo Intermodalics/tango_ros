@@ -98,8 +98,8 @@
 
         <FrameLayout
             android:id="@+id/preferencesFrame"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content" >
+            android:layout_height="match_parent"
+            android:layout_width="match_parent" >
         </FrameLayout>
     </LinearLayout>
 </android.support.v4.widget.DrawerLayout>

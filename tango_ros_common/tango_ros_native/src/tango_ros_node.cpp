@@ -206,18 +206,23 @@ TangoRosNode::~TangoRosNode() {
 }
 
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+  LOG(ERROR) << "TangoSetupConfig";
   TangoErrorType result = TangoSetupConfig();
   if (result != TANGO_SUCCESS) {
       LOG(ERROR) << "Error while setting up Tango config.";
       return result;
   }
+  LOG(ERROR) << "TangoConnect";
   result = TangoConnect();
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while connecting to Tango Service.";
     return result;
   }
 
+  LOG(ERROR) << "PublishStaticTransforms";
   PublishStaticTransforms();
+
+  LOG(ERROR) << "TangoService_getPoseAtTime";
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
@@ -259,7 +264,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
   const char* config_enable_drift_correction = "config_enable_drift_correction";
   result = TangoConfig_setBool(tango_config_, config_enable_drift_correction,
-                               publisher_config_.enable_drift_correction);
+                               static_cast<bool>(publisher_config_.enable_drift_correction));
   if(result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_drift_correction << " error: " << result;
@@ -544,9 +549,11 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
 
   if (publisher_config_.enable_drift_correction != config.enable_drift_correction) {
     LOG(ERROR) << "enable drift correction update";
-    TangoDisconnect();
     publisher_config_.enable_drift_correction = config.enable_drift_correction;
-    //OnTangoServiceConnected();
+    LOG(ERROR) << "TangoDisconnect";
+    TangoDisconnect();
+    LOG(ERROR) << "OnTangoServiceConnected";
+    OnTangoServiceConnected();
   }
   PublishStaticTransforms();
 }
