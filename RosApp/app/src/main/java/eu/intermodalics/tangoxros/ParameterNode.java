@@ -59,9 +59,9 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private final String[] mDynamicParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
 
-    public ParameterNode(Activity activity, String... paramNames) {
+    public ParameterNode(Activity activity, String... dynamicParamNames) {
         mCreatorActivity = activity;
-        mDynamicParamNames = paramNames;
+        mDynamicParamNames = dynamicParamNames;
     }
 
     @Override
@@ -104,15 +104,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
         Map<String,?> prefKeys = sharedPreferences.getAll();
         Object prefValue = prefKeys.get(key);
-
-        if (prefValue instanceof Boolean) {
-            final Boolean bool = (Boolean) prefValue;
-            new Thread() {
-                @Override
-                public void run() {
-                    callDynamicReconfigure(key, bool.booleanValue());
-                }
-            }.start();
+        if (Arrays.asList(mDynamicParamNames).contains(key)) {
+            if (prefValue instanceof Boolean) {
+                final Boolean bool = (Boolean) prefValue;
+                new Thread() {
+                    @Override
+                    public void run() {
+                        callDynamicReconfigure(key, bool.booleanValue());
+                    }
+                }.start();
+            }
         }
     }
 
@@ -124,9 +125,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         Map<String,?> prefKeys = sharedPreferences.getAll();
 
         for (Map.Entry<String,?> entry : prefKeys.entrySet()) {
-            if (entry.getValue() instanceof Boolean) {
-                Boolean bool = (Boolean) entry.getValue();
-                callDynamicReconfigure(entry.getKey(), bool.booleanValue());
+            if (Arrays.asList(mDynamicParamNames).contains(entry.getKey())) {
+                if (entry.getValue() instanceof Boolean) {
+                    Boolean bool = (Boolean) entry.getValue();
+                    callDynamicReconfigure(entry.getKey(), bool.booleanValue());
+                }
             }
         }
     }
