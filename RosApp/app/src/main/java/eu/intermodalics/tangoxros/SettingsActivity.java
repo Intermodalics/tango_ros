@@ -17,6 +17,7 @@
 package eu.intermodalics.tangoxros;
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -131,6 +132,14 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             });
             snackbar.show();
         }
+        Preference aboutPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_about_app_key));
+        aboutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                startAboutActivity();
+                return true;
+            }
+        });
     }
 
     /**
@@ -171,5 +180,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             edit.commit();
         }
         super.onBackPressed();
+    }
+
+    public void startAboutActivity() {
+        Intent intent = new Intent(this, AboutActivity.class);
+        startActivity(intent);
     }
 }

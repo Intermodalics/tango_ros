@@ -35,7 +35,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.ImageView;
@@ -215,18 +214,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
-        ImageButton aboutButton = (ImageButton) findViewById(R.id.about_button);
-        aboutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startAboutActivity();
-            }
-        });
-    }
-
-    public void startAboutActivity() {
-        Intent intent = new Intent(this, AboutActivity.class);
-        startActivity(intent);
     }
 
     @Override

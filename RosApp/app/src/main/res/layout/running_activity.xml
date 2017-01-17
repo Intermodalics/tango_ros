@@ -97,31 +97,8 @@
 
         <FrameLayout
             android:id="@+id/preferencesFrame"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content">
+            android:layout_height="match_parent"
+            android:layout_width="match_parent">
         </FrameLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="150dp">
-
-            <ImageButton
-                android:id="@+id/about_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="50dp"
-                android:src="@drawable/ic_help_white_24dp" />
-
-            <TextView
-                android:id="@+id/about_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="About the app" />
-
-
-        </LinearLayout>
     </LinearLayout>
 </android.support.v4.widget.DrawerLayout>
