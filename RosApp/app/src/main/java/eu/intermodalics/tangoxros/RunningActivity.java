@@ -126,7 +126,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     };
 
     /**
-     * Implements RosAppNode.CallbackListener.
+     * Implements TangoRosNode.CallbackListener.
      */
     public void onTangoRosErrorHook(int returnCode) {
         if (returnCode == TangoRosNode.ROS_CONNECTION_ERROR) {

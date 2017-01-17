@@ -71,7 +71,7 @@ public class TangoRosNode extends NativeNodeMainBeta {
     }
 
     public void attachCallbackListener(CallbackListener callbackListener) {
-        this.mCallbackListener = callbackListener;
+        mCallbackListener = callbackListener;
     }
 
     @Override
