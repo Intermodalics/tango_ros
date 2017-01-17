@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
  * This code is a candidate to be upstreamed as a contribution to RosJava, providing a generic API that fits this particular application.
  */
 public abstract class NativeNodeMainBeta extends AbstractNodeMain {
+    public static final int SUCCESS = 0;
     private Log log = LogFactory.getLog(NativeNodeMainBeta.class);
     private String libName;
     private String masterUri = null;
@@ -22,6 +23,8 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     private String nodeName = null;
     private String[] remappingArguments;
     private boolean shuttingDown = false;
+    protected int executeReturnCode = SUCCESS;
+    protected int shutdownReturnCode = SUCCESS;
 
     /**
      *  @param libName
@@ -79,8 +82,11 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
         new Thread() {
             @Override
             public void run() {
-                int returnCode = execute(masterUri, hostName, nodeName, remappingArguments);
-                onPostNativeNodeExecution(returnCode);
+                executeReturnCode = execute(masterUri, hostName, nodeName, remappingArguments);
+
+                if (executeReturnCode != SUCCESS) {
+                    onError(connectedNode, new Throwable(nodeName + " execution error code " + executeReturnCode));
+                }
 
                 // node execution has finished so we propagate the shutdown sequence only if we aren't already shutting down for other reasons
                 if(!shuttingDown) {
@@ -93,16 +99,10 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     @Override
     public void onShutdown(Node node) {
         shuttingDown = true;
-        int returnCode = shutdown();
+        shutdownReturnCode = shutdown();
 
-        onPostNativeNodeShutdown(returnCode);
-    }
-
-    public void onPostNativeNodeExecution(int returnCode) {
-      // Override this method to retrieve return code
-    }
-
-    public void onPostNativeNodeShutdown(int returnCode) {
-      // Override this method to retrieve return code
+        if (shutdownReturnCode != SUCCESS) {
+            onError(node, new Throwable(nodeName + " shutdown error code " + shutdownReturnCode));
+        }
     }
 }
