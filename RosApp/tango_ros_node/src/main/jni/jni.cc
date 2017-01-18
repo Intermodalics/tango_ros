@@ -55,9 +55,10 @@ Java_com_rosjava_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
   return tango_ros_node_executor.Execute(master.c_str(), host.c_str(), node.c_str());
 }
 
-JNIEXPORT void JNICALL
-Java_com_rosjava_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
+JNIEXPORT jint JNICALL
+Java_eu_intermodalics_tangoxros_TangoRosNode_shutdown(JNIEnv* /*env*/, jobject /*obj*/) {
   tango_ros_node_executor.Shutdown();
+  return 0;     // No error codes are defined for Shutdown; 0 is for success.
 }
 
 #ifdef __cplusplus

@@ -44,7 +44,6 @@ import com.rosjava.tangoxros.TangoInitializationHelper.DefaultTangoServiceConnec
 import com.rosjava.tangoxros.TangoRosNode;
 
 import org.ros.address.InetAddressFactory;
-import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -123,12 +122,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     /**
      * Implements TangoRosNode.CallbackListener.
      */
-    public void onNativeNodeExecutionError(int errorCode) {
-        if (errorCode == NativeNodeMainBeta.ROS_CONNECTION_ERROR) {
+    public void onTangoRosErrorHook(int returnCode) {
+        if (returnCode == TangoRosNode.ROS_CONNECTION_ERROR) {
             updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.ros_init_error));
             displayToastMessage(R.string.ros_init_error);
-        } else if (errorCode < NativeNodeMainBeta.SUCCESS) {
+        } else if (returnCode < TangoRosNode.SUCCESS) {
             updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
@@ -302,7 +301,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        // Create parameter synchronization node to be up-to-date with Parameter Server.
+        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
         mParameterNode = new ParameterNode(this,
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),
@@ -313,7 +312,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
         // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
-        if(TangoInitializationHelper.loadTangoSharedLibrary() !=
+        if (TangoInitializationHelper.loadTangoSharedLibrary() !=
                 TangoInitializationHelper.ARCH_ERROR) {
             mTangoRosNode = new TangoRosNode();
             mTangoRosNode.attachCallbackListener(this);
