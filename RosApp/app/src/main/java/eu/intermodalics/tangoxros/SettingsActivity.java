@@ -20,6 +20,7 @@ import android.annotation.TargetApi;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -117,6 +118,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         super.onStart();
         boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
+            CheckBoxPreference driftCorrection = (CheckBoxPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_drift_correction_key));
+            driftCorrection.setEnabled(true);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

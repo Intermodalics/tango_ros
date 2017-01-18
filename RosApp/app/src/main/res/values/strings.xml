@@ -29,9 +29,6 @@
     <string name="publish_color_camera">Color image</string>
     <string name="publish_color_camera_key">publish_color_camera</string>
 
-    <string name="enable_drift_correction">Drift correction</string>
-    <string name="enable_drift_correction_key">enable_drift_correction</string>
-
     <!-- Strings related to settings preferences -->
     
     <string name="pref_category_ros_title">ROS</string>
@@ -44,6 +41,13 @@
     <string name="pref_master_uri_title">Master URI</string>
     <string name="pref_master_uri_key">pref_master_uri</string>
     <string name="pref_master_uri_default">http://local-desktop:11311</string>
+
+    <string name="pref_category_tango_title">Tango</string>
+    <string name="pref_category_tango_key">pref_category_tango</string>
+
+    <string name="pref_drift_correction">Drift correction</string>
+    <string name="pref_drift_correction_key">pref_drift_correction</string>
+    <string name="pref_drift_correction_summary">Enable to use Tango drift correction</string>
 
     <string name="pref_category_logging_title">Logging</string>
     <string name="pref_category_logging_key">pref_category_logging</string>

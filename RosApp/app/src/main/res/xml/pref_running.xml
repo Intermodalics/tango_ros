@@ -2,7 +2,7 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-            android:title="Tango Data">
+            android:title="">
 
         <SwitchPreference
                 android:key="@string/publish_device_pose_key"
@@ -19,14 +19,5 @@
         <SwitchPreference
             android:key="@string/publish_color_camera_key"
             android:title="@string/publish_color_camera" />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="Tango Config">
-
-        <SwitchPreference
-            android:key="@string/enable_drift_correction_key"
-            android:title="@string/enable_drift_correction"
-            android:defaultValue="True" />
     </PreferenceCategory>
 </PreferenceScreen>
