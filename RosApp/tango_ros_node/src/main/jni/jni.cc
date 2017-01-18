@@ -24,19 +24,19 @@ extern "C" {
 #endif
 
 JNIEXPORT jboolean JNICALL
-Java_com_rosjava_tangoxros_TangoInitializationHelper_setBinderTangoService(
+Java_eu_intermodalics_tangoxros_TangoInitializationHelper_setBinderTangoService(
     JNIEnv* env, jclass /*class*/, jobject binder) {
   return tango_helper::SetBinder(env, binder);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_rosjava_tangoxros_TangoInitializationHelper_isTangoVersionOk(
+Java_eu_intermodalics_tangoxros_TangoInitializationHelper_isTangoVersionOk(
     JNIEnv* env, jclass /*class*/, jobject activity) {
   return tango_helper::IsTangoVersionOk(env, activity);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_rosjava_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
+Java_eu_intermodalics_tangoxros_TangoRosNode_execute(JNIEnv* env, jobject /*obj*/,
     jstring master_uri_value, jstring host_ip_value, jstring node_name_value,
     jobjectArray remapping_objects_value) {
   const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);

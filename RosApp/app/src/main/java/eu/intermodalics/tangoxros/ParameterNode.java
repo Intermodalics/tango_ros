@@ -21,8 +21,6 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.rosjava.tangoxros.TangoRosNode;
-
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;

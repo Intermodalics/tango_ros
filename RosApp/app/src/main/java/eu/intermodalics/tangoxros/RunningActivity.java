@@ -19,8 +19,8 @@ package eu.intermodalics.tangoxros;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.net.Uri;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -34,20 +34,18 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
-import android.widget.ImageView;
 import android.widget.Switch;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.rosjava.tangoxros.TangoInitializationHelper;
-import com.rosjava.tangoxros.TangoInitializationHelper.DefaultTangoServiceConnection;
-import com.rosjava.tangoxros.TangoRosNode;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+
+import eu.intermodalics.tangoxros.TangoInitializationHelper.DefaultTangoServiceConnection;
 
 public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();

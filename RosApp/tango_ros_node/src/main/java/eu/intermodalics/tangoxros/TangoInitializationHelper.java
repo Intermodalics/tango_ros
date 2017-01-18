@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.rosjava.tangoxros;
+package eu.intermodalics.tangoxros;
 
 import android.app.Activity;
 import android.content.ComponentName;
