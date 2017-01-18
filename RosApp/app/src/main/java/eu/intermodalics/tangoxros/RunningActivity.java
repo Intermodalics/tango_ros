@@ -45,7 +45,9 @@ import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
 
-import eu.intermodalics.tangoxros.TangoInitializationHelper.DefaultTangoServiceConnection;
+import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
+import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
+import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoxros;
+package eu.intermodalics.tango_ros_node;
 
 import android.content.ServiceConnection;
 
