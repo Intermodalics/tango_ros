@@ -1,7 +1,5 @@
 package org.ros.node;
 
-import android.app.Activity;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -14,14 +12,10 @@ import org.apache.commons.logging.LogFactory;
  * File extracted from rosjava_core repository: https://github.com/rosjava/rosjava_core.
  *
  * @note Standard code for NativeNodeMain was modified to use error codes for this particular application on Execute function.
- * This code shall be removed once a standard way of handling error codes is published to the public code of NativeNodeMain.
+ * This code is a candidate to be upstreamed as a contribution to RosJava, providing a generic API that fits this particular application.
  */
 public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     public static final int SUCCESS = 0;
-    public static final int ROS_CONNECTION_ERROR = 1;
-    public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
-    public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
-
     private Log log = LogFactory.getLog(NativeNodeMainBeta.class);
     private String libName;
     private String masterUri = null;
@@ -29,6 +23,8 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     private String nodeName = null;
     private String[] remappingArguments;
     private boolean shuttingDown = false;
+    protected int executeReturnCode = SUCCESS;
+    protected int shutdownReturnCode = SUCCESS;
 
     /**
      *  @param libName
@@ -72,24 +68,9 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
         this(libName, null);
     }
 
-    // An interface to give feedback to the activity on node errors.
-    // This is a workaround to be cleaned when rosjava kinetic is released.
-    public interface CallbackListener {
-        public void onNativeNodeExecutionError(int errorCode);
-    }
-    CallbackListener callbackListener;
-
-    /**
-     *
-     * @param activity The activity owning this node.
-     */
-    public void attachCallbackListener(Activity activity) {
-        callbackListener = (CallbackListener) activity;
-    }
-
     // These methods define the execution model interface for this node.
     protected abstract int execute(String rosMasterUri, String rosHostName, String rosNodeName, String[] remappingArguments);
-    protected abstract void shutdown();
+    protected abstract int shutdown();
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
@@ -101,9 +82,10 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
         new Thread() {
             @Override
             public void run() {
-                int errorCode = execute(masterUri, hostName, nodeName, remappingArguments);
-                if (errorCode != SUCCESS) {
-                    callbackListener.onNativeNodeExecutionError(errorCode);
+                executeReturnCode = execute(masterUri, hostName, nodeName, remappingArguments);
+
+                if (executeReturnCode != SUCCESS) {
+                    onError(connectedNode, new Throwable(nodeName + " execution error code " + executeReturnCode));
                 }
 
                 // node execution has finished so we propagate the shutdown sequence only if we aren't already shutting down for other reasons
@@ -117,15 +99,10 @@ public abstract class NativeNodeMainBeta extends AbstractNodeMain {
     @Override
     public void onShutdown(Node node) {
         shuttingDown = true;
-        shutdown();
-    }
+        shutdownReturnCode = shutdown();
 
-    @Override
-    public void onError(Node node, Throwable throwable) {
-        super.onError(node, throwable);
-        if (throwable.getMessage().contains(ROS_CONNECTION_FAILURE_ERROR_MSG) ||
-                throwable.getMessage().contains(ROS_WRONG_HOST_NAME_ERROR_MSG)) {
-            callbackListener.onNativeNodeExecutionError(ROS_CONNECTION_ERROR);
+        if (shutdownReturnCode != SUCCESS) {
+            onError(node, new Throwable(nodeName + " shutdown error code " + shutdownReturnCode));
         }
     }
 }
