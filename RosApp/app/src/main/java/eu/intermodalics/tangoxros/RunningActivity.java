@@ -309,11 +309,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
         // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
-        mParameterNode = new ParameterNode(this,
+        String[] dynamicParams = {
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),
                 getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key));
+                getString(R.string.publish_fisheye_camera_key)};
+        String[] params = {getString(R.string.pref_drift_correction_key)};
+        mParameterNode = new ParameterNode(this, dynamicParams, params);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
 

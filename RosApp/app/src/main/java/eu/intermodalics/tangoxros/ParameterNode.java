@@ -57,11 +57,13 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
     private final String[] mDynamicParamNames;
+    private final String[] mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
 
-    public ParameterNode(Activity activity, String... paramNames) {
+    public ParameterNode(Activity activity, String[] dynamicParamNames, String[] paramNames) {
         mCreatorActivity = activity;
-        mDynamicParamNames = paramNames;
+        mDynamicParamNames = dynamicParamNames;
+        mParamNames = paramNames;
     }
 
     @Override
@@ -94,6 +96,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                 }
             }
         });
+
+        for (String paramName : mParamNames) {
+            Boolean paramValue = mSharedPreferences.getBoolean(paramName, true);
+            connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), paramValue);
+        }
     }
 
     /**

@@ -46,7 +46,7 @@
     <string name="pref_category_tango_key">pref_category_tango</string>
 
     <string name="pref_drift_correction">Drift correction</string>
-    <string name="pref_drift_correction_key">pref_drift_correction</string>
+    <string name="pref_drift_correction_key">enable_drift_correction</string>
     <string name="pref_drift_correction_summary">Enable to use Tango drift correction</string>
 
     <string name="pref_category_logging_title">Logging</string>
