@@ -97,6 +97,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             }
         });
 
+        // Set ROS params according to preferences.
         for (String paramName : mParamNames) {
             Boolean paramValue = mSharedPreferences.getBoolean(paramName, true);
             connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), paramValue);
