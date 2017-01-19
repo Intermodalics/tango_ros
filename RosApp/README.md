@@ -1,19 +1,25 @@
-## TangoRos App
+## Tango Ros Streamer App
 
 ### The roscpp\_android\_ndk
 
 * Download the roscpp\_android\_ndk [here](http://wiki.ros.org/android_ndk/Tutorials/Building%20The%20Example%20Applications%20using%20the%20Binary%20Distribution).
 (See the second section *Get the files*)
 
-* The roscpp\_android\_ndk should be placed inside ```tango_ros/third_party/```.
-
-* Replace the original Android.mk file of the roscpp\_android\_ndk by the one present in the Github repository in ```tango_ros/third_party/roscpp_android_ndk/```.
+* Unpack it and copy the content of the roscpp\_android\_ndk inside ```tango_ros/third_party/roscpp_android_ndk/```, except the Android.mk file.
+```
+tar -xvzf ~/Download/roscpp_android_ndk.tar.gz -C ~/Download/
+rsync -av --progress ~/Download/roscpp_android_ndk/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/ --exclude Android.mk
+```
 
 ### The OpenCV sdk
 
 * Download the OpenCV sdk [here](http://docs.opencv.org/2.4/doc/tutorials/introduction/android_binary_package/O4A_SDK.html#get-the-opencv4android-sdk) (choose version 3.1.0).
 
 * Unpack it and copy the content of ```OpenCV-android-sdk/sdk/native/``` into ```tango_ros/third_party/OpenCV_sdk_native/```.
+```
+unzip ~/Download/OpenCV-3.1.0-android-sdk.zip -d ~/Download/
+cp ~/Download/OpenCV-android-sdk/sdk/native/* ~/tango_ros_ws/src/tango_ros/third_party/OpenCV_sdk_native/
+```
 
 ### Miniglog
 
@@ -32,9 +38,9 @@ Example:
 ndk.dir=/opt/android-ndk-r10b  
 sdk.dir=/opt/android-sdk-linux  
 
-* Plug an android device to your desktop.
+* Plug an android device to your desktop. Your device should be Tango-enabled.
 
-* Check the TangoCore version of your device (Settings->Apps->Tango Core). The app was tested on Yildun release.
+* Check the TangoCore version of your device (Settings->Apps->Tango Core). The minimum version required to run Tango Ros Streamer is Yildun.
 
 * Press the green arrow in Android Studio to build and install the app on the device.
 
@@ -42,10 +48,10 @@ sdk.dir=/opt/android-sdk-linux
 
 * Launch a roscore on your desktop.
 
-* Enter the ros master URI when the application is asking and press _Connect_.
-![screenshot_2016-11-25-08-56-08](https://cloud.githubusercontent.com/assets/12640723/20618636/89512010-b2f0-11e6-9343-770e0170a22c.png)
+* For the first run, the app will ask you to set some settings. Press DONE once you did it.
+![screenshot_2017-01-19-14-19-52](https://cloud.githubusercontent.com/assets/12640723/22108286/b1cd420c-de52-11e6-9130-b65bf4be3f94.png)
 
-* Open rviz with the config file located at RosApp/tango_ros.rviz to visualize the different tango data (device pose, pointcloud, images). You can enable/disable published data thanks to the app's switch buttons, press _Apply_ to applie your changes.
-![screenshot_2016-11-25-08-57-21](https://cloud.githubusercontent.com/assets/12640723/20618637/8b53b1e8-b2f0-11e6-8f21-618fe99f238c.png)
+* You can enable/disable published data via the app switch buttons located in a right drawer.
+![screenshot_2017-01-19-14-20-37](https://cloud.githubusercontent.com/assets/12640723/22108292/b9b1990a-de52-11e6-9426-0662b9b1cd65.png)
 
-
+* You can run rviz with the config file located at ```tango_ros/RosApp/tango_ros.rviz``` to visualize Tango data (device pose, pointcloud, images).
