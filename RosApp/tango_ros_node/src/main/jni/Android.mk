@@ -3,7 +3,7 @@ PROJECT_ROOT_FROM_JNI:= ../../../..
 PROJECT_ROOT:= $(call my-dir)/../../../..
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := tango_ros_android_lib
+LOCAL_MODULE    := tango_ros_node
 LOCAL_SRC_FILES := jni.cc tango_helper.cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable

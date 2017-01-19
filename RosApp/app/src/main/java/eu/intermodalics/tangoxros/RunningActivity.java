@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tangoxros;
 
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -24,7 +23,6 @@ import android.net.Uri;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
@@ -46,6 +44,10 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+
+import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
+import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
+import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
@@ -73,8 +75,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TangoRosNode mTangoRosNode;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
-    private boolean mIsTangoVersionOk = false;
-    private boolean mIsTangoServiceBound = false;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
     private Logger mLogger;
@@ -99,31 +99,25 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     /**
      * Tango Service connection.
      */
-    ServiceConnection mTangoServiceConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // Synchronization around RunningActivity object is to avoid
-            // Tango disconnect in the middle of the connecting operation.
-            if (mTangoRosNode.setBinderTangoService(service)) {
-                Log.i(TAG, "Bound to tango service");
-                mIsTangoServiceBound = true;
-                if (mIsTangoVersionOk) {
-                    updateTangoStatus(TangoStatus.SERVICE_RUNNING);
+    ServiceConnection mTangoServiceConnection = new DefaultTangoServiceConnection(
+        new DefaultTangoServiceConnection.AfterConnectionCallback() {
+            @Override
+            public void execute() {
+                if (TangoInitializationHelper.isTangoServiceBound()) {
+                    if (TangoInitializationHelper.isTangoVersionOk()) {
+                        updateTangoStatus(TangoStatus.SERVICE_RUNNING);
+                    } else {
+                        updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                    }
                 } else {
-                    updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                    updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
+                    Log.e(TAG, getString(R.string.tango_bind_error));
+                    displayToastMessage(R.string.tango_bind_error);
+                    onDestroy();
                 }
-            } else {
-                updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
-                Log.e(TAG, getString(R.string.tango_bind_error));
-                displayToastMessage(R.string.tango_bind_error);
-                onDestroy();
             }
         }
-
-        public void onServiceDisconnected(ComponentName name) {
-            // Handle this if you need to gracefully shutdown/retry
-            // in the event that Tango itself crashes/gets upgraded while running.
-        }
-    };
+    );
 
     /**
      * Implements TangoRosNode.CallbackListener.
@@ -273,7 +267,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mIsTangoServiceBound) {
+        if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
             updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
@@ -323,8 +317,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             mTangoRosNode = new TangoRosNode();
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            if (mTangoRosNode.isTangoVersionOk(this)) {
-                mIsTangoVersionOk = true;
+            if (TangoInitializationHelper.checkTangoVersionOk(this)) {
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
@@ -335,7 +328,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         } else {
             Log.e(TAG, getString(R.string.tango_lib_error));
             displayToastMessage(R.string.tango_lib_error);
-
         }
     }
 

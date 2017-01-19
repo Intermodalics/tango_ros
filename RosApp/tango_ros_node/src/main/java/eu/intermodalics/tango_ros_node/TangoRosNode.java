@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoxros;
+package eu.intermodalics.tango_ros_node;
 
-import android.app.Activity;
-import android.os.IBinder;
+import android.content.ServiceConnection;
 
 import org.ros.namespace.GraphName;
 import org.ros.node.NativeNodeMainBeta;
 import org.ros.node.Node;
 
+/**
+ *  * To run the TangoRosNode correctly:
+ * - Load the Tango Shared library using {@link TangoInitializationHelper#loadTangoSharedLibrary}. Return code shall be
+ * different from {@link TangoInitializationHelper#ARCH_ERROR}.
+ * - Bind to the Tango Service using {@link TangoInitializationHelper#bindTangoService} providing a {@link ServiceConnection}.
+ * See {@link TangoInitializationHelper.DefaultTangoServiceConnection} for a default handle.
+ * - Create and execute node in the standard RosJava way.
+ */
 public class TangoRosNode extends NativeNodeMainBeta {
     public static final int ROS_CONNECTION_ERROR = 1;
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
     public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
     public static final String NODE_NAME = "tango";
-    public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
+    public static final String DEFAULT_LIB_NAME = "tango_ros_node";
     private CallbackListener mCallbackListener;
 
     public TangoRosNode() {
@@ -49,22 +56,6 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
     }
-
-    /**
-     * Binds to the tango service.
-     *
-     * @param nativeTangoServiceBinder The native binder object.
-     * @return true if binding to the Tango service ended successfully.
-     */
-    public native boolean setBinderTangoService(IBinder nativeTangoServiceBinder);
-
-    /**
-     * Check that the tango version is correct.
-     *
-     * @param callerActivity the caller activity of this function.
-     * @return true if the version of tango is ok.
-     */
-    public native boolean isTangoVersionOk(Activity callerActivity);
 
     public interface CallbackListener {
         void onTangoRosErrorHook(int returnCode);
