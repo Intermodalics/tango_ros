@@ -5,38 +5,14 @@ android {
     buildToolsVersion "21.1.2"
 
     defaultConfig {
-        applicationId "eu.intermodalics.tangoxros"
+        applicationId "eu.intermodalics.tango_ros_streamer"
         minSdkVersion 14
         targetSdkVersion 22
-    }
-
-    sourceSets.main {
-        jniLibs.srcDir 'src/main/libs'
-        jni.srcDirs = [];
-    }
-
-    buildTypes {
-        debug {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            debuggable true
-            jniDebuggable true
-        }
     }
 
     lintOptions {
         abortOnError false
     }
-}
-
-tasks.withType(JavaCompile) {
-    compileTask -> compileTask.dependsOn ndkBuild
-}
-task ndkBuild(type: Exec) {
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    def ndkbuild = properties.getProperty('ndk.dir', null) + "/ndk-build"
-    commandLine ndkbuild, '-C', file('src/main/jni').absolutePath
 }
 
 dependencies {
@@ -53,16 +29,5 @@ dependencies {
     compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
     compile 'com.android.support:support-v4:22.2.1'
     compile 'com.android.support:design:22.2.1'
-}
-
-repositories {
-    maven {
-        url 'https://github.com/rosjava/rosjava_mvn_repo/raw/master'
-    }
-    mavenCentral()
-}
-
-android.packagingOptions {
-    exclude 'META-INF/LICENSE.txt'
-    exclude 'META-INF/NOTICE.txt'
+    compile project(':tango_ros_node')
 }

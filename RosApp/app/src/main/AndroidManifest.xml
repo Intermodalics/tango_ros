@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="eu.intermodalics.tangoxros">
+    package="eu.intermodalics.tango_ros_streamer">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -22,7 +22,7 @@
         <receiver
             android:enabled="true"
             android:exported="true"
-            android:name=".RunAppOnStartupBroadcastReceiver"
+            android:name="eu.intermodalics.tango_ros_streamer.RunAppOnStartupBroadcastReceiver"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
 
             <intent-filter>
@@ -34,7 +34,7 @@
         </receiver>
 
         <activity
-            android:name=".RunningActivity"
+            android:name="eu.intermodalics.tango_ros_streamer.RunningActivity"
             android:label="@string/app_name"
             android:configChanges="orientation|screenSize|uiMode">
             <intent-filter>
@@ -44,12 +44,12 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name="eu.intermodalics.tango_ros_streamer.SettingsActivity"
             android:label="@string/title_activity_settings">
         </activity>
 
         <activity
-            android:name=".AboutActivity"
+            android:name="eu.intermodalics.tango_ros_streamer.AboutActivity"
             android:label="@string/title_activity_about">
         </activity>
 

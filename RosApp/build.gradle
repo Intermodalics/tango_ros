@@ -17,3 +17,22 @@ allprojects {
         jcenter()
     }
 }
+
+buildscript {
+    apply from: "https://github.com/rosjava/android_core/raw/kinetic/buildscript.gradle"
+}
+
+subprojects {
+    apply plugin: 'ros-android'
+
+    afterEvaluate { project ->
+        android {
+            // Exclude a few files that are duplicated across our dependencies and
+            // prevent packaging Android applications.
+            packagingOptions {
+                exclude "META-INF/LICENSE.txt"
+                exclude "META-INF/NOTICE.txt"
+            }
+        }
+    }
+}

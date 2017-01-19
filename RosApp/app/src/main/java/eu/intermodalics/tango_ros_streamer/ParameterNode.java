@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoxros;
+package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -40,6 +40,7 @@ import dynamic_reconfigure.Config;
 import dynamic_reconfigure.Reconfigure;
 import dynamic_reconfigure.ReconfigureRequest;
 import dynamic_reconfigure.ReconfigureResponse;
+import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 /**
  * RosJava node that handles interactions with Dynamic Reconfigure.
