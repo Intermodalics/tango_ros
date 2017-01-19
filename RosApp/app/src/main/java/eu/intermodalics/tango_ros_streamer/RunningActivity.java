@@ -89,7 +89,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TextView mLogTextView;
 
     public RunningActivity() {
-        super("TangoxRos", "TangoxRos");
+        super("TangoRosStreamer", "TangoRosStreamer");
     }
 
     protected RunningActivity(String notificationTicker, String notificationTitle) {

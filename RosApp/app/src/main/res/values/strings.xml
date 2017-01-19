@@ -62,6 +62,6 @@
     <string name="pref_run_at_device_boot_key">pref_run_at_device_boot</string>
     <string name="pref_run_at_device_boot_summary">Enable to start the app automatically after the device boot</string>
 
-    <string name="pref_about_app_title">About TangoXRos</string>
+    <string name="pref_about_app_title">About Tango Ros Streamer</string>
     <string name="pref_about_app_key">pref_about_app</string>
 </resources>
