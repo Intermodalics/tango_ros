@@ -9,7 +9,7 @@
 
     <string name="snackbar_text_restart">You will need to restart the app to apply these new settings.</string>
 
-    <string name="title_activity_about">About the app</string>
+    <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">
         This application provides Tango data to the ROS ecosystem</string>
     <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
