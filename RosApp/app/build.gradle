@@ -5,7 +5,7 @@ android {
     buildToolsVersion "21.1.2"
 
     defaultConfig {
-        applicationId "eu.intermodalics.tangoxros"
+        applicationId "eu.intermodalics.tango_ros_streamer"
         minSdkVersion 14
         targetSdkVersion 22
     }

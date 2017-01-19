@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoxros;
+package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
 import android.os.Environment;

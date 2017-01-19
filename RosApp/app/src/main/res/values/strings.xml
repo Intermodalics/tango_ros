@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">TangoxRos</string>
+    <string name="app_name">Tango Ros Streamer</string>
     <string name="pref_previously_started_key">pref_previously_started</string>
 
     <string name="title_activity_settings">Settings</string>
-    <string name="welcome_text_first_run">Welcome to the TangoxRos app! Please define your settings before starting.</string>
+    <string name="welcome_text_first_run">Welcome to Tango Ros Streamer! Please define your settings before starting.</string>
     <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
     <string name="snackbar_action_text_first_run">Done</string>
 
@@ -56,7 +56,7 @@
 
     <string name="pref_log_file_title">Log file name</string>
     <string name="pref_log_file_key">pref_log_file_name</string>
-    <string name="pref_log_file_default">tangoxros_log</string>
+    <string name="pref_log_file_default">tango_ros_streamer_log</string>
 
     <string name="pref_run_at_device_boot_title">Auto start app after boot</string>
     <string name="pref_run_at_device_boot_key">pref_run_at_device_boot</string>
