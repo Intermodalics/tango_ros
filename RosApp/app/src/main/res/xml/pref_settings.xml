@@ -21,9 +21,19 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:title="@string/pref_category_tango_title"
+        android:key="@string/pref_category_tango_key">
+        <CheckBoxPreference
+            android:title="@string/pref_drift_correction"
+            android:key="@string/pref_drift_correction_key"
+            android:defaultValue="true"
+            android:enabled="false"
+            android:summary="@string/pref_drift_correction_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/pref_category_general_title"
         android:key="@string/pref_category_general_key">
-
         <EditTextPreference
             android:title="@string/pref_log_file_title"
             android:key="@string/pref_log_file_key"
