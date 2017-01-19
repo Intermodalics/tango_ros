@@ -5,7 +5,7 @@
 * Download the roscpp\_android\_ndk [here](http://wiki.ros.org/android_ndk/Tutorials/Building%20The%20Example%20Applications%20using%20the%20Binary%20Distribution).
 (See the second section *Get the files*)
 
-* Unpack it and copy the content of the ```roscpp\_android\_ndk``` folder inside ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file.
+* Unpack it and copy the content of the ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file.
 ```
 tar -xvzf ~/Downloads/roscpp_android_ndk.tar.gz -C ~/Downloads/
 rsync -av --progress ~/Downloads/roscpp_android_ndk/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/ --exclude Android.mk
