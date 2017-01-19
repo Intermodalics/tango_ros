@@ -35,7 +35,7 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
     public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
     public static final String NODE_NAME = "tango";
-    public static final String DEFAULT_LIB_NAME = "tango_ros_android_lib";
+    public static final String DEFAULT_LIB_NAME = "tango_ros_node";
     private CallbackListener mCallbackListener;
 
     public TangoRosNode() {
