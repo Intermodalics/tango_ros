@@ -1,1 +1,3 @@
+include ':tango_ros_node'
 include ':app'
+
