@@ -256,8 +256,11 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
         << config_enable_motion_tracking << " error: " << result;
     return result;
   }
+
+  bool enable_drift_correction;
+  node_handle_.param(publisher_config_.enable_drift_correction_param, enable_drift_correction, true);
   const char* config_enable_drift_correction = "config_enable_drift_correction";
-  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
   if(result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_drift_correction << " error: " << result;
