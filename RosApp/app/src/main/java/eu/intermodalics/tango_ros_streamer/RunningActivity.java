@@ -307,8 +307,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 getString(R.string.publish_point_cloud_key),
                 getString(R.string.publish_color_camera_key),
                 getString(R.string.publish_fisheye_camera_key)};
-        String[] params = {getString(R.string.pref_drift_correction_key)};
-        mParameterNode = new ParameterNode(this, dynamicParams, params);
+        // Tango configuration parameters are non-runtime settings for now.
+        // The reason is that changing a Tango configuration parameter requires to disconnect and
+        // reconnect to the Tango service at runtime.
+        String[] tangoConfigurationParameters = {getString(R.string.pref_drift_correction_key)};
+        mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
 

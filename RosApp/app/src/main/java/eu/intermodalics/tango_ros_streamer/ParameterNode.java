@@ -61,6 +61,12 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private final String[] mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
 
+    /**
+     * Constructor of the ParameterNode class.
+     * @param activity The activity running the node.
+     * @param dynamicParamNames Names of the dynamic reconfigure parameters (without namespace).
+     * @param paramNames Names of the (non-dynamic) ROS parameters (without namespace).
+     */
     public ParameterNode(Activity activity, String[] dynamicParamNames, String[] paramNames) {
         mCreatorActivity = activity;
         mDynamicParamNames = dynamicParamNames;
