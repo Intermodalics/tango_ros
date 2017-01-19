@@ -11,7 +11,7 @@
 
 ### The OpenCV sdk
 
-* Download the OpenCV sdk [here](http://docs.opencv.org/2.4/doc/tutorials/introduction/android_binary_package/O4A_SDK.html#get-the-opencv4android-sdk).
+* Download the OpenCV sdk [here](http://docs.opencv.org/2.4/doc/tutorials/introduction/android_binary_package/O4A_SDK.html#get-the-opencv4android-sdk) (choose version 3.1.0).
 
 * Unpack it and copy the content of ```OpenCV-android-sdk/sdk/native/``` into ```tango_ros/third_party/OpenCV_sdk_native/```.
 
@@ -23,7 +23,7 @@
 
 ### Building the app with android studio
 
-* Download Android Studio (version 2.2 seems to not work properly with this project, you can download previous versions [here](http://tools.android.com/system/app/pages/subPages?path=/download/studio/builds)).
+* Download Android Studio [here](https://developer.android.com/studio/index.html).
 
 * When starting Android Studio import the project by selecting the RosApp directory.
 
