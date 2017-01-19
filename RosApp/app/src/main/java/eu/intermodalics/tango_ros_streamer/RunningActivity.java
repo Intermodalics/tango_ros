@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoxros;
+package eu.intermodalics.tango_ros_streamer;
 
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -89,7 +89,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TextView mLogTextView;
 
     public RunningActivity() {
-        super("TangoxRos", "TangoxRos");
+        super("TangoRosStreamer", "TangoRosStreamer");
     }
 
     protected RunningActivity(String notificationTicker, String notificationTitle) {
