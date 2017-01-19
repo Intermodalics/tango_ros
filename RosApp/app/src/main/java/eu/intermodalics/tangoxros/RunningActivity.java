@@ -276,9 +276,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         if (mIsTangoServiceBound) {
             Log.i(TAG, "Unbind tango service");
             unbindService(mTangoServiceConnection);
+            mIsTangoServiceBound = false;
             updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
         }
         mLogger.saveLogToFile();
+        this.nodeMainExecutorService.forceShutdown();
     }
 
     @Override
