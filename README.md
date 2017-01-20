@@ -1,8 +1,8 @@
 # Introduction
 This repository hosts the code of the Tango Ros Streamer application. It is an Android application for [Tango](https://get.google.com/tango/)-enabled devices.
-Its main purpose is to provide Tango data to the [ROS](http://wiki.ros.org/) ecosystem in order to easily use the Tango functionalities on robots.
+Its main purpose is to provide Tango sensor data to the [ROS](http://wiki.ros.org/) ecosystem in order to easily use the Tango functionalities on robots.
 
-This work is developped by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/).
+This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/).
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
 
 # Installation
