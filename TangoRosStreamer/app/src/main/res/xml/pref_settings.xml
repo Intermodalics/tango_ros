@@ -1,0 +1,57 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/pref_category_ros_title"
+        android:key="@string/pref_category_ros_key">
+        <CheckBoxPreference
+            android:title="@string/pref_master_is_local_title"
+            android:key="@string/pref_master_is_local_key"
+            android:defaultValue="false"
+            android:disableDependentsState="true"
+            android:summary="@string/pref_master_is_local_summary"/>
+
+        <EditTextPreference
+            android:title="@string/pref_master_uri_title"
+            android:key="@string/pref_master_uri_key"
+            android:defaultValue="@string/pref_master_uri_default"
+            android:dependency="@string/pref_master_is_local_key"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:selectAllOnFocus="true"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_tango_title"
+        android:key="@string/pref_category_tango_key">
+        <CheckBoxPreference
+            android:title="@string/pref_drift_correction"
+            android:key="@string/pref_drift_correction_key"
+            android:defaultValue="true"
+            android:enabled="false"
+            android:summary="@string/pref_drift_correction_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_general_title"
+        android:key="@string/pref_category_general_key">
+        <EditTextPreference
+            android:title="@string/pref_log_file_title"
+            android:key="@string/pref_log_file_key"
+            android:defaultValue="@string/pref_log_file_default"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:selectAllOnFocus="true"/>
+
+        <CheckBoxPreference
+            android:title="@string/pref_run_at_device_boot_title"
+            android:key="@string/pref_run_at_device_boot_key"
+            android:defaultValue="false"
+            android:summary="@string/pref_run_at_device_boot_summary"/>
+
+        <Preference
+            android:title="@string/pref_about_app_title"
+            android:key="@string/pref_about_app_key"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>

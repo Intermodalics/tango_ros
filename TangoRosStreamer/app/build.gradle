@@ -1,0 +1,33 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "21.1.2"
+
+    defaultConfig {
+        applicationId "eu.intermodalics.tango_ros_streamer"
+        minSdkVersion 14
+        targetSdkVersion 22
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile('org.ros.android_core:android_10:[0.3,)') {
+        exclude group: 'junit'
+        exclude group: 'xml-apis'
+    }
+    // e.g. official msgs
+    compile 'org.ros.rosjava_messages:std_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:sensor_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:geometry_msgs:[0.3,)'
+    compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
+    compile 'com.android.support:support-v4:22.2.1'
+    compile 'com.android.support:design:22.2.1'
+    compile project(':tango_ros_node')
+}

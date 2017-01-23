@@ -63,6 +63,8 @@ struct PublisherConfiguration {
   std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
   std::string color_camera_topic = "tango/camera/color_1/image_raw/compressed";
+  // Param name for the drift correction parameter.
+  std::string enable_drift_correction_param = "tango/enable_drift_correction";
 };
 
 // Node collecting tango data and publishing it on ros topics.
