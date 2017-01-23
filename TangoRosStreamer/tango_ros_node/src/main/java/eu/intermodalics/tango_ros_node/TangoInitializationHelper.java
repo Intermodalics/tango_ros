@@ -112,6 +112,16 @@ public class TangoInitializationHelper {
         return context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     * Only for apps using the C API:
+     * Unbinds the underlying TangoService for native apps.
+     */
+    public static final void unbindTangoService(final Context context,
+                                                 ServiceConnection connection) {
+        context.unbindService(connection);
+        mIsTangoServiceBound = false;
+    }
+
 
     /**
      * Load the libtango_client_api.so library based on different Tango device setup.

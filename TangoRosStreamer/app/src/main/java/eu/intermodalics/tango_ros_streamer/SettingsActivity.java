@@ -43,7 +43,8 @@ import android.widget.Toast;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends AppCompatPreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity implements
+        SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = SettingsActivity.class.getSimpleName();
 
     private SharedPreferences mSharedPref;
@@ -100,11 +101,29 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                         .getString(preference.getKey(), ""));
     }
 
+    /**
+     * Implements OnSharedPreferenceChangeListener to trigger a snackbar if the
+     * change requires to restart the app to be applied.
+     */
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
+        if (key == getString(R.string.pref_master_is_local_key) ||
+                key == getString(R.string.pref_master_uri_key)) {
+            boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
+            if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
+                Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
+                View snackBarView = snackbar.getView();
+                snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
+                snackbar.show();
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mSharedPref.registerOnSharedPreferenceChangeListener(this);
         mSettingsPreferenceFragment = new SettingsPreferenceFragment();
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, mSettingsPreferenceFragment)
