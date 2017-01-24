@@ -319,7 +319,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         if (TangoInitializationHelper.loadTangoSharedLibrary() !=
-                TangoInitializationHelper.ARCH_ERROR) {
+                TangoInitializationHelper.ARCH_ERROR &&
+                TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
+                        != TangoInitializationHelper.ARCH_ERROR) {
             mTangoRosNode = new TangoRosNode();
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);

@@ -43,20 +43,6 @@ public class TangoInitializationHelper {
     protected static boolean mIsTangoVersionOk;
 
     /**
-     * {@link TangoInitializationHelper} depends on the same library as {@link TangoRosNode}.
-     * This code is added to ensure that the native functions will be properly linked;
-     * loading the same library twice has no side effects.
-     */
-    static {
-        try {
-            System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
-        } catch (Exception e) {
-            Log.e(TangoInitializationHelper.class.getName(),
-                    "Error loading library " + TangoRosNode.DEFAULT_LIB_NAME, e);
-        }
-    }
-
-    /**
      * Binds to the tango service.
      *
      * @param nativeTangoServiceBinder The native binder object.
@@ -183,6 +169,23 @@ public class TangoInitializationHelper {
             }
         }
         return loadedSoId;
+    }
+
+    /**
+     * {@link TangoInitializationHelper} depends on the same library as {@link TangoRosNode}.
+     * This code is added to ensure that the native functions will be properly linked;
+     * loading the same library twice has no side effects.
+     */
+    public static final int loadTangoRosNodeSharedLibrary() {
+        int loadedSo = ARCH_ERROR;
+        try {
+            System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
+            loadedSo = ARCH_DEFAULT;
+        } catch (Exception e) {
+            Log.e(TangoInitializationHelper.class.getName(),
+                    "Error loading library " + TangoRosNode.DEFAULT_LIB_NAME, e);
+        }
+        return loadedSo;
     }
 
     /**
