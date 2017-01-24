@@ -4,7 +4,8 @@
   <version>0.0.0</version>
   <description>This package contains a cpp lib for using ros with tango</description>
 
-  <maintainer email="perrine@intermodalics.eu">PerrineAguiar</maintainer>
+  <maintainer email="ruben@intermodalics.eu">Ruben Smits</maintainer>
+  <maintainer email="perrine@intermodalics.eu">Perrine Aguiar</maintainer>
   <license>Apache</license>
 
   <buildtool_depend>catkin</buildtool_depend>

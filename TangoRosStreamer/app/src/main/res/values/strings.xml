@@ -1,0 +1,77 @@
+<resources>
+    <string name="app_name">Tango Ros Streamer</string>
+    <string name="pref_previously_started_key">pref_previously_started</string>
+
+    <string name="title_activity_settings">Settings</string>
+    <string name="welcome_text_first_run">Welcome to Tango Ros Streamer! Please define your settings before starting.</string>
+    <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
+    <string name="snackbar_action_text_first_run">Done</string>
+
+    <string name="snackbar_text_restart">You will need to restart the app to apply these new settings.</string>
+    <string name="snackbar_action_text_restart">RESTART NOW</string>
+
+    <string name="title_activity_about">About Tango Ros Streamer</string>
+    <string name="description_activity_about">
+        This application provides Tango data to the ROS ecosystem</string>
+    <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
+    <string name="ekumen_website_address">http://www.ekumenlabs.com/</string>
+    <string name="tango_about"><a href="http://get.google.com/tango/">Tango</a></string>
+    <string name="ros_about"> <a href="http://wiki.ros.org/">ROS</a></string>
+    <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
+
+    <!-- Strings related to error messages -->
+
+    <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="tango_lib_error">Unable to load Tango library</string>
+    <string name="tango_bind_error">Unable to bind to Tango Service</string>
+    <string name="tango_service_error">Unable to connect to Tango Service</string>
+    <string name="tango_version_error">Your version of Tango is out of date</string>
+
+    <!-- Strings related to running preferences -->
+
+    <string name="publish_device_pose">Device pose</string>
+    <string name="publish_device_pose_key">publish_device_pose</string>
+
+    <string name="publish_point_cloud">Point cloud</string>
+    <string name="publish_point_cloud_key">publish_point_cloud</string>
+
+    <string name="publish_fisheye_camera">Fisheye image</string>
+    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
+
+    <string name="publish_color_camera">Color image</string>
+    <string name="publish_color_camera_key">publish_color_camera</string>
+
+    <!-- Strings related to settings preferences -->
+    
+    <string name="pref_category_ros_title">ROS</string>
+    <string name="pref_category_ros_key">pref_category_ros</string>
+
+    <string name="pref_master_is_local_title">Run local master</string>
+    <string name="pref_master_is_local_key">pref_master_is_remote</string>
+    <string name="pref_master_is_local_summary">Enable if master is running on the device</string>
+
+    <string name="pref_master_uri_title">Master URI</string>
+    <string name="pref_master_uri_key">pref_master_uri</string>
+    <string name="pref_master_uri_default">http://local-desktop:11311</string>
+
+    <string name="pref_category_tango_title">Tango</string>
+    <string name="pref_category_tango_key">pref_category_tango</string>
+
+    <string name="pref_drift_correction">Single session drift correction</string>
+    <string name="pref_drift_correction_key">enable_drift_correction</string>
+    <string name="pref_drift_correction_summary">Enable to use Tango single session drift correction</string>
+
+    <string name="pref_category_general_title">General</string>
+    <string name="pref_category_general_key">pref_category_general</string>
+
+    <string name="pref_log_file_title">Log file name</string>
+    <string name="pref_log_file_key">pref_log_file_name</string>
+    <string name="pref_log_file_default">tango_ros_streamer_log</string>
+
+    <string name="pref_run_at_device_boot_title">Auto start app after boot</string>
+    <string name="pref_run_at_device_boot_key">pref_run_at_device_boot</string>
+    <string name="pref_run_at_device_boot_summary">Enable to start the app automatically after the device boot</string>
+
+    <string name="pref_about_app_title">About Tango Ros Streamer</string>
+    <string name="pref_about_app_key">pref_about_app</string>
+</resources>
