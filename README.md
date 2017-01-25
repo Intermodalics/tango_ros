@@ -5,7 +5,10 @@ Its main purpose is to provide Tango sensor data to the [ROS](http://wiki.ros.or
 This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/).
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
 
-# Installation
+# Kickstart
+The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer
+
+# Manual installation
 ```
 sudo apt-get install python-catkin-tools
 mkdir -p ~/tango_ros_ws/src
