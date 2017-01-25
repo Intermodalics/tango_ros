@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Tango Ros Streamer</string>
+    <string name="app_version">version 1.0-5</string>
     <string name="pref_previously_started_key">pref_previously_started</string>
 
     <string name="title_activity_settings">Settings</string>
@@ -13,10 +14,12 @@
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">
         This application provides Tango data to the ROS ecosystem</string>
+    <string name="wiki_address">http://wiki.ros.org/tango_ros_streamer</string>
+    <string name="github_address">http://github.com/Intermodalics/tango_ros</string>
     <string name="intermodalics_website_address">http://www.intermodalics.eu/</string>
     <string name="ekumen_website_address">http://www.ekumenlabs.com/</string>
-    <string name="tango_about"><a href="http://get.google.com/tango/">Tango</a></string>
-    <string name="ros_about"> <a href="http://wiki.ros.org/">ROS</a></string>
+    <string name="tango_website_address">http://get.google.com/tango/</string>
+    <string name="ros_website_address">http://wiki.ros.org/</string>
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <!-- Strings related to error messages -->
