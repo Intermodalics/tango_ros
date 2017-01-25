@@ -408,7 +408,6 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           area_description_T_start_of_service_.child_frame_id =
               toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         }
-
         pose_available_.notify_all();
         pose_available_mutex_.unlock();
       }
@@ -487,7 +486,7 @@ void TangoRosNode::PublishDevicePose() {
       pose_available_.wait(lock);
       if (publisher_config_.publish_device_pose) {
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
-        tf_broadcaster_.sendTransform(area_description_T_start_of_service);
+        tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
       }
     }
   }
