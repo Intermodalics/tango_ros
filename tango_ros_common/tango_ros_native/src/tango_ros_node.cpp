@@ -402,7 +402,8 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         TangoPoseData area_description_T_start_of_service;
         TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
         if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-          toTransformStamped(*pose, time_offset_, &area_description_T_start_of_service_);
+          toTransformStamped(area_description_T_start_of_service,
+                             time_offset_, &area_description_T_start_of_service_);
           area_description_T_start_of_service_.header.frame_id =
               toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
           area_description_T_start_of_service_.child_frame_id =
