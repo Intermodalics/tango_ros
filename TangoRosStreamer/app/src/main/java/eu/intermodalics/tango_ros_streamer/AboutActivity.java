@@ -37,10 +37,6 @@ public class AboutActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // Make links in text views clickable.
-        TextView textViewRos = (TextView) findViewById(R.id.text_ros_about);
-        textViewRos.setMovementMethod(LinkMovementMethod.getInstance());
-        TextView textViewTango = (TextView) findViewById(R.id.text_tango_about);
-        textViewTango.setMovementMethod(LinkMovementMethod.getInstance());
         TextView textViewRosjava = (TextView) findViewById(R.id.text_rosjava_about);
         textViewRosjava.setMovementMethod(LinkMovementMethod.getInstance());
 
@@ -48,10 +44,9 @@ public class AboutActivity extends AppCompatActivity {
         onlineDocButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //TODO: Add address to ros wiki.
-                //Uri uri = Uri.parse(getString(R.string.app_wiki_address));
-                //Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                //startActivity(intent);
+                Uri uri = Uri.parse(getString(R.string.wiki_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
             }
         });
 
@@ -60,6 +55,16 @@ public class AboutActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 startRateAppActivity();
+            }
+        });
+
+        Button githubButton = (Button) findViewById(R.id.source_code_about);
+        githubButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse(getString(R.string.github_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
             }
         });
 
@@ -78,6 +83,26 @@ public class AboutActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Uri uri = Uri.parse(getString(R.string.ekumen_website_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            }
+        });
+
+        ImageButton tangoWebsiteButton = (ImageButton) findViewById(R.id.logo_tango_about);
+        tangoWebsiteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse(getString(R.string.tango_website_address));
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            }
+        });
+
+        ImageButton rosWebsiteButton = (ImageButton) findViewById(R.id.logo_ros_about);
+        rosWebsiteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse(getString(R.string.ros_website_address));
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(intent);
             }
