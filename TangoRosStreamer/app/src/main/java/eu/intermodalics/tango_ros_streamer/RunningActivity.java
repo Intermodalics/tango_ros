@@ -40,9 +40,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.exception.RosException;
+import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
+import java.net.InetAddress;
 import java.net.URI;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
@@ -299,43 +302,49 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-        nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+        try {
+            NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+            nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
 
-        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
-        String[] dynamicParams = {
-                getString(R.string.publish_device_pose_key),
-                getString(R.string.publish_point_cloud_key),
-                getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key)};
-        // Tango configuration parameters are non-runtime settings for now.
-        // The reason is that changing a Tango configuration parameter requires to disconnect and
-        // reconnect to the Tango service at runtime.
-        String[] tangoConfigurationParameters = {getString(R.string.pref_drift_correction_key)};
-        mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
-        nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
-        nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+            // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
+            String[] dynamicParams = {
+                    getString(R.string.publish_device_pose_key),
+                    getString(R.string.publish_point_cloud_key),
+                    getString(R.string.publish_color_camera_key),
+                    getString(R.string.publish_fisheye_camera_key)};
+            // Tango configuration parameters are non-runtime settings for now.
+            // The reason is that changing a Tango configuration parameter requires to disconnect and
+            // reconnect to the Tango service at runtime.
+            String[] tangoConfigurationParameters = {getString(R.string.pref_drift_correction_key)};
+            mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
+            nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
+            nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
 
-        // Create and start Tango ROS Node
-        nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
-        if (TangoInitializationHelper.loadTangoSharedLibrary() !=
-                TangoInitializationHelper.ARCH_ERROR &&
-                TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
-                        != TangoInitializationHelper.ARCH_ERROR) {
-            mTangoRosNode = new TangoRosNode();
-            mTangoRosNode.attachCallbackListener(this);
-            TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-            if (TangoInitializationHelper.checkTangoVersionOk(this)) {
-                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
-                updateRosStatus(RosStatus.NODE_RUNNING);
+            // Create and start Tango ROS Node
+            nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
+            if (TangoInitializationHelper.loadTangoSharedLibrary() !=
+                    TangoInitializationHelper.ARCH_ERROR &&
+                    TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
+                            != TangoInitializationHelper.ARCH_ERROR) {
+                mTangoRosNode = new TangoRosNode();
+                mTangoRosNode.attachCallbackListener(this);
+                TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
+                if (TangoInitializationHelper.checkTangoVersionOk(this)) {
+                    nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+                    updateRosStatus(RosStatus.NODE_RUNNING);
+                } else {
+                    updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                    Log.e(TAG, getResources().getString(R.string.tango_version_error));
+                    displayToastMessage(R.string.tango_version_error);
+                }
             } else {
-                updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
-                Log.e(TAG, getResources().getString(R.string.tango_version_error));
-                displayToastMessage(R.string.tango_version_error);
+                Log.e(TAG, getString(R.string.tango_lib_error));
+                displayToastMessage(R.string.tango_lib_error);
             }
-        } else {
-            Log.e(TAG, getString(R.string.tango_lib_error));
-            displayToastMessage(R.string.tango_lib_error);
+        } catch (RosRuntimeException e) {
+            Log.e(TAG, getString(R.string.network_error));
+            displayToastMessage(R.string.network_error);
+            return;
         }
     }
 
