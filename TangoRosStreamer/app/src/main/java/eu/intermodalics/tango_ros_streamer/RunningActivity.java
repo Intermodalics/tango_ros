@@ -40,12 +40,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
-import org.ros.exception.RosException;
 import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
-import java.net.InetAddress;
 import java.net.URI;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
