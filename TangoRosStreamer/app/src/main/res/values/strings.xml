@@ -49,8 +49,8 @@
     <string name="pref_category_ros_key">pref_category_ros</string>
 
     <string name="pref_master_is_local_title">Run local master</string>
-    <string name="pref_master_is_local_key">pref_master_is_remote</string>
-    <string name="pref_master_is_local_summary">Enable if master is running on the device</string>
+    <string name="pref_master_is_local_key">pref_master_is_local</string>
+    <string name="pref_master_is_local_summary">Enable to run ROS master on the device</string>
 
     <string name="pref_master_uri_title">Master URI</string>
     <string name="pref_master_uri_key">pref_master_uri</string>
