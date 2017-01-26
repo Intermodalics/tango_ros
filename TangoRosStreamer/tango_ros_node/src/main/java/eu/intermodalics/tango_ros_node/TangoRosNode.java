@@ -33,6 +33,8 @@ import org.ros.node.Node;
 public class TangoRosNode extends NativeNodeMainBeta {
     public static final int ROS_CONNECTION_ERROR = 1;
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
+    public static final String ROS_CONNECTION_UNREACHABLE_ERROR_MSG = "ENETUNREACH";
+    public static final String ROS_CONNECTION_TIMEOUT_ERROR_MSG = "No response after waiting for 10000 milliseconds.";
     public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "tango_ros_node";
@@ -69,6 +71,8 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public void onError(Node node, Throwable throwable) {
         super.onError(node, throwable);
         if (throwable.getMessage().contains(ROS_CONNECTION_FAILURE_ERROR_MSG) ||
+                throwable.getMessage().contains(ROS_CONNECTION_UNREACHABLE_ERROR_MSG) ||
+                throwable.getMessage().contains(ROS_CONNECTION_TIMEOUT_ERROR_MSG) ||
                 throwable.getMessage().contains(ROS_WRONG_HOST_NAME_ERROR_MSG)) {
             executeOnErrorHook(ROS_CONNECTION_ERROR);
         } else if (this.executeReturnCode != 0) {
