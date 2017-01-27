@@ -19,7 +19,6 @@ package eu.intermodalics.tango_ros_streamer;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -172,20 +171,20 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    Log.i(TAG, "Dynamic Reconfigure success");
+                    mConnectedNode.getLog().info("Dynamic Reconfigure success");
                     mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    Log.e(TAG, "Dynamic Reconfigure failure: " + e.getMessage(), e);
+                    mConnectedNode.getLog().error("Dynamic Reconfigure failure: " + e.getMessage());
                 }
             });
             mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
-            Log.e(TAG, "Service not found: " + e.getMessage(), e);
+            mConnectedNode.getLog().error("Service not found: " + e.getMessage());
         } catch (Exception e) {
-            Log.e(TAG, "Error while calling Dynamic Reconfigure Service: " + e.getMessage(), e);
+            mConnectedNode.getLog().error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 
