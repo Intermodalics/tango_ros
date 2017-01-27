@@ -83,6 +83,7 @@ public class TangoRosNode extends NativeNodeMainBeta {
         for (String errorMessage : mErrorMessages) {
             if (throwable.getMessage().contains(errorMessage)) {
                 executeOnErrorHook(ROS_CONNECTION_ERROR);
+                return;
             }
         }
         if (this.executeReturnCode != 0) {
