@@ -43,11 +43,11 @@ public class TangoRosNode extends NativeNodeMainBeta {
     public static final String DEFAULT_LIB_NAME = "tango_ros_node";
 
     private CallbackListener mCallbackListener;
-    private List<String> errorMessages;
+    private List<String> mErrorMessages;
 
     public TangoRosNode() {
         super(DEFAULT_LIB_NAME);
-        errorMessages = Arrays.asList(
+        mErrorMessages = Arrays.asList(
                 ROS_CONNECTION_FAILURE_ERROR_MSG,
                 ROS_CONNECTION_UNREACHABLE_ERROR_MSG,
                 ROS_CONNECTION_TIMEOUT_ERROR_MSG,
@@ -80,7 +80,7 @@ public class TangoRosNode extends NativeNodeMainBeta {
     @Override
     public void onError(Node node, Throwable throwable) {
         super.onError(node, throwable);
-        for (String errorMessage : errorMessages) {
+        for (String errorMessage : mErrorMessages) {
             if (throwable.getMessage().contains(errorMessage)) {
                 executeOnErrorHook(ROS_CONNECTION_ERROR);
             }
