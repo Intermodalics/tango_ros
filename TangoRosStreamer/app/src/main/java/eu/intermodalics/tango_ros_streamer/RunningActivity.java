@@ -21,11 +21,13 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.content.res.Configuration;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
+import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -366,8 +368,14 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         if (mRunLocalMaster) {
             this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
             mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
+            // The URI returned by getMasterUri is correct but looks 'weird',
+            // e.g. 'http://android-c90553518bc67cf5:1131'.
+            // Instead of showing this to the user, we show the IP address of the device,
+            // which is also correct and less confusing.
+            WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+            String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
             mUriTextView = (TextView) findViewById(R.id.master_uri);
-            mUriTextView.setText(mMasterUri);
+            mUriTextView.setText("http://" + deviceIP + ":11311");
         }
         if (mMasterUri != null) {
             URI masterUri;
