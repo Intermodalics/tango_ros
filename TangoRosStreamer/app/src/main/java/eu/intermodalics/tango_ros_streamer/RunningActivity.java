@@ -40,6 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -299,9 +300,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-        NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-        nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
-
+        NodeConfiguration nodeConfiguration;
+        try {
+            nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+            nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
+        } catch (RosRuntimeException e) {
+            Log.e(TAG, getString(R.string.network_error));
+            displayToastMessage(R.string.network_error);
+            return;
+        }
         // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
         String[] dynamicParams = {
                 getString(R.string.publish_device_pose_key),
