@@ -47,7 +47,7 @@ enum LogLevel {
 };
 /**
  * Wrapper functions around ros log and glog to log node messages both on
- * /rosout topic and on logcat.
+ * rosout topic and on logcat.
  */
 void Log(LogLevel log_level, const std::string& message);
 void Log(LogLevel log_level, std::ostream& message);
