@@ -17,6 +17,8 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <time.h>
@@ -36,6 +38,20 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
+enum LogLevel {
+  DEBUG,
+  INFO,
+  WARN,
+  ERROR,
+  FATAL
+};
+/**
+ * Wrapper functions around ros log and glog to log node messages both on
+ * /rosout topic and on logcat.
+ */
+void Log(LogLevel log_level, const std::string& message);
+void Log(LogLevel log_level, std::ostream& message);
+
 const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";

@@ -47,8 +47,6 @@ import eu.intermodalics.tango_ros_node.TangoRosNode;
  * and to update Dynamic Reconfigure with changes applied on the app's preferences by the user.
  */
 public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final String TAG = ParameterNode.class.getSimpleName();
-
     private static final String NODE_NAME = "parameter_node";
     private static final String RECONFIGURE_TOPIC_NAME = "parameter_updates";
     private static final String RECONFIGURE_SRV_NAME = "set_parameters";
