@@ -38,6 +38,9 @@
     <string name="publish_point_cloud">Point cloud</string>
     <string name="publish_point_cloud_key">publish_point_cloud</string>
 
+    <string name="publish_laser_scan">Laser scan</string>
+    <string name="publish_laser_scan_key">publish_laser_scan</string>
+
     <string name="publish_fisheye_camera">Fisheye image</string>
     <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
 

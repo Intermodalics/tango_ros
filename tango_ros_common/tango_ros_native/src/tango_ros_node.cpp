@@ -21,10 +21,8 @@
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
-#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-//#include <tf2_ros/buffer.h>
 
 namespace {
 // This function routes onPoseAvailable callback to the application object for
@@ -79,14 +77,50 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.w = pose.orientation[3];
   transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
 }
+
+void toLaserScanRange(double x, double y, double z, double min_height_,
+                      double max_height_, sensor_msgs::LaserScan* laser_scan) {
+  if (std::isnan(x) || std::isnan(y) || std::isnan(z)) {
+    // NAN point.
+    return;
+  }
+  if (z > max_height_ || z < min_height_) {
+    // Z not in height range.
+    return;
+  }
+  double range = hypot(x, y);
+  if (range < laser_scan->range_min) {
+    // Point not in distance range.
+    return;
+  }
+  double angle = atan2(y, x);
+  if (angle < laser_scan->angle_min || angle > laser_scan->angle_max) {
+    // Point not in angle range.
+    return;
+  }
+
+  // Overwrite range at laserscan ray if new range is smaller.
+  int index = (angle - laser_scan->angle_min) / laser_scan->angle_increment;
+  if (range < laser_scan->ranges[index]) {
+    laser_scan->ranges[index] = range;
+  }
+}
+
+
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
 // @param tango_point_cloud, TangoPointCloud to convert.
 // @param time_offset, offset in ms between tango_point_cloud (tango time) and
 //        point_cloud (ros time).
+// @param
+// @param
 // @param point_cloud, the output PointCloud2.
-void toPointCloud2(const TangoPointCloud& tango_point_cloud,
+// @param
+void toPointCloud2AndLaserScan(const TangoPointCloud& tango_point_cloud,
                    double time_offset,
-                   sensor_msgs::PointCloud2* point_cloud) {
+                   double min_height,
+                   double max_height,
+                   sensor_msgs::PointCloud2* point_cloud,
+                   sensor_msgs::LaserScan* laser_scan) {
   point_cloud->width = tango_point_cloud.num_points;
   point_cloud->height = 1;
   point_cloud->point_step = (sizeof(float) * tango_ros_native::NUMBER_OF_FIELDS_IN_POINT_CLOUD);
@@ -107,13 +141,24 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   sensor_msgs::PointCloud2Iterator<float> iter_c(*point_cloud, "c");
   for (size_t i = 0; i < tango_point_cloud.num_points;
       ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_c) {
+    // Fill in point cloud message.
     *iter_x = tango_point_cloud.points[i][0];
     *iter_y = tango_point_cloud.points[i][1];
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
+
+    // Fill in laser scan message.
+    // Laser scan frame is rotated of pi/2 around x axis with respect to point cloud frame.
+    double x = tango_point_cloud.points[i][0];
+    double y = tango_point_cloud.points[i][2];
+    double z = -tango_point_cloud.points[i][1];
+    toLaserScanRange(x, y, z, min_height, max_height, laser_scan);
   }
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
+  laser_scan->header = point_cloud->header;
 }
+
+
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
 // @param image, cv::Mat to compress, in YUV420sp format.
 // @param compressing_quality, value from 0 to 100 (the higher is the better).
@@ -183,6 +228,10 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
       node_handle_.advertise<sensor_msgs::PointCloud2>(publisher_config_.point_cloud_topic,
       queue_size, latching);
 
+  laser_scan_publisher_ =
+      node_handle_.advertise<sensor_msgs::LaserScan>(publisher_config_.laser_scan_topic,
+      queue_size, latching);
+
   fisheye_image_publisher_ =
         node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.fisheye_camera_topic,
         queue_size, latching);
@@ -190,16 +239,13 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   color_image_publisher_ =
       node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.color_camera_topic,
       queue_size, latching);
-
-  laser_scan_publisher_ =
-      node_handle_.advertise<sensor_msgs::LaserScan>(publisher_config_.laser_scan_topic,
-      queue_size, latching);
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
     TangoRosNode() {
   publisher_config_.publish_device_pose = static_cast<bool>(publisher_config.publish_device_pose);
   publisher_config_.publish_point_cloud = static_cast<bool>(publisher_config.publish_point_cloud);
+  publisher_config_.publish_laser_scan = static_cast<bool>(publisher_config.publish_laser_scan);
   publisher_config_.publish_camera = static_cast<bool>(publisher_config.publish_camera);
 }
 
@@ -358,7 +404,7 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::PublishStaticTransforms() {
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
-  if (publisher_config_.publish_point_cloud) {
+  if (publisher_config_.publish_point_cloud || publisher_config_.publish_laser_scan) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
     TangoService_getPoseAtTime(0.0, pair, &pose);
@@ -367,9 +413,10 @@ void TangoRosNode::PublishStaticTransforms() {
     device_T_camera_depth_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
     device_T_camera_depth_.header.stamp = ros::Time::now();
     tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
+  }
 
-
-    // pi/2 rotation around x axis.
+  if (publisher_config_.publish_laser_scan) {
+    // Laser scan frame is rotated of 90 degrees around x axis with respect to point cloud frame.
     camera_depth_T_laser_.transform.translation.x = 0;
     camera_depth_T_laser_.transform.translation.y = 0;
     camera_depth_T_laser_.transform.translation.z = 0;
@@ -378,7 +425,7 @@ void TangoRosNode::PublishStaticTransforms() {
     camera_depth_T_laser_.transform.rotation.y = 0;
     camera_depth_T_laser_.transform.rotation.z = 0;
     camera_depth_T_laser_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    camera_depth_T_laser_.child_frame_id = "laser";
+    camera_depth_T_laser_.child_frame_id = LASER_SCAN_FRAME_ID;
     camera_depth_T_laser_.header.stamp = ros::Time::now();
     tf_static_broadcaster_.sendTransform(camera_depth_T_laser_);
   }
@@ -424,12 +471,34 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
 }
 
 void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
-  if (publisher_config_.publish_point_cloud && point_cloud->num_points > 0
-      && point_cloud_available_mutex_.try_lock()) {
-    toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
+  if (((publisher_config_.publish_point_cloud && point_cloud_available_mutex_.try_lock()) ||
+      (publisher_config_.publish_laser_scan && laser_scan_available_mutex_.try_lock()))
+      && point_cloud->num_points > 0) {
+    laser_scan_.angle_min = 0;
+    laser_scan_.angle_max = 3.14;
+    laser_scan_.angle_increment = 3.14 / 360;
+    laser_scan_.time_increment = 0.0;
+    laser_scan_.scan_time = 0.3333;
+    laser_scan_.range_min = 0.45;
+    laser_scan_.range_max = 6.0;
+    // Determine amount of rays to create.
+    uint32_t ranges_size = std::ceil((laser_scan_.angle_max - laser_scan_.angle_min) / laser_scan_.angle_increment);
+    // Laserscan rays with no obstacle data will evaluate to infinity.
+    laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
+
+    toPointCloud2AndLaserScan(*point_cloud, time_offset_, min_height_,
+                             max_height_, &point_cloud_, &laser_scan_);
     point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    point_cloud_available_.notify_all();
-    point_cloud_available_mutex_.unlock();
+    laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
+
+    if (publisher_config_.publish_point_cloud) {
+      point_cloud_available_.notify_all();
+      point_cloud_available_mutex_.unlock();
+    }
+    if (publisher_config_.publish_laser_scan) {
+      laser_scan_available_.notify_all();
+      laser_scan_available_mutex_.unlock();
+    }
   }
 }
 
@@ -464,6 +533,7 @@ void TangoRosNode::StartPublishing() {
   run_threads_ = true;
   publish_device_pose_thread_ = std::thread(&TangoRosNode::PublishDevicePose, this);
   publish_pointcloud_thread_ = std::thread(&TangoRosNode::PublishPointCloud, this);
+  publish_laserscan_thread_ = std::thread(&TangoRosNode::PublishLaserScan, this);
   publish_fisheye_image_thread_ = std::thread(&TangoRosNode::PublishFisheyeImage, this);
   publish_color_image_thread_ = std::thread(&TangoRosNode::PublishColorImage, this);
   ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
@@ -476,6 +546,8 @@ void TangoRosNode::StopPublishing() {
       publish_device_pose_thread_.join();
     if (publisher_config_.publish_point_cloud)
       publish_pointcloud_thread_.join();
+    if (publisher_config_.publish_laser_scan)
+      publish_laserscan_thread_.join();
     if (publisher_config_.publish_camera & CAMERA_FISHEYE)
       publish_fisheye_image_thread_.join();
     if (publisher_config_.publish_camera & CAMERA_COLOR)
@@ -509,72 +581,21 @@ void TangoRosNode::PublishPointCloud() {
       point_cloud_available_.wait(lock);
       if (publisher_config_.publish_point_cloud) {
         point_cloud_publisher_.publish(point_cloud_);
+      }
+    }
+  }
+}
 
-
-        sensor_msgs::LaserScan laser_scan;
-        laser_scan.header = point_cloud_.header;
-        laser_scan.header.frame_id = "laser";
-        laser_scan.angle_min = 0;
-        laser_scan.angle_max = 3.14;
-        laser_scan.angle_increment = 3.14 / 360;
-        laser_scan.time_increment = 0.0;
-        laser_scan.scan_time = 0.3333;
-        laser_scan.range_min = 0.45;
-        laser_scan.range_max = 6.0;
-
-        // Determine amount of rays to create.
-        uint32_t ranges_size = std::ceil((laser_scan.angle_max - laser_scan.angle_min) / laser_scan.angle_increment);
-        // Laserscan rays with no obstacle data will evaluate to infinity or max_range.
-        laser_scan.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
-
-        // TODO: make these ros params.
-        double min_height_ = 0;
-        double max_height_ = 2.0;
-
-        for (sensor_msgs::PointCloud2ConstIterator<float>
-                  iter_x(point_cloud_, "x"), iter_y(point_cloud_, "y"), iter_z(point_cloud_, "z");
-                  iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-
-          // pi/2 rotation around x axis.
-          double x = *iter_x;
-          double y = *iter_z;
-          double z = -1 * (*iter_y);
-
-          if (std::isnan(x) || std::isnan(y) || std::isnan(z)) {
-            LOG(INFO) << "rejected for nan in point(" << x << ", "
-                << y << ", " << z << ")";
-            continue;
-          }
-
-          if (z > max_height_ || z < min_height_) {
-            LOG(INFO) << "rejected for height " << z << " not in range ("
-                << min_height_ << ", " << max_height_ << ")";
-            continue;
-          }
-
-          double range = hypot(x, y);
-          if (range < laser_scan.range_min) {
-            LOG(INFO) << "rejected for range " << range << " below minimum value "
-                << laser_scan.range_min << ". Point: (" << x << ", "
-                << y << ", " << z << ")";
-            continue;
-          }
-
-          double angle = atan2(y, x);
-          if (angle < laser_scan.angle_min || angle > laser_scan.angle_max) {
-            LOG(INFO) << "rejected for angle " << angle << " not in range ("
-                << laser_scan.angle_min << ", " << laser_scan.angle_max << ")";
-            continue;
-          }
-
-          // Overwrite range at laserscan ray if new range is smaller.
-          int index = (angle - laser_scan.angle_min) / laser_scan.angle_increment;
-          if (range < laser_scan.ranges[index]) {
-            laser_scan.ranges[index] = range;
-          }
-
-        }
-        laser_scan_publisher_.publish(laser_scan);
+void TangoRosNode::PublishLaserScan() {
+  while(ros::ok()) {
+    if (!run_threads_) {
+      break;
+    }
+    {
+      std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
+      laser_scan_available_.wait(lock);
+      if (publisher_config_.publish_laser_scan) {
+        laser_scan_publisher_.publish(laser_scan_);
       }
     }
   }
@@ -617,6 +638,7 @@ void TangoRosNode::PublishColorImage() {
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   publisher_config_.publish_device_pose = config.publish_device_pose;
   publisher_config_.publish_point_cloud = config.publish_point_cloud;
+  publisher_config_.publish_laser_scan = config.publish_laser_scan;
   if (config.publish_fisheye_camera) {
     publisher_config_.publish_camera |= CAMERA_FISHEYE;
   } else {
