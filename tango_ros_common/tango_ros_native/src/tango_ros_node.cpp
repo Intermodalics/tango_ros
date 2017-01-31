@@ -21,8 +21,10 @@
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+//#include <tf2_ros/buffer.h>
 
 namespace {
 // This function routes onPoseAvailable callback to the application object for
@@ -187,6 +189,10 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
 
   color_image_publisher_ =
       node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.color_camera_topic,
+      queue_size, latching);
+
+  laser_scan_publisher_ =
+      node_handle_.advertise<sensor_msgs::LaserScan>(publisher_config_.laser_scan_topic,
       queue_size, latching);
 }
 
@@ -361,6 +367,20 @@ void TangoRosNode::PublishStaticTransforms() {
     device_T_camera_depth_.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
     device_T_camera_depth_.header.stamp = ros::Time::now();
     tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
+
+
+    // pi/2 rotation around x axis.
+    camera_depth_T_laser_.transform.translation.x = 0;
+    camera_depth_T_laser_.transform.translation.y = 0;
+    camera_depth_T_laser_.transform.translation.z = 0;
+    camera_depth_T_laser_.transform.rotation.w = sqrt(2) / 2;
+    camera_depth_T_laser_.transform.rotation.x = 1 / sqrt(2);
+    camera_depth_T_laser_.transform.rotation.y = 0;
+    camera_depth_T_laser_.transform.rotation.z = 0;
+    camera_depth_T_laser_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+    camera_depth_T_laser_.child_frame_id = "laser";
+    camera_depth_T_laser_.header.stamp = ros::Time::now();
+    tf_static_broadcaster_.sendTransform(camera_depth_T_laser_);
   }
 
   if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
@@ -489,6 +509,72 @@ void TangoRosNode::PublishPointCloud() {
       point_cloud_available_.wait(lock);
       if (publisher_config_.publish_point_cloud) {
         point_cloud_publisher_.publish(point_cloud_);
+
+
+        sensor_msgs::LaserScan laser_scan;
+        laser_scan.header = point_cloud_.header;
+        laser_scan.header.frame_id = "laser";
+        laser_scan.angle_min = 0;
+        laser_scan.angle_max = 3.14;
+        laser_scan.angle_increment = 3.14 / 360;
+        laser_scan.time_increment = 0.0;
+        laser_scan.scan_time = 0.3333;
+        laser_scan.range_min = 0.45;
+        laser_scan.range_max = 6.0;
+
+        // Determine amount of rays to create.
+        uint32_t ranges_size = std::ceil((laser_scan.angle_max - laser_scan.angle_min) / laser_scan.angle_increment);
+        // Laserscan rays with no obstacle data will evaluate to infinity or max_range.
+        laser_scan.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
+
+        // TODO: make these ros params.
+        double min_height_ = 0;
+        double max_height_ = 2.0;
+
+        for (sensor_msgs::PointCloud2ConstIterator<float>
+                  iter_x(point_cloud_, "x"), iter_y(point_cloud_, "y"), iter_z(point_cloud_, "z");
+                  iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+
+          // pi/2 rotation around x axis.
+          double x = *iter_x;
+          double y = *iter_z;
+          double z = -1 * (*iter_y);
+
+          if (std::isnan(x) || std::isnan(y) || std::isnan(z)) {
+            LOG(INFO) << "rejected for nan in point(" << x << ", "
+                << y << ", " << z << ")";
+            continue;
+          }
+
+          if (z > max_height_ || z < min_height_) {
+            LOG(INFO) << "rejected for height " << z << " not in range ("
+                << min_height_ << ", " << max_height_ << ")";
+            continue;
+          }
+
+          double range = hypot(x, y);
+          if (range < laser_scan.range_min) {
+            LOG(INFO) << "rejected for range " << range << " below minimum value "
+                << laser_scan.range_min << ". Point: (" << x << ", "
+                << y << ", " << z << ")";
+            continue;
+          }
+
+          double angle = atan2(y, x);
+          if (angle < laser_scan.angle_min || angle > laser_scan.angle_max) {
+            LOG(INFO) << "rejected for angle " << angle << " not in range ("
+                << laser_scan.angle_min << ", " << laser_scan.angle_max << ")";
+            continue;
+          }
+
+          // Overwrite range at laserscan ray if new range is smaller.
+          int index = (angle - laser_scan.angle_min) / laser_scan.angle_increment;
+          if (range < laser_scan.ranges[index]) {
+            laser_scan.ranges[index] = range;
+          }
+
+        }
+        laser_scan_publisher_.publish(laser_scan);
       }
     }
   }

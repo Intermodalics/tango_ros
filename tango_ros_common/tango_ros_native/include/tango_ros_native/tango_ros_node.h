@@ -59,6 +59,8 @@ struct PublisherConfiguration {
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
+  // Topic name for the point cloud publisher.
+  std::string laser_scan_topic = "tango/laser_scan";
   // Topic name for the fisheye image publisher.
   std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
@@ -139,11 +141,13 @@ class TangoRosNode {
   geometry_msgs::TransformStamped start_of_service_T_device_;
   tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;
   geometry_msgs::TransformStamped device_T_camera_depth_;
+  geometry_msgs::TransformStamped camera_depth_T_laser_;
   geometry_msgs::TransformStamped device_T_camera_fisheye_;
   geometry_msgs::TransformStamped device_T_camera_color_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
+  ros::Publisher laser_scan_publisher_;
 
   ros::Publisher fisheye_image_publisher_;
   sensor_msgs::CompressedImage fisheye_compressed_image_;
