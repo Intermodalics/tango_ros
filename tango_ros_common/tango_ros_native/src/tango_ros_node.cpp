@@ -77,7 +77,6 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.w = pose.orientation[3];
   transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
 }
-
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
 // @param tango_point_cloud, TangoPointCloud to convert.
 // @param time_offset, offset in ms between tango_point_cloud (tango time) and
@@ -114,7 +113,6 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   }
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
-
 // Convert a point to a laser scan range.
 // Method taken from the ros package 'pointcloud_to_laserscan':
 // http://wiki.ros.org/pointcloud_to_laserscan
@@ -153,7 +151,6 @@ void toLaserScanRange(double x, double y, double z, double min_height,
     laser_scan->ranges[index] = range;
   }
 }
-
 // Converts a TangoPointCloud to a sensor_msgs::LaserScan.
 // @param tango_point_cloud, TangoPointCloud to convert.
 // @param time_offset, offset in ms between tango_point_cloud (tango time) and
@@ -179,8 +176,6 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
   }
   laser_scan->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
-
-
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2 and a
 // sensor_msgs::LaserScan.
 // @param tango_point_cloud, TangoPointCloud to convert.
@@ -234,8 +229,6 @@ void toPointCloud2AndLaserScan(const TangoPointCloud& tango_point_cloud,
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
   laser_scan->header = point_cloud->header;
 }
-
-
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
 // @param image, cv::Mat to compress, in YUV420sp format.
 // @param compressing_quality, value from 0 to 100 (the higher is the better).
