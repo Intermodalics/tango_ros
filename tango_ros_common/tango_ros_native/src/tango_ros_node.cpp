@@ -105,7 +105,6 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   sensor_msgs::PointCloud2Iterator<float> iter_c(*point_cloud, "c");
   for (size_t i = 0; i < tango_point_cloud.num_points;
       ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_c) {
-    // Fill in point cloud message.
     *iter_x = tango_point_cloud.points[i][0];
     *iter_y = tango_point_cloud.points[i][1];
     *iter_z = tango_point_cloud.points[i][2];
@@ -166,7 +165,6 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
                    double max_height,
                    sensor_msgs::LaserScan* laser_scan) {
   for (size_t i = 0; i < tango_point_cloud.num_points; ++i) {
-    // Fill in laser scan message.
     // Laser scan frame is rotated of 90 degrees around x axis with respect to
     // point cloud frame.
     double x = tango_point_cloud.points[i][0];
