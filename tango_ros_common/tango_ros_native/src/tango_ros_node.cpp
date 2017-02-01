@@ -176,59 +176,6 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
   }
   laser_scan->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
-// Converts a TangoPointCloud to a sensor_msgs::PointCloud2 and a
-// sensor_msgs::LaserScan.
-// @param tango_point_cloud, TangoPointCloud to convert.
-// @param time_offset, offset in ms between tango_point_cloud (tango time) and
-//        point_cloud/laser_scan (ros time).
-// @param min_height minimum height for a point of the point cloud to be
-// included in laser scan.
-// @param max_height maximum height for a point of the point cloud to be
-// included in laser scan.
-// @param point_cloud, the output PointCloud2.
-// @param laser_scan, the output LaserScan.
-void toPointCloud2AndLaserScan(const TangoPointCloud& tango_point_cloud,
-                   double time_offset,
-                   double min_height,
-                   double max_height,
-                   sensor_msgs::PointCloud2* point_cloud,
-                   sensor_msgs::LaserScan* laser_scan) {
-  point_cloud->width = tango_point_cloud.num_points;
-  point_cloud->height = 1;
-  point_cloud->point_step = (sizeof(float) * tango_ros_native::NUMBER_OF_FIELDS_IN_POINT_CLOUD);
-  point_cloud->is_dense = true;
-  point_cloud->row_step = point_cloud->width;
-  point_cloud->is_bigendian = false;
-  point_cloud->data.resize(tango_point_cloud.num_points);
-  sensor_msgs::PointCloud2Modifier modifier(*point_cloud);
-  modifier.setPointCloud2Fields(tango_ros_native::NUMBER_OF_FIELDS_IN_POINT_CLOUD,
-                                "x", 1, sensor_msgs::PointField::FLOAT32,
-                                "y", 1, sensor_msgs::PointField::FLOAT32,
-                                "z", 1, sensor_msgs::PointField::FLOAT32,
-                                "c", 1, sensor_msgs::PointField::FLOAT32);
-  modifier.resize(tango_point_cloud.num_points);
-  sensor_msgs::PointCloud2Iterator<float> iter_x(*point_cloud, "x");
-  sensor_msgs::PointCloud2Iterator<float> iter_y(*point_cloud, "y");
-  sensor_msgs::PointCloud2Iterator<float> iter_z(*point_cloud, "z");
-  sensor_msgs::PointCloud2Iterator<float> iter_c(*point_cloud, "c");
-  for (size_t i = 0; i < tango_point_cloud.num_points;
-      ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_c) {
-    // Fill in point cloud message.
-    *iter_x = tango_point_cloud.points[i][0];
-    *iter_y = tango_point_cloud.points[i][1];
-    *iter_z = tango_point_cloud.points[i][2];
-    *iter_c = tango_point_cloud.points[i][3];
-
-    // Laser scan frame is rotated of 90 degrees around x axis with respect to
-    // point cloud frame.
-    double x = tango_point_cloud.points[i][0];
-    double y = tango_point_cloud.points[i][2];
-    double z = -tango_point_cloud.points[i][1];
-    toLaserScanRange(x, y, z, min_height, max_height, laser_scan);
-  }
-  point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
-  laser_scan->header = point_cloud->header;
-}
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
 // @param image, cv::Mat to compress, in YUV420sp format.
 // @param compressing_quality, value from 0 to 100 (the higher is the better).
@@ -542,38 +489,31 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
 }
 
 void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
-  if (publisher_config_.publish_laser_scan && point_cloud->num_points > 0
-      && laser_scan_available_mutex_.try_lock()) {
-    laser_scan_.angle_min = LASER_SCAN_ANGLE_MIN;
-    laser_scan_.angle_max = LASER_SCAN_ANGLE_MAX;
-    laser_scan_.angle_increment = LASER_SCAN_ANGLE_INCREMENT;
-    laser_scan_.time_increment = LASER_SCAN_TIME_INCREMENT;
-    laser_scan_.scan_time = LASER_SCAN_SCAN_TIME;
-    laser_scan_.range_min = LASER_SCAN_RANGE_MIN;
-    laser_scan_.range_max = LASER_SCAN_RANGE_MAX;
-    // Determine amount of rays to create.
-    uint32_t ranges_size = std::ceil((laser_scan_.angle_max - laser_scan_.angle_min)
-                                     / laser_scan_.angle_increment);
-    // Laser scan rays with no obstacle data will evaluate to infinity.
-    laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
+  if (point_cloud->num_points > 0) {
     if (publisher_config_.publish_point_cloud && point_cloud_available_mutex_.try_lock()) {
-      toPointCloud2AndLaserScan(*point_cloud, time_offset_, laser_scan_min_height_,
-                               laser_scan_max_height_, &point_cloud_, &laser_scan_);
+      toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
       point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
       point_cloud_available_.notify_all();
       point_cloud_available_mutex_.unlock();
-    } else {
-      toLaserScan(*point_cloud, time_offset_, laser_scan_min_height_, laser_scan_max_height_, &laser_scan_);
     }
-    laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
-    laser_scan_available_.notify_all();
-    laser_scan_available_mutex_.unlock();
-  } else if (publisher_config_.publish_point_cloud && point_cloud->num_points > 0
-      && point_cloud_available_mutex_.try_lock()) {
-    toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
-    point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    point_cloud_available_.notify_all();
-    point_cloud_available_mutex_.unlock();
+    if (publisher_config_.publish_laser_scan && laser_scan_available_mutex_.try_lock()) {
+      laser_scan_.angle_min = LASER_SCAN_ANGLE_MIN;
+      laser_scan_.angle_max = LASER_SCAN_ANGLE_MAX;
+      laser_scan_.angle_increment = LASER_SCAN_ANGLE_INCREMENT;
+      laser_scan_.time_increment = LASER_SCAN_TIME_INCREMENT;
+      laser_scan_.scan_time = LASER_SCAN_SCAN_TIME;
+      laser_scan_.range_min = LASER_SCAN_RANGE_MIN;
+      laser_scan_.range_max = LASER_SCAN_RANGE_MAX;
+      // Determine amount of rays to create.
+      uint32_t ranges_size = std::ceil((laser_scan_.angle_max - laser_scan_.angle_min)
+                                       / laser_scan_.angle_increment);
+      // Laser scan rays with no obstacle data will evaluate to infinity.
+      laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
+      toLaserScan(*point_cloud, time_offset_, laser_scan_min_height_, laser_scan_max_height_, &laser_scan_);
+      laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
+      laser_scan_available_.notify_all();
+      laser_scan_available_mutex_.unlock();
+    }
   }
 }
 
