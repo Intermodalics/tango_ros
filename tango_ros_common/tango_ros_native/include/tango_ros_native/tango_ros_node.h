@@ -39,6 +39,13 @@
 namespace tango_ros_native {
 const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
+const float LASER_SCAN_ANGLE_MIN = 0.;
+const float LASER_SCAN_ANGLE_MAX = 3.1415;
+const float LASER_SCAN_ANGLE_INCREMENT = 3.1415 / 360;
+const float LASER_SCAN_TIME_INCREMENT = 0.0;
+const float LASER_SCAN_SCAN_TIME= 0.3333;
+const float LASER_SCAN_RANGE_MIN = 0.45;
+const float LASER_SCAN_RANGE_MAX = 6.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
@@ -159,8 +166,8 @@ class TangoRosNode {
   ros::Publisher laser_scan_publisher_;
   sensor_msgs::LaserScan laser_scan_;
   // TODO: make these ros params.
-  double min_height_ = 0;
-  double max_height_ = 2.0;
+  double laser_scan_min_height_ = 0;
+  double laser_scan_max_height_ = 2.0;
 
   ros::Publisher fisheye_image_publisher_;
   sensor_msgs::CompressedImage fisheye_compressed_image_;
