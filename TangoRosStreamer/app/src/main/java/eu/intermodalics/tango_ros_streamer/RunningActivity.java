@@ -318,6 +318,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         String[] dynamicParams = {
                 getString(R.string.publish_device_pose_key),
                 getString(R.string.publish_point_cloud_key),
+                getString(R.string.publish_laser_scan_key),
                 getString(R.string.publish_color_camera_key),
                 getString(R.string.publish_fisheye_camera_key)};
         // Tango configuration parameters are non-runtime settings for now.

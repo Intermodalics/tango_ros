@@ -13,6 +13,10 @@
             android:title="@string/publish_point_cloud" />
 
         <SwitchPreference
+            android:key="@string/publish_laser_scan_key"
+            android:title="@string/publish_laser_scan" />
+
+        <SwitchPreference
             android:key="@string/publish_fisheye_camera_key"
             android:title="@string/publish_fisheye_camera" />
 

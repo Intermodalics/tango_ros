@@ -29,6 +29,7 @@
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -38,6 +39,14 @@
 namespace tango_ros_native {
 const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
+const float LASER_SCAN_ANGLE_MIN = 0.;
+const float LASER_SCAN_ANGLE_MAX = 3.1415;
+const float LASER_SCAN_ANGLE_INCREMENT = 3.1415 / 360;
+const float LASER_SCAN_TIME_INCREMENT = 0.0;
+const float LASER_SCAN_SCAN_TIME= 0.3333;
+const float LASER_SCAN_RANGE_MIN = 0.45;
+const float LASER_SCAN_RANGE_MAX = 6.0;
+const std::string LASER_SCAN_FRAME_ID = "laser";
 constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
 constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
 // Compressing quality for OpenCV to compress an image to JPEG format,
@@ -54,11 +63,15 @@ struct PublisherConfiguration {
   std::atomic_bool publish_device_pose{false};
   // True if point cloud needs to be published.
   std::atomic_bool publish_point_cloud{false};
+  // True if laser scan needs to be published.
+  std::atomic_bool publish_laser_scan{false};
   // Flag corresponding to which cameras need to be published.
   std::atomic<uint32_t> publish_camera{CAMERA_NONE};
 
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
+  // Topic name for the laser scan publisher.
+  std::string laser_scan_topic = "tango/laser_scan";
   // Topic name for the fisheye image publisher.
   std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
   // Topic name for the color image publisher.
@@ -101,9 +114,10 @@ class TangoRosNode {
   TangoErrorType TangoConnect();
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
-  // Publishes the available data (device pose, point cloud, images).
+  // Publishes the available data (device pose, point cloud, laser scan, images).
   void PublishDevicePose();
   void PublishPointCloud();
+  void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
@@ -119,6 +133,7 @@ class TangoRosNode {
   PublisherConfiguration publisher_config_;
   std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
+  std::thread publish_laserscan_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
   std::thread ros_spin_thread_;
@@ -128,6 +143,8 @@ class TangoRosNode {
   std::condition_variable pose_available_;
   std::mutex point_cloud_available_mutex_;
   std::condition_variable point_cloud_available_;
+  std::mutex laser_scan_available_mutex_;
+  std::condition_variable laser_scan_available_;
   std::mutex fisheye_image_available_mutex_;
   std::condition_variable fisheye_image_available_;
   std::mutex color_image_available_mutex_;
@@ -139,11 +156,18 @@ class TangoRosNode {
   geometry_msgs::TransformStamped start_of_service_T_device_;
   tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;
   geometry_msgs::TransformStamped device_T_camera_depth_;
+  geometry_msgs::TransformStamped camera_depth_T_laser_;
   geometry_msgs::TransformStamped device_T_camera_fisheye_;
   geometry_msgs::TransformStamped device_T_camera_color_;
 
   ros::Publisher point_cloud_publisher_;
   sensor_msgs::PointCloud2 point_cloud_;
+
+  ros::Publisher laser_scan_publisher_;
+  sensor_msgs::LaserScan laser_scan_;
+  // TODO: make these ros params.
+  double laser_scan_min_height_ = 0;
+  double laser_scan_max_height_ = 2.0;
 
   ros::Publisher fisheye_image_publisher_;
   sensor_msgs::CompressedImage fisheye_compressed_image_;
