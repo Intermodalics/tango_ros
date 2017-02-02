@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
@@ -54,6 +55,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
+    private Log log;
     private final String[] mDynamicParamNames;
     private final String[] mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
@@ -76,6 +78,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     @Override
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
+        log = connectedNode.getLog();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
 
         // Overwrite preferences in server with local preferences.
@@ -169,20 +172,20 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    mConnectedNode.getLog().info("Dynamic Reconfigure success");
+                    log.info("Dynamic Reconfigure success");
                     mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    mConnectedNode.getLog().error("Dynamic Reconfigure failure: " + e.getMessage());
+                    log.error("Dynamic Reconfigure failure: " + e.getMessage());
                 }
             });
             mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
-            mConnectedNode.getLog().error("Service not found: " + e.getMessage());
+            log.error("Service not found: " + e.getMessage());
         } catch (Exception e) {
-            mConnectedNode.getLog().error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
+            log.error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 
