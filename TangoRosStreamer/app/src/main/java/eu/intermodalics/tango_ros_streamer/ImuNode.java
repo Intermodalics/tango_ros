@@ -55,14 +55,9 @@ public class ImuNode  extends AbstractNodeMain implements NodeMain, SensorEventL
 
     public ImuNode(Activity activity) {
         mSensorManager = (SensorManager) activity.getSystemService(Context.SENSOR_SERVICE);
-
         mRotationSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mGyroscopeSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mAccelerometerSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-        mSensorManager.registerListener(this, mRotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(this, mGyroscopeSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        mSensorManager.registerListener(this, mAccelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     public GraphName getDefaultNodeName() { return GraphName.of(NODE_NAME); }
@@ -72,6 +67,10 @@ public class ImuNode  extends AbstractNodeMain implements NodeMain, SensorEventL
         mLog = connectedNode.getLog();
         mImuPublisher = connectedNode.newPublisher("android/imu", Imu._TYPE);
         mImuMessage = mConnectedNode.getTopicMessageFactory().newFromType(Imu._TYPE);
+
+        mSensorManager.registerListener(this, mRotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, mGyroscopeSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, mAccelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     @Override
@@ -90,32 +89,21 @@ public class ImuNode  extends AbstractNodeMain implements NodeMain, SensorEventL
                 mImuMessage.getOrientation().setX(quaternion[1]);
                 mImuMessage.getOrientation().setY(quaternion[2]);
                 mImuMessage.getOrientation().setZ(quaternion[3]);
-                mImuMessage.setOrientationCovariance(
-                        new double[]{0.001, 0., 0.,
-                                     0., 0.001, 0.,
-                                     0., 0., 0.001}
-                );
+                mImuMessage.setOrientationCovariance(new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0});
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 mNewGyroscopeData = true;
                 mImuMessage.getAngularVelocity().setX(event.values[0]);
                 mImuMessage.getAngularVelocity().setY(event.values[1]);
                 mImuMessage.getAngularVelocity().setZ(event.values[2]);
-                mImuMessage.setAngularVelocityCovariance(
-                        new double[]{0.0025, 0., 0.,
-                                     0., 0.0025, 0.,
-                                     0., 0., 0.0025}
-                );
+                mImuMessage.setAngularVelocityCovariance(new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0});
                 break;
             case Sensor.TYPE_ACCELEROMETER:
                 mNewAccelerometerData = true;
                 mImuMessage.getLinearAcceleration().setX(event.values[0]);
                 mImuMessage.getLinearAcceleration().setY(event.values[1]);
                 mImuMessage.getLinearAcceleration().setZ(event.values[2]);
-                mImuMessage.setLinearAccelerationCovariance(
-                        new double[]{0.01, 0., 0.,
-                                     0., 0.01, 0.,
-                                     0., 0., 0.01});
+                mImuMessage.setLinearAccelerationCovariance(new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0});
                 break;
             default:
                 break;
