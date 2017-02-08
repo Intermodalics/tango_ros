@@ -16,24 +16,15 @@
 #include <cmath>
 
 #include <glog/logging.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <image_geometry/pinhole_camera_model.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-
-#include <image_geometry/pinhole_camera_model.h>
-#include "image_transport/publisher_plugin.h"
-#include "image_transport/subscriber_plugin.h"
-#include <pluginlib/class_loader.h>
-#include <boost/foreach.hpp>
-#include <boost/algorithm/string/erase.hpp>
-#include <map>
 
 namespace {
 // This function routes onPoseAvailable callback to the application object for
@@ -200,8 +191,6 @@ void toCameraInfo(const TangoCameraIntrinsics& camera_intrinsics,
 // The distortion model used by the Tango fisheye camera is called FOV and is
 // described in 'Straight lines have to be straight'.
 // See https://hal.inria.fr/inria-00267247/document.
-// @param
-// @param
 void ApplyFOVModel(
     double xu, double yu, double w, double w_inverse, double two_tan_w_div_two,
     double* xd, double* yd) {
@@ -217,9 +206,10 @@ void ApplyFOVModel(
   }
 }
 // Undistord the Tango fisheye image using the FOV model.
-// @param
-// @param
-void RectifyFisheyeImage(const cv::Mat& image,
+// @param fisheye_image the fisheye image to rectify
+// @param fisheye_camera_info the fisheye camera intrinsics
+// @param image_rect the output rectified fisheye image.
+void RectifyFisheyeImage(const cv::Mat& fisheye_image,
                          const sensor_msgs::CameraInfo& fisheye_camera_info,
                          cv::Mat* image_rect) {
   double fx = fisheye_camera_info.K[0];
@@ -233,13 +223,13 @@ void RectifyFisheyeImage(const cv::Mat& image,
   double w_inverse = 1 / w;
   double two_tan_w_div_two = 2.0 * std::tan(w * 0.5);
 
-  cv::Mat cv_warp_map_x(image.rows, image.cols, CV_32FC1);
-  cv::Mat cv_warp_map_y(image.rows, image.cols, CV_32FC1);
+  cv::Mat cv_warp_map_x(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
+  cv::Mat cv_warp_map_y(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
   // Compute warp maps in x and y directions.
   // OpenCV expects maps from dest to src, i.e. from undistorded to distorded
   // pixel coordinates.
-  for(int iu = 0; iu < image.rows; ++iu) {
-    for (int ju = 0; ju < image.cols; ++ju) {
+  for(int iu = 0; iu < fisheye_image.rows; ++iu) {
+    for (int ju = 0; ju < fisheye_image.cols; ++ju) {
       double xu = (ju - cx) * fx_inverse;
       double yu = (iu - cy) * fy_inverse;
       double xd, yd;
@@ -250,8 +240,9 @@ void RectifyFisheyeImage(const cv::Mat& image,
           cv_warp_map_y.at<float>(iu, ju) = id;
     }
   }
-  image_rect->create(image.rows, image.cols, image.channels());
-  cv::remap(image, *image_rect, cv_warp_map_x, cv_warp_map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
+  image_rect->create(fisheye_image.rows, fisheye_image.cols, fisheye_image.channels());
+  cv::remap(fisheye_image, *image_rect, cv_warp_map_x, cv_warp_map_y,
+            cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 }
 }  // namespace
 
@@ -278,7 +269,7 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
         image_transport_->advertise(publisher_config_.color_rectified_image_topic,
                                    queue_size, latching);
   } catch (const image_transport::Exception& e) {
-    LOG(ERROR) << e.what();
+    LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
 
 }
