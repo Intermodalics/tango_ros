@@ -23,6 +23,7 @@
 
     <!-- Strings related to error messages -->
 
+    <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
     <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
@@ -37,6 +38,9 @@
     <string name="publish_point_cloud">Point cloud</string>
     <string name="publish_point_cloud_key">publish_point_cloud</string>
 
+    <string name="publish_laser_scan">Laser scan</string>
+    <string name="publish_laser_scan_key">publish_laser_scan</string>
+
     <string name="publish_fisheye_camera">Fisheye image</string>
     <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
 
@@ -49,8 +53,8 @@
     <string name="pref_category_ros_key">pref_category_ros</string>
 
     <string name="pref_master_is_local_title">Run local master</string>
-    <string name="pref_master_is_local_key">pref_master_is_remote</string>
-    <string name="pref_master_is_local_summary">Enable if master is running on the device</string>
+    <string name="pref_master_is_local_key">pref_master_is_local</string>
+    <string name="pref_master_is_local_summary">Enable to run the ROS master on the device</string>
 
     <string name="pref_master_uri_title">Master URI</string>
     <string name="pref_master_uri_key">pref_master_uri</string>
