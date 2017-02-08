@@ -165,8 +165,7 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
       string_frame_type = "uuid";
       break;
     default:
-      tango_ros_native::Log(tango_ros_native::ERROR, std::ostringstream().flush() <<
-                            "Unknown TangoCoordinateFrameType: " << tango_frame_type);
+      LOG(ERROR) << "Unknown TangoCoordinateFrameType: " << tango_frame_type;
       string_frame_type = "unknown";
       break;
   }
@@ -175,40 +174,6 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
 }  // namespace
 
 namespace tango_ros_native {
-void Log(LogLevel log_level, const std::string& message) {
-  switch (log_level) {
-    case DEBUG:
-      LOG(INFO) << message; // No debug level in glog.
-      ROS_DEBUG_STREAM(message);
-      break;
-    case INFO:
-      LOG(INFO) << message;
-      ROS_INFO_STREAM(message);
-      break;
-    case WARN:
-      LOG(WARNING) << message;
-      ROS_WARN_STREAM(message);
-      break;
-    case ERROR:
-      LOG(ERROR) << message;
-      ROS_ERROR_STREAM(message);
-      break;
-    case FATAL:
-      LOG(FATAL) << message;
-      ROS_FATAL_STREAM(message);
-      break;
-    default:
-      LOG(INFO) << message;
-      ROS_INFO_STREAM(message);
-      break;
-  }
-}
-
-void Log(LogLevel log_level, std::ostream& message) {
-  std::string string_message = static_cast<std::ostringstream&>(message).str();
-  Log(log_level, string_message);
-}
-
 TangoRosNode::TangoRosNode() : run_threads_(false) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
@@ -242,12 +207,12 @@ TangoRosNode::~TangoRosNode() {
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   TangoErrorType result = TangoSetupConfig();
   if (result != TANGO_SUCCESS) {
-      Log(ERROR, "Error while setting up Tango config.");
+      LOG(ERROR) << "Error while setting up Tango config.";
       return result;
   }
   result = TangoConnect();
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, "Error while connecting to Tango Service.");
+    LOG(ERROR) << "Error while connecting to Tango Service.";
     return result;
   }
 
@@ -267,7 +232,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     current_time = time(NULL);
   }
   if (pose.status_code != TANGO_POSE_VALID) {
-    Log(ERROR, "Error, could not get a first valid pose.");
+    LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
   time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
@@ -279,8 +244,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 
   tango_config_ = TangoService_getConfig(TANGO_CONFIG_DEFAULT);
   if (tango_config_ == nullptr) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name <<  ", TangoService_getConfig error.");
+    LOG(ERROR) << function_name << ", TangoService_getConfig error.";
     return TANGO_ERROR;
   }
 
@@ -288,9 +252,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   const char* config_enable_motion_tracking = "config_enable_motion_tracking";
   result = TangoConfig_setBool(tango_config_, config_enable_motion_tracking, true);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setBool "
-        << config_enable_motion_tracking << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setBool "
+        << config_enable_motion_tracking << " error: " << result;
     return result;
   }
 
@@ -299,42 +262,36 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   const char* config_enable_drift_correction = "config_enable_drift_correction";
   result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setBool "
-        << config_enable_drift_correction << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setBool "
+        << config_enable_drift_correction << " error: " << result;
     return result;
   }
-
   const char* config_enable_auto_recovery = "config_enable_auto_recovery";
   result = TangoConfig_setBool(tango_config_, config_enable_auto_recovery, true);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setBool "
-        << config_enable_auto_recovery << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setBool "
+        << config_enable_auto_recovery << " error: " << result;
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
   result = TangoConfig_setBool(tango_config_, config_enable_depth, true);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setBool "
-        << config_enable_depth << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setBool "
+        << config_enable_depth << " error: " << result;
     return result;
   }
   const char* config_depth_mode = "config_depth_mode";
   result = TangoConfig_setInt32(tango_config_, config_depth_mode, TANGO_POINTCLOUD_XYZC);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setInt "
-        << config_depth_mode << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setInt "
+        << config_depth_mode << " error: " << result;
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
   result = TangoConfig_setBool(tango_config_, config_enable_color_camera, true);
   if(result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoConfig_setBool "
-        << config_enable_color_camera << " error: " << result);
+    LOG(ERROR) << function_name << ", TangoConfig_setBool "
+        << config_enable_color_camera << " error: " << result;
     return result;
   }
   return TANGO_SUCCESS;
@@ -350,38 +307,37 @@ TangoErrorType TangoRosNode::TangoConnect() {
   TangoErrorType result;
   result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() << function_name
-        << ", TangoService_connectOnPoseAvailable error: " << result);
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnPoseAvailable error: " << result;
     return result;
   }
 
   result = TangoService_connectOnPointCloudAvailable(onPointCloudAvailableRouter);
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() << function_name
-        << ", TangoService_connectOnPointCloudAvailable error: " << result);
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnPointCloudAvailable error: " << result;
     return result;
   }
 
   result = TangoService_connectOnFrameAvailable(
       TANGO_CAMERA_FISHEYE, this, onFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() << function_name
-        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result);
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
     return result;
   }
 
   result = TangoService_connectOnFrameAvailable(
       TANGO_CAMERA_COLOR, this, onFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() << function_name
-        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result);
+    LOG(ERROR) << function_name
+        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result;
     return result;
   }
 
   result = TangoService_connect(this, tango_config_);
   if (result != TANGO_SUCCESS) {
-    Log(ERROR, std::ostringstream().flush() <<
-        function_name << ", TangoService_connect error: " << result);
+    LOG(ERROR) << function_name << ", TangoService_connect error: " << result;
     return result;
   }
   return TANGO_SUCCESS;
