@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Intermodalics All Rights Reserved.
+ * Copyright 2017 Intermodalics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import sensor_msgs.Imu;
 /**
  *
  */
-public class ImuNode  extends AbstractNodeMain implements NodeMain, SensorEventListener {
+public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventListener {
     private static final String NODE_NAME = "android";
 
     private ConnectedNode mConnectedNode;
