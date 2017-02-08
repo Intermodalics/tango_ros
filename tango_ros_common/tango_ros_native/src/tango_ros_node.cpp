@@ -419,6 +419,17 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::PublishStaticTransforms() {
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
+
+  pair.base = TANGO_COORDINATE_FRAME_DEVICE;
+  pair.target = TANGO_COORDINATE_FRAME_IMU;
+  TangoService_getPoseAtTime(0.0, pair, &pose);
+  geometry_msgs::TransformStamped device_T_imu;
+  toTransformStamped(pose, time_offset_, &device_T_imu);
+  device_T_imu.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+  device_T_imu.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_IMU);
+  device_T_imu.header.stamp = ros::Time::now();
+  tf_static_broadcaster_.sendTransform(device_T_imu);
+
   if (publisher_config_.publish_point_cloud || publisher_config_.publish_laser_scan) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
