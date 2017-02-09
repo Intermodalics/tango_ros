@@ -737,9 +737,8 @@ void TangoRosNode::PublishFisheyeImage() {
         cv_bridge_fisheye_image_.image = fisheye_image_gray_;
         fisheye_camera_info_.header = fisheye_image_header_;
         fisheye_camera_info_manager_->setCameraInfo(fisheye_camera_info_);
-        sensor_msgs::Image image;
-        cv_bridge_fisheye_image_.toImageMsg(image);
-        fisheye_camera_publisher_.publish(image, fisheye_camera_info_);
+        cv_bridge_fisheye_image_.toImageMsg(fisheye_image_msg_);
+        fisheye_camera_publisher_.publish(fisheye_image_msg_, fisheye_camera_info_);
 
         if (fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
           cv::remap(fisheye_image_gray_, fisheye_image_rect_, cv_warp_map_x_,
@@ -771,9 +770,8 @@ void TangoRosNode::PublishColorImage() {
         cv_bridge_color_image.image = color_image_rgb_;
         color_camera_info_.header = color_image_header_;
         color_camera_info_manager_->setCameraInfo(color_camera_info_);
-        sensor_msgs::Image image;
-        cv_bridge_color_image.toImageMsg(image);
-        color_camera_publisher_.publish(image, color_camera_info_);
+        cv_bridge_color_image.toImageMsg(color_image_msg_);
+        color_camera_publisher_.publish(color_image_msg_, color_camera_info_);
 
         if (color_rectified_image_publisher_.getNumSubscribers() > 0) {
           color_camera_model_.rectifyImage(color_image_rgb_, color_image_rect_);

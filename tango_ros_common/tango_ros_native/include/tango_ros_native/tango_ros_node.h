@@ -183,6 +183,7 @@ class TangoRosNode {
   cv::Mat fisheye_image_;
   cv::Mat fisheye_image_gray_;
   cv_bridge::CvImage cv_bridge_fisheye_image_;
+  sensor_msgs::Image fisheye_image_msg_;
   cv::Mat cv_warp_map_x_;
   cv::Mat cv_warp_map_y_;
   cv::Mat fisheye_image_rect_;
@@ -195,6 +196,7 @@ class TangoRosNode {
   cv::Mat color_image_;
   cv::Mat color_image_rgb_;
   cv_bridge::CvImage cv_bridge_color_image;
+  sensor_msgs::Image color_image_msg_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
 };
