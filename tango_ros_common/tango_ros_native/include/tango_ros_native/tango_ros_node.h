@@ -25,9 +25,9 @@
 
 #include <opencv2/core/core.hpp>
 
-#include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <sensor_msgs/CameraInfo.h>
@@ -69,13 +69,13 @@ struct PublisherConfiguration {
   std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the laser scan publisher.
   std::string laser_scan_topic = "tango/laser_scan";
-  // Topic name for the fisheye image publisher.
+  // Topic name for the fisheye raw image publisher.
   std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
   // Topic name for the fisheye rectified image publisher.
   std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
-  // Topic name for the color image publisher.
+  // Topic name for the color raw image publisher.
   std::string color_image_topic = "tango/camera/color_1/image_raw";
-  // Topic name for the color image publisher.
+  // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
   // Param name for the drift correction parameter.
   std::string enable_drift_correction_param = "tango/enable_drift_correction";

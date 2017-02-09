@@ -249,57 +249,57 @@ void toCameraInfo(const TangoCameraIntrinsics& camera_intrinsics,
     LOG(ERROR) << "Unknown camera ID: " << camera_intrinsics.camera_id;
   }
 }
-// Compute fisheye distorted coordinates from undistorded coordinates.
+// Compute fisheye distorted coordinates from undistorted coordinates.
 // The distortion model used by the Tango fisheye camera is called FOV and is
-// described in 'Straight lines have to be straight'.
-// See https://hal.inria.fr/inria-00267247/document.
-void ApplyFOVModel(
+// described in 'Straight lines have to be straight' by Frederic Devernay and
+// Olivier Faugeras. See https://hal.inria.fr/inria-00267247/document.
+void ApplyFovModel(
     double xu, double yu, double w, double w_inverse, double two_tan_w_div_two,
     double* xd, double* yd) {
   double ru = sqrt(xu * xu + yu * yu);
-  const double epsilon = 1e-7;
-  if (w < epsilon) {
+  constexpr double epsilon = 1e-7;
+  if (w < epsilon || ru < epsilon) {
     *xd = xu;
     *yd = yu ;
   } else {
-    double rd = std::atan(ru * two_tan_w_div_two) * w_inverse;
-    *xd = xu * rd / ru;
-    *yd = yu * rd / ru;
+    double rd_div_ru = std::atan(ru * two_tan_w_div_two) * w_inverse / ru;
+    *xd = xu * rd_div_ru;
+    *yd = yu * rd_div_ru;
   }
 }
-// Undistord the Tango fisheye image using the FOV model.
-// @param fisheye_image the fisheye image to rectify
-// @param fisheye_camera_info the fisheye camera intrinsics
+// Undistort the Tango fisheye image using the FOV model.
+// @param fisheye_image the fisheye image to rectify.
+// @param fisheye_camera_info the fisheye camera intrinsics.
 // @param image_rect the output rectified fisheye image.
 void RectifyFisheyeImage(const cv::Mat& fisheye_image,
                          const sensor_msgs::CameraInfo& fisheye_camera_info,
                          cv::Mat* image_rect) {
-  double fx = fisheye_camera_info.K[0];
-  double fy = fisheye_camera_info.K[4];
-  double cx = fisheye_camera_info.K[2];
-  double cy = fisheye_camera_info.K[5];
-  double w = fisheye_camera_info.D[0];
+  const double fx = fisheye_camera_info.K[0];
+  const double fy = fisheye_camera_info.K[4];
+  const double cx = fisheye_camera_info.K[2];
+  const double cy = fisheye_camera_info.K[5];
+  const double w = fisheye_camera_info.D[0];
   // Pre-computed variables for more efficiency.
-  double fy_inverse = 1.0 / fy;
-  double fx_inverse = 1.0 / fx;
-  double w_inverse = 1 / w;
-  double two_tan_w_div_two = 2.0 * std::tan(w * 0.5);
+  const double fy_inverse = 1.0 / fy;
+  const double fx_inverse = 1.0 / fx;
+  const double w_inverse = 1 / w;
+  const double two_tan_w_div_two = 2.0 * std::tan(w * 0.5);
 
   cv::Mat cv_warp_map_x(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
   cv::Mat cv_warp_map_y(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
   // Compute warp maps in x and y directions.
-  // OpenCV expects maps from dest to src, i.e. from undistorded to distorded
+  // OpenCV expects maps from dest to src, i.e. from undistorted to distorted
   // pixel coordinates.
   for(int iu = 0; iu < fisheye_image.rows; ++iu) {
     for (int ju = 0; ju < fisheye_image.cols; ++ju) {
       double xu = (ju - cx) * fx_inverse;
       double yu = (iu - cy) * fy_inverse;
       double xd, yd;
-      ApplyFOVModel(xu, yu, w, w_inverse, two_tan_w_div_two, &xd, &yd);
-        double jd = cx + xd * fx;
-        double id = cy + yd * fy;
-          cv_warp_map_x.at<float>(iu, ju) = jd;
-          cv_warp_map_y.at<float>(iu, ju) = id;
+      ApplyFovModel(xu, yu, w, w_inverse, two_tan_w_div_two, &xd, &yd);
+      double jd = cx + xd * fx;
+      double id = cy + yd * fy;
+      cv_warp_map_x.at<float>(iu, ju) = jd;
+      cv_warp_map_y.at<float>(iu, ju) = id;
     }
   }
   image_rect->create(fisheye_image.rows, fisheye_image.cols, fisheye_image.channels());
