@@ -221,6 +221,10 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   return string_frame_type;
 }
 // Converts TangoCameraIntrinsics to sensor_msgs::CameraInfo.
+// See Tango documentation:
+// http://developers.google.com/tango/apis/unity/reference/class/tango/tango-camera-intrinsics
+// And ROS documentation:
+// http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html
 // @param camera_intrinsics, TangoCameraIntrinsics to convert.
 // @param camera_info, the output CameraInfo.
 void toCameraInfo(const TangoCameraIntrinsics& camera_intrinsics,
@@ -266,7 +270,8 @@ void ApplyFovModel(
   }
 }
 // Compute the warp maps to undistort the Tango fisheye image using the FOV
-// model.
+// model. See OpenCV documentation for more information on warp maps:
+// http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html
 // @param fisheye_camera_info the fisheye camera intrinsics.
 // @param cv_warp_map_x the output map for the x direction.
 // @param cv_warp_map_y the output map for the y direction.
