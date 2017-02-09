@@ -17,10 +17,8 @@
 
 #include <glog/logging.h>
 
-#include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
-#include <image_geometry/pinhole_camera_model.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
@@ -267,13 +265,14 @@ void ApplyFovModel(
     *yd = yu * rd_div_ru;
   }
 }
-// Undistort the Tango fisheye image using the FOV model.
-// @param fisheye_image the fisheye image to rectify.
+// Compute the warp maps to undistort the Tango fisheye image using the FOV
+// model.
 // @param fisheye_camera_info the fisheye camera intrinsics.
-// @param image_rect the output rectified fisheye image.
-void RectifyFisheyeImage(const cv::Mat& fisheye_image,
-                         const sensor_msgs::CameraInfo& fisheye_camera_info,
-                         cv::Mat* image_rect) {
+// @param cv_warp_map_x the output map for the x direction.
+// @param cv_warp_map_y the output map for the y direction.
+void ComputeWarpMapsToRectifyFisheyeImage(
+    const sensor_msgs::CameraInfo& fisheye_camera_info,
+    cv::Mat* cv_warp_map_x, cv::Mat* cv_warp_map_y) {
   const double fx = fisheye_camera_info.K[0];
   const double fy = fisheye_camera_info.K[4];
   const double cx = fisheye_camera_info.K[2];
@@ -284,27 +283,21 @@ void RectifyFisheyeImage(const cv::Mat& fisheye_image,
   const double fx_inverse = 1.0 / fx;
   const double w_inverse = 1 / w;
   const double two_tan_w_div_two = 2.0 * std::tan(w * 0.5);
-
-  cv::Mat cv_warp_map_x(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
-  cv::Mat cv_warp_map_y(fisheye_image.rows, fisheye_image.cols, CV_32FC1);
   // Compute warp maps in x and y directions.
   // OpenCV expects maps from dest to src, i.e. from undistorted to distorted
   // pixel coordinates.
-  for(int iu = 0; iu < fisheye_image.rows; ++iu) {
-    for (int ju = 0; ju < fisheye_image.cols; ++ju) {
+  for(int iu = 0; iu < fisheye_camera_info.height; ++iu) {
+    for (int ju = 0; ju < fisheye_camera_info.width; ++ju) {
       double xu = (ju - cx) * fx_inverse;
       double yu = (iu - cy) * fy_inverse;
       double xd, yd;
       ApplyFovModel(xu, yu, w, w_inverse, two_tan_w_div_two, &xd, &yd);
       double jd = cx + xd * fx;
       double id = cy + yd * fy;
-      cv_warp_map_x.at<float>(iu, ju) = jd;
-      cv_warp_map_y.at<float>(iu, ju) = id;
+      cv_warp_map_x->at<float>(iu, ju) = jd;
+      cv_warp_map_y->at<float>(iu, ju) = id;
     }
   }
-  image_rect->create(fisheye_image.rows, fisheye_image.cols, fisheye_image.channels());
-  cv::remap(fisheye_image, *image_rect, cv_warp_map_x, cv_warp_map_y,
-            cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 }
 }  // namespace
 
@@ -391,11 +384,18 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   toCameraInfo(tango_camera_intrinsics, &fisheye_camera_info_);
   fisheye_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
   fisheye_camera_info_manager_->setCameraName("fisheye_1");
+  // Cache warp maps for more efficiency.
+  cv_warp_map_x_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_32FC1);
+  cv_warp_map_y_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_32FC1);
+  ComputeWarpMapsToRectifyFisheyeImage(fisheye_camera_info_, &cv_warp_map_x_, &cv_warp_map_y_);
+  fisheye_image_rect_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_8UC1);
 
   TangoService_getCameraIntrinsics(TANGO_CAMERA_COLOR, &tango_camera_intrinsics);
   toCameraInfo(tango_camera_intrinsics, &color_camera_info_);
   color_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
   color_camera_info_manager_->setCameraName("color_1");
+  // Cache camera model for more efficiency.
+  color_camera_model_.fromCameraInfo(color_camera_info_);
 
   return TANGO_SUCCESS;
 }
@@ -731,21 +731,22 @@ void TangoRosNode::PublishFisheyeImage() {
       if ((publisher_config_.publish_camera & CAMERA_FISHEYE)) {
         // The Tango image encoding is not supported by ROS.
         // We need to convert it to gray.
-        cv::Mat fisheye_image_gray;
-        cv::cvtColor(fisheye_image_, fisheye_image_gray, cv::COLOR_YUV420sp2GRAY);
-        cv_bridge::CvImage cv_bridge_image;
-        cv_bridge_image.header = fisheye_image_header_;
-        cv_bridge_image.encoding = sensor_msgs::image_encodings::MONO8;
-        cv_bridge_image.image = fisheye_image_gray;
+        cv::cvtColor(fisheye_image_, fisheye_image_gray_, cv::COLOR_YUV420sp2GRAY);
+        cv_bridge_fisheye_image_.header = fisheye_image_header_;
+        cv_bridge_fisheye_image_.encoding = sensor_msgs::image_encodings::MONO8;
+        cv_bridge_fisheye_image_.image = fisheye_image_gray_;
         fisheye_camera_info_.header = fisheye_image_header_;
         fisheye_camera_info_manager_->setCameraInfo(fisheye_camera_info_);
-        fisheye_camera_publisher_.publish(*(cv_bridge_image.toImageMsg()), fisheye_camera_info_);
+        sensor_msgs::Image image;
+        cv_bridge_fisheye_image_.toImageMsg(image);
+        fisheye_camera_publisher_.publish(image, fisheye_camera_info_);
 
         if (fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
-          cv::Mat fisheye_image_rect;
-          RectifyFisheyeImage(fisheye_image_gray, fisheye_camera_info_, &fisheye_image_rect);
+          cv::remap(fisheye_image_gray_, fisheye_image_rect_, cv_warp_map_x_,
+                    cv_warp_map_y_, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
           sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
-                      cv_bridge_image.header, cv_bridge_image.encoding, fisheye_image_rect).toImageMsg();
+              cv_bridge_fisheye_image_.header, cv_bridge_fisheye_image_.encoding,
+              fisheye_image_rect_).toImageMsg();
           fisheye_rectified_image_publisher_.publish(image_rect);
         }
       }
@@ -764,23 +765,21 @@ void TangoRosNode::PublishColorImage() {
       if ((publisher_config_.publish_camera & CAMERA_COLOR)) {
         // The Tango image encoding is not supported by ROS.
         // We need to convert it to RGB.
-        cv::Mat color_image_rgb;
-        cv::cvtColor(color_image_, color_image_rgb, cv::COLOR_YUV420sp2BGRA);
-        cv_bridge::CvImage cv_bridge_image;
-        cv_bridge_image.header = color_image_header_;
-        cv_bridge_image.encoding = sensor_msgs::image_encodings::BGRA8;
-        cv_bridge_image.image = color_image_rgb;
+        cv::cvtColor(color_image_, color_image_rgb_, cv::COLOR_YUV420sp2BGRA);
+        cv_bridge_color_image.header = color_image_header_;
+        cv_bridge_color_image.encoding = sensor_msgs::image_encodings::BGRA8;
+        cv_bridge_color_image.image = color_image_rgb_;
         color_camera_info_.header = color_image_header_;
         color_camera_info_manager_->setCameraInfo(color_camera_info_);
-        color_camera_publisher_.publish(*(cv_bridge_image.toImageMsg()), color_camera_info_);
+        sensor_msgs::Image image;
+        cv_bridge_color_image.toImageMsg(image);
+        color_camera_publisher_.publish(image, color_camera_info_);
 
         if (color_rectified_image_publisher_.getNumSubscribers() > 0) {
-          image_geometry::PinholeCameraModel model;
-          model.fromCameraInfo(color_camera_info_);
-          cv::Mat color_image_rect;
-          model.rectifyImage(color_image_rgb, color_image_rect);
+          color_camera_model_.rectifyImage(color_image_rgb_, color_image_rect_);
           sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
-              cv_bridge_image.header, cv_bridge_image.encoding, color_image_rect).toImageMsg();
+              cv_bridge_color_image.header, cv_bridge_color_image.encoding,
+              color_image_rect_).toImageMsg();
           color_rectified_image_publisher_.publish(image_rect);
         }
       }

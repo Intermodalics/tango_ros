@@ -26,7 +26,9 @@
 #include <opencv2/core/core.hpp>
 
 #include <camera_info_manager/camera_info_manager.h>
+#include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
@@ -175,17 +177,26 @@ class TangoRosNode {
 
   image_transport::CameraPublisher fisheye_camera_publisher_;
   std_msgs::Header fisheye_image_header_;
-  cv::Mat fisheye_image_;
   sensor_msgs::CameraInfo fisheye_camera_info_;
   std::shared_ptr<camera_info_manager::CameraInfoManager> fisheye_camera_info_manager_;
   image_transport::Publisher fisheye_rectified_image_publisher_;
+  cv::Mat fisheye_image_;
+  cv::Mat fisheye_image_gray_;
+  cv_bridge::CvImage cv_bridge_fisheye_image_;
+  cv::Mat cv_warp_map_x_;
+  cv::Mat cv_warp_map_y_;
+  cv::Mat fisheye_image_rect_;
 
   image_transport::CameraPublisher color_camera_publisher_;
   std_msgs::Header color_image_header_;
-  cv::Mat color_image_;
   sensor_msgs::CameraInfo color_camera_info_;
   std::shared_ptr<camera_info_manager::CameraInfoManager> color_camera_info_manager_;
   image_transport::Publisher color_rectified_image_publisher_;
+  cv::Mat color_image_;
+  cv::Mat color_image_rgb_;
+  cv_bridge::CvImage cv_bridge_color_image;
+  image_geometry::PinholeCameraModel color_camera_model_;
+  cv::Mat color_image_rect_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
