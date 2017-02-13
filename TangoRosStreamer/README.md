@@ -6,9 +6,11 @@
 
 * Follow this [tutorial](http://wiki.ros.org/android_ndk/Tutorials/BuildingNativeROSPackages) to build the roscpp android ndk.
 
-* Once it ended succesfull, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file.
+* Once it ended succesfully, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
 ```
-rsync -av --progress ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/ --exclude Android.mk
+cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/lib/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
+cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/include/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
+cp ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/Application.mk ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
 ```
 
 ### Building the app with Android Studio
