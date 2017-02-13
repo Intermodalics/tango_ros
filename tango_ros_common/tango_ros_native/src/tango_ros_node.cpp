@@ -62,7 +62,7 @@ void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
 }
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
 // @param pose, TangoPoseData to convert.
-// @param time_offset, offset in ms between pose (tango time) and
+// @param time_offset, offset in s between pose (tango time) and
 //        transform (ros time).
 // @param transform, the output TransformStamped.
 void toTransformStamped(const TangoPoseData& pose,
@@ -75,11 +75,11 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.y = pose.orientation[1];
   transform->transform.rotation.z = pose.orientation[2];
   transform->transform.rotation.w = pose.orientation[3];
-  transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
+  transform->header.stamp.fromSec(pose.timestamp + time_offset);
 }
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
 // @param tango_point_cloud, TangoPointCloud to convert.
-// @param time_offset, offset in ms between tango_point_cloud (tango time) and
+// @param time_offset, offset in s between tango_point_cloud (tango time) and
 //        point_cloud (ros time).
 // @param point_cloud, the output PointCloud2.
 void toPointCloud2(const TangoPointCloud& tango_point_cloud,
@@ -110,7 +110,7 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
   }
-  point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
+  point_cloud->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
 // Convert a point to a laser scan range.
 // Method taken from the ros package 'pointcloud_to_laserscan':
@@ -152,7 +152,7 @@ void toLaserScanRange(double x, double y, double z, double min_height,
 }
 // Converts a TangoPointCloud to a sensor_msgs::LaserScan.
 // @param tango_point_cloud, TangoPointCloud to convert.
-// @param time_offset, offset in ms between tango_point_cloud (tango time) and
+// @param time_offset, offset in s between tango_point_cloud (tango time) and
 //        laser_scan (ros time).
 // @param min_height minimum height for a point of the point cloud to be
 // included in laser scan.
@@ -172,7 +172,7 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
     double z = -tango_point_cloud.points[i][1];
     toLaserScanRange(x, y, z, min_height, max_height, laser_scan);
   }
-  laser_scan->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
+  laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
 // Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
 // @param image, cv::Mat to compress, in YUV420sp format.
@@ -302,7 +302,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
+  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
   return TANGO_SUCCESS;
 }
 
@@ -545,7 +545,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_available_mutex_.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    fisheye_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    fisheye_compressed_image_.header.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_compressed_image_.header.seq = buffer->frame_number;
     fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
     fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
@@ -557,7 +557,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_available_mutex_.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    color_compressed_image_.header.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    color_compressed_image_.header.stamp.fromSec(buffer->timestamp + time_offset_);
     color_compressed_image_.header.seq = buffer->frame_number;
     color_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
     color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
