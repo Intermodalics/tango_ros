@@ -463,7 +463,7 @@ void TangoRosNode::PublishStaticTransforms() {
     // According to the ROS documentation, laser scan angles are measured around
     // the Z-axis in the laser scan frame. To follow this convention the laser
     // scan frame has to be rotated of 90 degrees around x axis with respect to
-    // the tango point cloud frame.
+    // the Tango point cloud frame.
     camera_depth_T_laser_.transform.translation.x = 0;
     camera_depth_T_laser_.transform.translation.y = 0;
     camera_depth_T_laser_.transform.translation.z = 0;
