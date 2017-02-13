@@ -112,6 +112,17 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
   }
   point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
 }
+// Transform a point from frame 1 to frame2.
+// @param frame1_p point expressed in frame1
+// @param frame1_T_frame2_message transform message from frame1 to frame2.
+// @param frame2_p output point expressed in frame2.
+void transformPoint(const tf::Vector3& frame1_p,
+                    const geometry_msgs::Transform& frame1_T_frame2_message,
+                    tf::Vector3* frame2_p) {
+  tf::Transform frame1_T_frame2;
+  tf::transformMsgToTF(frame1_T_frame2_message, frame1_T_frame2);
+  *frame2_p = frame1_T_frame2.inverse() * frame1_p;
+}
 // Convert a point to a laser scan range.
 // Method taken from the ros package 'pointcloud_to_laserscan':
 // http://wiki.ros.org/pointcloud_to_laserscan
@@ -161,23 +172,22 @@ void toLaserScanRange(double x, double y, double z, double min_height,
 // included in laser scan.
 // @param max_height maximum height for a point of the point cloud to be
 // included in laser scan.
-// @param point_cloud_T_laser_message transform message between point cloud
-// frame and laser scan frame.
+// @param point_cloud_T_laser_message transformation message from point cloud to
+// laser scan frame.
 // @param laser_scan, the output LaserScan.
 void toLaserScan(const TangoPointCloud& tango_point_cloud,
                  double time_offset,
                  double min_height,
                  double max_height,
-                 geometry_msgs::Transform point_cloud_T_laser_message,
+                 const geometry_msgs::Transform& point_cloud_T_laser_message,
                  sensor_msgs::LaserScan* laser_scan) {
   for (size_t i = 0; i < tango_point_cloud.num_points; ++i) {
-    tf::Vector3 point_cloud_p(tango_point_cloud.points[i][0],
-                              tango_point_cloud.points[i][1],
-                              tango_point_cloud.points[i][2]);
-    tf::Transform point_cloud_T_laser;
-    tf::transformMsgToTF(point_cloud_T_laser_message, point_cloud_T_laser);
-    tf::Vector3 laser_p = point_cloud_T_laser.inverse() * point_cloud_p;
-    toLaserScanRange(laser_p.getX(), laser_p.getY(), laser_p.getZ(),
+    const tf::Vector3 point_cloud_p(tango_point_cloud.points[i][0],
+                                    tango_point_cloud.points[i][1],
+                                    tango_point_cloud.points[i][2]);
+    tf::Vector3 laser_scan_p;
+    transformPoint(point_cloud_p, point_cloud_T_laser_message, &laser_scan_p);
+    toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
                      min_height, max_height, laser_scan);
   }
   laser_scan->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
@@ -450,8 +460,10 @@ void TangoRosNode::PublishStaticTransforms() {
   }
 
   if (publisher_config_.publish_laser_scan) {
-    // Laser scan frame is rotated of 90 degrees around x axis with respect to
-    // point cloud frame.
+    // According to the ROS documentation, laser scan angles are measured around
+    // the Z-axis in the laser scan frame. To follow this convention the laser
+    // scan frame has to be rotated of 90 degrees around x axis with respect to
+    // the tango point cloud frame.
     camera_depth_T_laser_.transform.translation.x = 0;
     camera_depth_T_laser_.transform.translation.y = 0;
     camera_depth_T_laser_.transform.translation.z = 0;
