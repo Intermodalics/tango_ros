@@ -453,7 +453,7 @@ void TangoRosNode::PublishStaticTransforms() {
     // scan frame has to be rotated of 90 degrees around x axis with respect to
     // the Tango point cloud frame.
     camera_depth_T_laser_ = tf::StampedTransform(
-        tf::Transform(tf::Quaternion(1 / sqrt(2), 0, 0, sqrt(2) / 2)), ros::Time::now(),
+        tf::Transform(tf::Quaternion(1 / sqrt(2), 0, 0, 1 / sqrt(2))), ros::Time::now(),
                       toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH), LASER_SCAN_FRAME_ID);
     geometry_msgs::TransformStamped camera_depth_T_laser_message;
     tf::transformStampedTFToMsg(camera_depth_T_laser_, camera_depth_T_laser_message);
