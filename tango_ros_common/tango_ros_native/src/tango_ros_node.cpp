@@ -736,23 +736,23 @@ void TangoRosNode::PublishFisheyeImage() {
       if ((publisher_config_.publish_camera & CAMERA_FISHEYE)) {
         // The Tango image encoding is not supported by ROS.
         // We need to convert it to gray.
-        cv::Mat fisheye_image_gray_;
-        cv::cvtColor(fisheye_image_, fisheye_image_gray_, cv::COLOR_YUV420sp2GRAY);
-        cv_bridge::CvImage cv_bridge_fisheye_image_;
-        cv_bridge_fisheye_image_.header = fisheye_image_header_;
-        cv_bridge_fisheye_image_.encoding = sensor_msgs::image_encodings::MONO8;
-        cv_bridge_fisheye_image_.image = fisheye_image_gray_;
+        cv::Mat fisheye_image_gray;
+        cv::cvtColor(fisheye_image_, fisheye_image_gray, cv::COLOR_YUV420sp2GRAY);
+        cv_bridge::CvImage cv_bridge_fisheye_image;
+        cv_bridge_fisheye_image.header = fisheye_image_header_;
+        cv_bridge_fisheye_image.encoding = sensor_msgs::image_encodings::MONO8;
+        cv_bridge_fisheye_image.image = fisheye_image_gray;
         fisheye_camera_info_.header = fisheye_image_header_;
         fisheye_camera_info_manager_->setCameraInfo(fisheye_camera_info_);
-        sensor_msgs::Image fisheye_image_msg_;
-        cv_bridge_fisheye_image_.toImageMsg(fisheye_image_msg_);
-        fisheye_camera_publisher_.publish(fisheye_image_msg_, fisheye_camera_info_);
+        sensor_msgs::Image fisheye_image_msg;
+        cv_bridge_fisheye_image.toImageMsg(fisheye_image_msg);
+        fisheye_camera_publisher_.publish(fisheye_image_msg, fisheye_camera_info_);
 
         if (fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
-          cv::remap(fisheye_image_gray_, fisheye_image_rect_, cv_warp_map_x_,
+          cv::remap(fisheye_image_gray, fisheye_image_rect_, cv_warp_map_x_,
                     cv_warp_map_y_, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
           sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
-              cv_bridge_fisheye_image_.header, cv_bridge_fisheye_image_.encoding,
+              cv_bridge_fisheye_image.header, cv_bridge_fisheye_image.encoding,
               fisheye_image_rect_).toImageMsg();
           fisheye_rectified_image_publisher_.publish(image_rect);
         }
@@ -772,20 +772,20 @@ void TangoRosNode::PublishColorImage() {
       if ((publisher_config_.publish_camera & CAMERA_COLOR)) {
         // The Tango image encoding is not supported by ROS.
         // We need to convert it to RGB.
-        cv::Mat color_image_rgb_;
-        cv::cvtColor(color_image_, color_image_rgb_, cv::COLOR_YUV420sp2BGRA);
+        cv::Mat color_image_rgb;
+        cv::cvtColor(color_image_, color_image_rgb, cv::COLOR_YUV420sp2BGRA);
         cv_bridge::CvImage cv_bridge_color_image;
         cv_bridge_color_image.header = color_image_header_;
         cv_bridge_color_image.encoding = sensor_msgs::image_encodings::BGRA8;
-        cv_bridge_color_image.image = color_image_rgb_;
+        cv_bridge_color_image.image = color_image_rgb;
         color_camera_info_.header = color_image_header_;
         color_camera_info_manager_->setCameraInfo(color_camera_info_);
-        sensor_msgs::Image color_image_msg_;
-        cv_bridge_color_image.toImageMsg(color_image_msg_);
-        color_camera_publisher_.publish(color_image_msg_, color_camera_info_);
+        sensor_msgs::Image color_image_msg;
+        cv_bridge_color_image.toImageMsg(color_image_msg);
+        color_camera_publisher_.publish(color_image_msg, color_camera_info_);
 
         if (color_rectified_image_publisher_.getNumSubscribers() > 0) {
-          color_camera_model_.rectifyImage(color_image_rgb_, color_image_rect_);
+          color_camera_model_.rectifyImage(color_image_rgb, color_image_rect_);
           sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
               cv_bridge_color_image.header, cv_bridge_color_image.encoding,
               color_image_rect_).toImageMsg();
