@@ -79,6 +79,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
+    private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
     private Logger mLogger;
@@ -328,7 +329,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-
+        // Create node publishing IMU data.
+        mImuNode = new ImuNode(this);
+        nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mImuNode, nodeConfiguration);
         // Create and start Tango ROS Node
         nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
         if (TangoInitializationHelper.loadTangoSharedLibrary() !=

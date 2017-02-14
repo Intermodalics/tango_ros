@@ -62,7 +62,7 @@ void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
 }
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
 // @param pose, TangoPoseData to convert.
-// @param time_offset, offset in ms between pose (tango time) and
+// @param time_offset, offset in s between pose (tango time) and
 //        transform (ros time).
 // @param transform, the output TransformStamped.
 void toTransformStamped(const TangoPoseData& pose,
@@ -75,11 +75,11 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.y = pose.orientation[1];
   transform->transform.rotation.z = pose.orientation[2];
   transform->transform.rotation.w = pose.orientation[3];
-  transform->header.stamp.fromSec((pose.timestamp + time_offset) / 1e3);
+  transform->header.stamp.fromSec(pose.timestamp + time_offset);
 }
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
 // @param tango_point_cloud, TangoPointCloud to convert.
-// @param time_offset, offset in ms between tango_point_cloud (tango time) and
+// @param time_offset, offset in s between tango_point_cloud (tango time) and
 //        point_cloud (ros time).
 // @param point_cloud, the output PointCloud2.
 void toPointCloud2(const TangoPointCloud& tango_point_cloud,
@@ -110,7 +110,7 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
   }
-  point_cloud->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
+  point_cloud->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
 // Convert a point to a laser scan range.
 // Method taken from the ros package 'pointcloud_to_laserscan':
@@ -152,7 +152,7 @@ void toLaserScanRange(double x, double y, double z, double min_height,
 }
 // Converts a TangoPointCloud to a sensor_msgs::LaserScan.
 // @param tango_point_cloud, TangoPointCloud to convert.
-// @param time_offset, offset in ms between tango_point_cloud (tango time) and
+// @param time_offset, offset in s between tango_point_cloud (tango time) and
 //        laser_scan (ros time).
 // @param min_height minimum height for a point of the point cloud to be
 // included in laser scan.
@@ -172,7 +172,7 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
     double z = -tango_point_cloud.points[i][1];
     toLaserScanRange(x, y, z, min_height, max_height, laser_scan);
   }
-  laser_scan->header.stamp.fromSec((tango_point_cloud.timestamp + time_offset) / 1e3);
+  laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
 // Converts a TangoCoordinateFrameType to a ros frame ID i.e. a string.
 // @param tango_frame_type, TangoCoordinateFrameType to convert.
@@ -382,7 +382,6 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ =  ros::Time::now().toSec() * 1e3 - pose.timestamp;
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -402,6 +401,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
 
+  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
   return TANGO_SUCCESS;
 }
 
@@ -518,6 +518,17 @@ void TangoRosNode::TangoDisconnect() {
 void TangoRosNode::PublishStaticTransforms() {
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
+
+  pair.base = TANGO_COORDINATE_FRAME_DEVICE;
+  pair.target = TANGO_COORDINATE_FRAME_IMU;
+  TangoService_getPoseAtTime(0.0, pair, &pose);
+  geometry_msgs::TransformStamped device_T_imu;
+  toTransformStamped(pose, time_offset_, &device_T_imu);
+  device_T_imu.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+  device_T_imu.child_frame_id = toFrameId(TANGO_COORDINATE_FRAME_IMU);
+  device_T_imu.header.stamp = ros::Time::now();
+  tf_static_broadcaster_.sendTransform(device_T_imu);
+
   if (publisher_config_.publish_point_cloud || publisher_config_.publish_laser_scan) {
     pair.base = TANGO_COORDINATE_FRAME_DEVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
@@ -633,7 +644,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_available_mutex_.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    fisheye_image_header_.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
     fisheye_image_available_.notify_all();
@@ -644,7 +655,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_available_mutex_.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    color_image_header_.stamp.fromSec((buffer->timestamp + time_offset_) / 1e3);
+    color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
     color_image_available_.notify_all();

@@ -153,7 +153,7 @@ class TangoRosNode {
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
 
-  double time_offset_ = 0.; // Offset between tango time and ros time in ms.
+  double time_offset_ = 0.; // Offset between tango time and ros time in s.
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_device_;
