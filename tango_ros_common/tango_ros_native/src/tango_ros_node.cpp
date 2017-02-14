@@ -16,11 +16,11 @@
 #include <cmath>
 
 #include <glog/logging.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <sensor_msgs/distortion_models.h>
+#include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
@@ -174,19 +174,6 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
   }
   laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
-// Compresses a cv::Mat image to a sensor_msgs::CompressedImage in JPEG format.
-// @param image, cv::Mat to compress, in YUV420sp format.
-// @param compressing_quality, value from 0 to 100 (the higher is the better).
-// @param compressed_image, the output CompressedImage.
-void compressImage(const cv::Mat& image, const char* compressing_format,
-                   int compressing_quality,
-                   sensor_msgs::CompressedImage* compressed_image) {
-  cv::Mat image_rgb_encoded;
-  // OpenCV expects an image with channels in BGR order for compressing.
-  cv::cvtColor(image, image_rgb_encoded, cv::COLOR_YUV420sp2BGRA);
-  std::vector<int> params {CV_IMWRITE_JPEG_QUALITY, compressing_quality};
-  cv::imencode(compressing_format, image_rgb_encoded, compressed_image->data, params);
-}
 // Converts a TangoCoordinateFrameType to a ros frame ID i.e. a string.
 // @param tango_frame_type, TangoCoordinateFrameType to convert.
 // @return returns the corresponding frame id.
@@ -233,6 +220,90 @@ std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {
   }
   return string_frame_type;
 }
+// Converts TangoCameraIntrinsics to sensor_msgs::CameraInfo.
+// See Tango documentation:
+// http://developers.google.com/tango/apis/unity/reference/class/tango/tango-camera-intrinsics
+// And ROS documentation:
+// http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html
+// @param camera_intrinsics, TangoCameraIntrinsics to convert.
+// @param camera_info, the output CameraInfo.
+void toCameraInfo(const TangoCameraIntrinsics& camera_intrinsics,
+                  sensor_msgs::CameraInfo* camera_info) {
+  camera_info->height = camera_intrinsics.height;
+  camera_info->width = camera_intrinsics.width;
+  camera_info->K = {camera_intrinsics.fx, 0., camera_intrinsics.cx,
+                    0., camera_intrinsics.fy, camera_intrinsics.cy,
+                    0., 0., 1.};
+  camera_info->R = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
+  camera_info->P = {camera_intrinsics.fx, 0., camera_intrinsics.cx, 0.,
+                    0., camera_intrinsics.fy, camera_intrinsics.cy, 0.,
+                    0., 0., 1., 0.};
+  if (camera_intrinsics.camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE) {
+    camera_info->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+    camera_info->D = {camera_intrinsics.distortion[0],
+        camera_intrinsics.distortion[1], camera_intrinsics.distortion[2],
+        camera_intrinsics.distortion[3], camera_intrinsics.distortion[4]};
+  } else if (camera_intrinsics.camera_id == TangoCameraId::TANGO_CAMERA_COLOR) {
+    camera_info->distortion_model = sensor_msgs::distortion_models::RATIONAL_POLYNOMIAL;
+    camera_info->D = {camera_intrinsics.distortion[0],
+        camera_intrinsics.distortion[1], 0., 0., camera_intrinsics.distortion[2]};
+  } else {
+    LOG(ERROR) << "Unknown camera ID: " << camera_intrinsics.camera_id;
+  }
+}
+// Compute fisheye distorted coordinates from undistorted coordinates.
+// The distortion model used by the Tango fisheye camera is called FOV and is
+// described in 'Straight lines have to be straight' by Frederic Devernay and
+// Olivier Faugeras. See https://hal.inria.fr/inria-00267247/document.
+void ApplyFovModel(
+    double xu, double yu, double w, double w_inverse, double two_tan_w_div_two,
+    double* xd, double* yd) {
+  double ru = sqrt(xu * xu + yu * yu);
+  constexpr double epsilon = 1e-7;
+  if (w < epsilon || ru < epsilon) {
+    *xd = xu;
+    *yd = yu ;
+  } else {
+    double rd_div_ru = std::atan(ru * two_tan_w_div_two) * w_inverse / ru;
+    *xd = xu * rd_div_ru;
+    *yd = yu * rd_div_ru;
+  }
+}
+// Compute the warp maps to undistort the Tango fisheye image using the FOV
+// model. See OpenCV documentation for more information on warp maps:
+// http://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html
+// @param fisheye_camera_info the fisheye camera intrinsics.
+// @param cv_warp_map_x the output map for the x direction.
+// @param cv_warp_map_y the output map for the y direction.
+void ComputeWarpMapsToRectifyFisheyeImage(
+    const sensor_msgs::CameraInfo& fisheye_camera_info,
+    cv::Mat* cv_warp_map_x, cv::Mat* cv_warp_map_y) {
+  const double fx = fisheye_camera_info.K[0];
+  const double fy = fisheye_camera_info.K[4];
+  const double cx = fisheye_camera_info.K[2];
+  const double cy = fisheye_camera_info.K[5];
+  const double w = fisheye_camera_info.D[0];
+  // Pre-computed variables for more efficiency.
+  const double fy_inverse = 1.0 / fy;
+  const double fx_inverse = 1.0 / fx;
+  const double w_inverse = 1 / w;
+  const double two_tan_w_div_two = 2.0 * std::tan(w * 0.5);
+  // Compute warp maps in x and y directions.
+  // OpenCV expects maps from dest to src, i.e. from undistorted to distorted
+  // pixel coordinates.
+  for(int iu = 0; iu < fisheye_camera_info.height; ++iu) {
+    for (int ju = 0; ju < fisheye_camera_info.width; ++ju) {
+      double xu = (ju - cx) * fx_inverse;
+      double yu = (iu - cy) * fy_inverse;
+      double xd, yd;
+      ApplyFovModel(xu, yu, w, w_inverse, two_tan_w_div_two, &xd, &yd);
+      double jd = cx + xd * fx;
+      double id = cy + yd * fy;
+      cv_warp_map_x->at<float>(iu, ju) = jd;
+      cv_warp_map_y->at<float>(iu, ju) = id;
+    }
+  }
+}
 }  // namespace
 
 namespace tango_ros_native {
@@ -240,20 +311,29 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
-      node_handle_.advertise<sensor_msgs::PointCloud2>(publisher_config_.point_cloud_topic,
-      queue_size, latching);
-
+      node_handle_.advertise<sensor_msgs::PointCloud2>(
+          publisher_config_.point_cloud_topic, queue_size, latching);
   laser_scan_publisher_ =
-      node_handle_.advertise<sensor_msgs::LaserScan>(publisher_config_.laser_scan_topic,
-      queue_size, latching);
+      node_handle_.advertise<sensor_msgs::LaserScan>(
+          publisher_config_.laser_scan_topic, queue_size, latching);
 
-  fisheye_image_publisher_ =
-        node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.fisheye_camera_topic,
-        queue_size, latching);
-
-  color_image_publisher_ =
-      node_handle_.advertise<sensor_msgs::CompressedImage>(publisher_config_.color_camera_topic,
-      queue_size, latching);
+  image_transport_.reset(new image_transport::ImageTransport(node_handle_));
+  try {
+    fisheye_camera_publisher_ =
+        image_transport_->advertiseCamera(publisher_config_.fisheye_image_topic,
+                                          queue_size, latching);
+    fisheye_rectified_image_publisher_ =
+        image_transport_->advertise(publisher_config_.fisheye_rectified_image_topic,
+                                   queue_size, latching);
+    color_camera_publisher_ =
+        image_transport_->advertiseCamera(publisher_config_.color_image_topic,
+                                          queue_size, latching);
+    color_rectified_image_publisher_ =
+        image_transport_->advertise(publisher_config_.color_rectified_image_topic,
+                                   queue_size, latching);
+  } catch (const image_transport::Exception& e) {
+    LOG(ERROR) << "Error while creating image transport publishers" << e.what();
+  }
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
@@ -302,6 +382,25 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
+
+  TangoCameraIntrinsics tango_camera_intrinsics;
+  TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
+  toCameraInfo(tango_camera_intrinsics, &fisheye_camera_info_);
+  fisheye_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
+  fisheye_camera_info_manager_->setCameraName("fisheye_1");
+  // Cache warp maps for more efficiency.
+  cv_warp_map_x_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_32FC1);
+  cv_warp_map_y_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_32FC1);
+  ComputeWarpMapsToRectifyFisheyeImage(fisheye_camera_info_, &cv_warp_map_x_, &cv_warp_map_y_);
+  fisheye_image_rect_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_8UC1);
+
+  TangoService_getCameraIntrinsics(TANGO_CAMERA_COLOR, &tango_camera_intrinsics);
+  toCameraInfo(tango_camera_intrinsics, &color_camera_info_);
+  color_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
+  color_camera_info_manager_->setCameraName("color_1");
+  // Cache camera model for more efficiency.
+  color_camera_model_.fromCameraInfo(color_camera_info_);
+
   time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
   return TANGO_SUCCESS;
 }
@@ -545,10 +644,9 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_available_mutex_.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    fisheye_compressed_image_.header.stamp.fromSec(buffer->timestamp + time_offset_);
-    fisheye_compressed_image_.header.seq = buffer->frame_number;
-    fisheye_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-    fisheye_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
+    fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    fisheye_image_header_.seq = buffer->frame_number;
+    fisheye_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
     fisheye_image_available_.notify_all();
     fisheye_image_available_mutex_.unlock();
   }
@@ -557,10 +655,9 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_available_mutex_.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    color_compressed_image_.header.stamp.fromSec(buffer->timestamp + time_offset_);
-    color_compressed_image_.header.seq = buffer->frame_number;
-    color_compressed_image_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-    color_compressed_image_.format = ROS_IMAGE_COMPRESSING_FORMAT;
+    color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    color_image_header_.seq = buffer->frame_number;
+    color_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
     color_image_available_.notify_all();
     color_image_available_mutex_.unlock();
   }
@@ -648,9 +745,28 @@ void TangoRosNode::PublishFisheyeImage() {
       std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
       fisheye_image_available_.wait(lock);
       if ((publisher_config_.publish_camera & CAMERA_FISHEYE)) {
-        compressImage(fisheye_image_, CV_IMAGE_COMPRESSING_FORMAT,
-                      IMAGE_COMPRESSING_QUALITY, &fisheye_compressed_image_);
-        fisheye_image_publisher_.publish(fisheye_compressed_image_);
+        // The Tango image encoding is not supported by ROS.
+        // We need to convert it to gray.
+        cv::Mat fisheye_image_gray;
+        cv::cvtColor(fisheye_image_, fisheye_image_gray, cv::COLOR_YUV420sp2GRAY);
+        cv_bridge::CvImage cv_bridge_fisheye_image;
+        cv_bridge_fisheye_image.header = fisheye_image_header_;
+        cv_bridge_fisheye_image.encoding = sensor_msgs::image_encodings::MONO8;
+        cv_bridge_fisheye_image.image = fisheye_image_gray;
+        fisheye_camera_info_.header = fisheye_image_header_;
+        fisheye_camera_info_manager_->setCameraInfo(fisheye_camera_info_);
+        sensor_msgs::Image fisheye_image_msg;
+        cv_bridge_fisheye_image.toImageMsg(fisheye_image_msg);
+        fisheye_camera_publisher_.publish(fisheye_image_msg, fisheye_camera_info_);
+
+        if (fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
+          cv::remap(fisheye_image_gray, fisheye_image_rect_, cv_warp_map_x_,
+                    cv_warp_map_y_, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
+          sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
+              cv_bridge_fisheye_image.header, cv_bridge_fisheye_image.encoding,
+              fisheye_image_rect_).toImageMsg();
+          fisheye_rectified_image_publisher_.publish(image_rect);
+        }
       }
     }
   }
@@ -665,9 +781,27 @@ void TangoRosNode::PublishColorImage() {
       std::unique_lock<std::mutex> lock(color_image_available_mutex_);
       color_image_available_.wait(lock);
       if ((publisher_config_.publish_camera & CAMERA_COLOR)) {
-        compressImage(color_image_, CV_IMAGE_COMPRESSING_FORMAT,
-                      IMAGE_COMPRESSING_QUALITY, &color_compressed_image_);
-        color_image_publisher_.publish(color_compressed_image_);
+        // The Tango image encoding is not supported by ROS.
+        // We need to convert it to RGB.
+        cv::Mat color_image_rgb;
+        cv::cvtColor(color_image_, color_image_rgb, cv::COLOR_YUV420sp2BGRA);
+        cv_bridge::CvImage cv_bridge_color_image;
+        cv_bridge_color_image.header = color_image_header_;
+        cv_bridge_color_image.encoding = sensor_msgs::image_encodings::BGRA8;
+        cv_bridge_color_image.image = color_image_rgb;
+        color_camera_info_.header = color_image_header_;
+        color_camera_info_manager_->setCameraInfo(color_camera_info_);
+        sensor_msgs::Image color_image_msg;
+        cv_bridge_color_image.toImageMsg(color_image_msg);
+        color_camera_publisher_.publish(color_image_msg, color_camera_info_);
+
+        if (color_rectified_image_publisher_.getNumSubscribers() > 0) {
+          color_camera_model_.rectifyImage(color_image_rgb, color_image_rect_);
+          sensor_msgs::ImagePtr image_rect = cv_bridge::CvImage(
+              cv_bridge_color_image.header, cv_bridge_color_image.encoding,
+              color_image_rect_).toImageMsg();
+          color_rectified_image_publisher_.publish(image_rect);
+        }
       }
     }
   }
