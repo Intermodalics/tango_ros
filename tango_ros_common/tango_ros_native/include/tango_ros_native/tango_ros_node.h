@@ -159,7 +159,7 @@ class TangoRosNode {
   geometry_msgs::TransformStamped area_description_T_start_of_service_;
   tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;
   geometry_msgs::TransformStamped device_T_camera_depth_;
-  geometry_msgs::TransformStamped camera_depth_T_laser_;
+  tf::StampedTransform camera_depth_T_laser_;
   geometry_msgs::TransformStamped device_T_camera_fisheye_;
   geometry_msgs::TransformStamped device_T_camera_color_;
 
