@@ -25,10 +25,14 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <camera_info_manager/camera_info_manager.h>
+#include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
@@ -47,11 +51,6 @@ const float LASER_SCAN_SCAN_TIME= 0.3333;
 const float LASER_SCAN_RANGE_MIN = 0.45;
 const float LASER_SCAN_RANGE_MAX = 6.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
-constexpr char CV_IMAGE_COMPRESSING_FORMAT[] = ".jpg";
-constexpr char ROS_IMAGE_COMPRESSING_FORMAT[] = "jpeg";
-// Compressing quality for OpenCV to compress an image to JPEG format,
-// can take a value from 0 to 100 (the higher is the better).
-const int IMAGE_COMPRESSING_QUALITY = 50;
 
 // Camera bitfield values.
 const uint32_t CAMERA_NONE = 0;
@@ -72,10 +71,14 @@ struct PublisherConfiguration {
   std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the laser scan publisher.
   std::string laser_scan_topic = "tango/laser_scan";
-  // Topic name for the fisheye image publisher.
-  std::string fisheye_camera_topic = "tango/camera/fisheye_1/image_raw/compressed";
-  // Topic name for the color image publisher.
-  std::string color_camera_topic = "tango/camera/color_1/image_raw/compressed";
+  // Topic name for the fisheye raw image publisher.
+  std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
+  // Topic name for the fisheye rectified image publisher.
+  std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
+  // Topic name for the color raw image publisher.
+  std::string color_image_topic = "tango/camera/color_1/image_raw";
+  // Topic name for the color rectified image publisher.
+  std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
   // Param name for the drift correction parameter.
   std::string enable_drift_correction_param = "tango/enable_drift_correction";
 };
@@ -150,7 +153,7 @@ class TangoRosNode {
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
 
-  double time_offset_ = 0.; // Offset between tango time and ros time in ms.
+  double time_offset_ = 0.; // Offset between tango time and ros time in s.
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_device_;
@@ -170,13 +173,26 @@ class TangoRosNode {
   double laser_scan_min_height_ = 0;
   double laser_scan_max_height_ = 2.0;
 
-  ros::Publisher fisheye_image_publisher_;
-  sensor_msgs::CompressedImage fisheye_compressed_image_;
-  cv::Mat fisheye_image_;
+  std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
-  ros::Publisher color_image_publisher_;
-  sensor_msgs::CompressedImage color_compressed_image_;
+  image_transport::CameraPublisher fisheye_camera_publisher_;
+  std_msgs::Header fisheye_image_header_;
+  sensor_msgs::CameraInfo fisheye_camera_info_;
+  std::shared_ptr<camera_info_manager::CameraInfoManager> fisheye_camera_info_manager_;
+  image_transport::Publisher fisheye_rectified_image_publisher_;
+  cv::Mat fisheye_image_;
+  cv::Mat cv_warp_map_x_;
+  cv::Mat cv_warp_map_y_;
+  cv::Mat fisheye_image_rect_;
+
+  image_transport::CameraPublisher color_camera_publisher_;
+  std_msgs::Header color_image_header_;
+  sensor_msgs::CameraInfo color_camera_info_;
+  std::shared_ptr<camera_info_manager::CameraInfoManager> color_camera_info_manager_;
+  image_transport::Publisher color_rectified_image_publisher_;
   cv::Mat color_image_;
+  image_geometry::PinholeCameraModel color_camera_model_;
+  cv::Mat color_image_rect_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

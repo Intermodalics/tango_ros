@@ -3,16 +3,12 @@ PROJECT_ROOT:= $(call my-dir)/..
 
 include $(CLEAR_VARS)
 
-OPENCV_INSTALL_MODULES:=on
-OPENCV_CAMERA_MODULES:=off
-OPENCV_LIB_TYPE:=STATIC
-include $(PROJECT_ROOT)/../third_party/OpenCV_sdk_native/jni/OpenCV.mk
-
 LOCAL_MODULE    := tango_ros_native
 LOCAL_SRC_FILES := $(LOCAL_PATH)/src/tango_ros_node.cpp $(LOCAL_PATH)/src/tango_ros_util.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
-LOCAL_LDLIBS += -landroid -lm -llog
+LOCAL_LDLIBS += -landroid -lm -llog -lz
+LOCAL_WHOLE_STATIC_LIBRARIES := libimage_transport_plugins libcompressed_image_transport
 LOCAL_STATIC_LIBRARIES += roscpp_android_ndk miniglog
 LOCAL_SHARED_LIBRARIES := tango_client_api tango_support_api
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
