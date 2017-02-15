@@ -144,6 +144,9 @@ void toLaserScanRange(double x, double y, double z, double min_height,
     return;
   }
 
+  if (range > laser_scan->range_max) {
+    laser_scan->range_max = range;
+  }
   // Overwrite range at laser scan ray if new range is smaller.
   int index = (angle - laser_scan->angle_min) / laser_scan->angle_increment;
   if (range < laser_scan->ranges[index]) {
@@ -158,19 +161,22 @@ void toLaserScanRange(double x, double y, double z, double min_height,
 // included in laser scan.
 // @param max_height maximum height for a point of the point cloud to be
 // included in laser scan.
+// @param point_cloud_T_laser transformation from point cloud to
+// laser scan frame.
 // @param laser_scan, the output LaserScan.
 void toLaserScan(const TangoPointCloud& tango_point_cloud,
-                   double time_offset,
-                   double min_height,
-                   double max_height,
-                   sensor_msgs::LaserScan* laser_scan) {
+                 double time_offset,
+                 double min_height,
+                 double max_height,
+                 const tf::Transform& point_cloud_T_laser,
+                 sensor_msgs::LaserScan* laser_scan) {
   for (size_t i = 0; i < tango_point_cloud.num_points; ++i) {
-    // Laser scan frame is rotated of 90 degrees around x axis with respect to
-    // point cloud frame.
-    double x = tango_point_cloud.points[i][0];
-    double y = tango_point_cloud.points[i][2];
-    double z = -tango_point_cloud.points[i][1];
-    toLaserScanRange(x, y, z, min_height, max_height, laser_scan);
+    const tf::Vector3 point_cloud_p(tango_point_cloud.points[i][0],
+                                    tango_point_cloud.points[i][1],
+                                    tango_point_cloud.points[i][2]);
+    tf::Vector3 laser_scan_p  = point_cloud_T_laser.inverse() * point_cloud_p;
+    toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
+                     min_height, max_height, laser_scan);
   }
   laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
@@ -541,19 +547,16 @@ void TangoRosNode::PublishStaticTransforms() {
   }
 
   if (publisher_config_.publish_laser_scan) {
-    // Laser scan frame is rotated of 90 degrees around x axis with respect to
-    // point cloud frame.
-    camera_depth_T_laser_.transform.translation.x = 0;
-    camera_depth_T_laser_.transform.translation.y = 0;
-    camera_depth_T_laser_.transform.translation.z = 0;
-    camera_depth_T_laser_.transform.rotation.w = sqrt(2) / 2;
-    camera_depth_T_laser_.transform.rotation.x = 1 / sqrt(2);
-    camera_depth_T_laser_.transform.rotation.y = 0;
-    camera_depth_T_laser_.transform.rotation.z = 0;
-    camera_depth_T_laser_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-    camera_depth_T_laser_.child_frame_id = LASER_SCAN_FRAME_ID;
-    camera_depth_T_laser_.header.stamp = ros::Time::now();
-    tf_static_broadcaster_.sendTransform(camera_depth_T_laser_);
+    // According to the ROS documentation, laser scan angles are measured around
+    // the Z-axis in the laser scan frame. To follow this convention the laser
+    // scan frame has to be rotated of 90 degrees around x axis with respect to
+    // the Tango point cloud frame.
+    camera_depth_T_laser_ = tf::StampedTransform(
+        tf::Transform(tf::Quaternion(1 / sqrt(2), 0, 0, 1 / sqrt(2))), ros::Time::now(),
+                      toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH), LASER_SCAN_FRAME_ID);
+    geometry_msgs::TransformStamped camera_depth_T_laser_message;
+    tf::transformStampedTFToMsg(camera_depth_T_laser_, camera_depth_T_laser_message);
+    tf_static_broadcaster_.sendTransform(camera_depth_T_laser_message);
   }
 
   if (publisher_config_.publish_camera & CAMERA_FISHEYE) {
@@ -630,7 +633,8 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
                                        / laser_scan_.angle_increment);
       // Laser scan rays with no obstacle data will evaluate to infinity.
       laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
-      toLaserScan(*point_cloud, time_offset_, laser_scan_min_height_, laser_scan_max_height_, &laser_scan_);
+      toLaserScan(*point_cloud, time_offset_, laser_scan_min_height_,
+                  laser_scan_max_height_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
       laser_scan_available_.notify_all();
       laser_scan_available_mutex_.unlock();

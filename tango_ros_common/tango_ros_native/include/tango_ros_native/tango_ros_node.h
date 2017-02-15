@@ -43,13 +43,15 @@
 namespace tango_ros_native {
 const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
+// See laser scan message doc for definition of laser scan constants:
+// http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html
 const float LASER_SCAN_ANGLE_MIN = 0.;
 const float LASER_SCAN_ANGLE_MAX = 3.1415;
 const float LASER_SCAN_ANGLE_INCREMENT = 3.1415 / 360;
 const float LASER_SCAN_TIME_INCREMENT = 0.0;
 const float LASER_SCAN_SCAN_TIME= 0.3333;
-const float LASER_SCAN_RANGE_MIN = 0.45;
-const float LASER_SCAN_RANGE_MAX = 6.0;
+const float LASER_SCAN_RANGE_MIN = 0.15;
+const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
 // Camera bitfield values.
@@ -160,7 +162,7 @@ class TangoRosNode {
   geometry_msgs::TransformStamped area_description_T_start_of_service_;
   tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;
   geometry_msgs::TransformStamped device_T_camera_depth_;
-  geometry_msgs::TransformStamped camera_depth_T_laser_;
+  tf::StampedTransform camera_depth_T_laser_;
   geometry_msgs::TransformStamped device_T_camera_fisheye_;
   geometry_msgs::TransformStamped device_T_camera_color_;
 
@@ -170,8 +172,8 @@ class TangoRosNode {
   ros::Publisher laser_scan_publisher_;
   sensor_msgs::LaserScan laser_scan_;
   // TODO: make these ros params.
-  double laser_scan_min_height_ = 0;
-  double laser_scan_max_height_ = 2.0;
+  double laser_scan_min_height_ = -1.0; // meter
+  double laser_scan_max_height_ = 1.0; // meter
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
