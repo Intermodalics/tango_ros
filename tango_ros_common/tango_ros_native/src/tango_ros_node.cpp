@@ -388,6 +388,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
+  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -407,7 +408,6 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
 
-  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
   return TANGO_SUCCESS;
 }
 
