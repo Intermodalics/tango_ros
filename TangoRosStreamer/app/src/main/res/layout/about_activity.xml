@@ -38,7 +38,6 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/description_about"
-            android:text="@string/app_version"
             android:textSize="11sp"/>
 
         <Button
