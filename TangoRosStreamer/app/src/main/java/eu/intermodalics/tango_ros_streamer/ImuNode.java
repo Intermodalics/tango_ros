@@ -43,7 +43,6 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
     private Imu mImuMessage;
     private Log mLog;
 
-
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
     private Sensor mGyroscopeSensor;
@@ -107,7 +106,6 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
             default:
                 break;
         }
-
         if (mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
             mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
             mImuMessage.getHeader().setFrameId("imu");
