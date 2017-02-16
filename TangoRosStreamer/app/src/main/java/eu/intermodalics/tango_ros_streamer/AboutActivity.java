@@ -17,18 +17,21 @@
 package eu.intermodalics.tango_ros_streamer;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class AboutActivity extends AppCompatActivity {
-
+    private static final String TAG = AboutActivity.class.getSimpleName();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +42,14 @@ public class AboutActivity extends AppCompatActivity {
         // Make links in text views clickable.
         TextView textViewRosjava = (TextView) findViewById(R.id.text_rosjava_about);
         textViewRosjava.setMovementMethod(LinkMovementMethod.getInstance());
+
+        TextView textViewVersion = (TextView) findViewById(R.id.text_version);
+        try {
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            textViewVersion.setText(packageInfo.versionName + "-" + packageInfo.versionCode);
+        } catch (PackageManager.NameNotFoundException ex) {
+            Log.e(TAG, ex.getMessage());
+        }
 
         Button onlineDocButton = (Button) findViewById(R.id.online_doc_about);
         onlineDocButton.setOnClickListener(new View.OnClickListener() {
