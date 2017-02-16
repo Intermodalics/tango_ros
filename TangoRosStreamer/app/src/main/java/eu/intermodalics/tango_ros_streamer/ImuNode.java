@@ -24,18 +24,13 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 import org.apache.commons.logging.Log;
-import org.ros.message.MessageListener;
-import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
-import org.ros.node.topic.Subscriber;
 
-import geometry_msgs.TransformStamped;
 import sensor_msgs.Imu;
-import tf2_msgs.TFMessage;
 
 /**
  *
@@ -47,8 +42,6 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
     private Publisher<Imu> mImuPublisher;
     private Imu mImuMessage;
     private Log mLog;
-    private Subscriber<TFMessage> mTfListener;
-    private Time lastTfTimestamp;
 
 
     private SensorManager mSensorManager;
@@ -77,19 +70,6 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
         mSensorManager.registerListener(this, mRotationSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(this, mGyroscopeSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(this, mAccelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
-
-        mTfListener = mConnectedNode.newSubscriber("/tf", TFMessage._TYPE);
-        mTfListener.addMessageListener(new MessageListener<TFMessage>() {
-            @Override
-            public void onNewMessage(TFMessage tfMessage) {
-                for (TransformStamped transformStamped: tfMessage.getTransforms()) {
-                    if (transformStamped.getHeader().getFrameId().equals("start_of_service")
-                            && transformStamped.getChildFrameId().equals("device")) {
-                        lastTfTimestamp = transformStamped.getHeader().getStamp();
-                    }
-                }
-            }
-        });
     }
 
     @Override
@@ -128,8 +108,8 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
                 break;
         }
 
-        if (lastTfTimestamp != null && mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
-            mImuMessage.getHeader().setStamp(lastTfTimestamp);
+        if (mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
+            mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
             mImuMessage.getHeader().setFrameId("imu");
             mImuPublisher.publish(mImuMessage);
             mNewRotationData = false;
