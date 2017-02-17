@@ -18,6 +18,7 @@ package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.preference.ListPreference;
 import android.preference.PreferenceManager;
 
 import org.apache.commons.logging.Log;
@@ -55,7 +56,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
-    private Log log;
+    private Log mLog;
     private final String[] mDynamicParamNames;
     private final String[] mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
@@ -78,7 +79,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     @Override
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
-        log = connectedNode.getLog();
+        mLog = connectedNode.getLog();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
 
         // Overwrite preferences in server with local preferences.
@@ -106,7 +107,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
         // Set ROS params according to preferences.
         for (String paramName : mParamNames) {
-            Boolean paramValue = mSharedPreferences.getBoolean(paramName, true);
+            Boolean paramValue = mSharedPreferences.getBoolean(paramName, false);
             connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), paramValue);
         }
     }
@@ -128,6 +129,24 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                         callDynamicReconfigure(key, bool.booleanValue());
                     }
                 }.start();
+            }
+        }
+        
+        if (key == mCreatorActivity.getString(R.string.pref_area_learning_method_key)) {
+            String stringValue = mSharedPreferences.getString(key, "1");
+            SharedPreferences.Editor editor = mSharedPreferences.edit();
+            if (stringValue.equals("1")) {
+                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), false);
+                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), false);
+                editor.commit();
+            } else if (stringValue.equals("2")) {
+                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), true);
+                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), false);
+                editor.commit();
+            } else if (stringValue.equals("3")) {
+                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), false);
+                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), true);
+                editor.commit();
             }
         }
     }
@@ -172,20 +191,20 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    log.info("Dynamic Reconfigure success");
+                    mLog.info("Dynamic Reconfigure success");
                     mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    log.error("Dynamic Reconfigure failure: " + e.getMessage());
+                    mLog.error("Dynamic Reconfigure failure: " + e.getMessage());
                 }
             });
             mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
-            log.error("Service not found: " + e.getMessage());
+            mLog.error("Service not found: " + e.getMessage());
         } catch (Exception e) {
-            log.error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
+            mLog.error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 

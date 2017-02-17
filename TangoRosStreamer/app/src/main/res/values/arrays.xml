@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <string-array name="listAreaLearningMethods">
+        <item>None</item>
+        <item>Single session drift correction</item>
+        <item>Learning mode</item>
+    </string-array>
+
+    <string-array name="listAreaLearningMethodsValues">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+</resources>

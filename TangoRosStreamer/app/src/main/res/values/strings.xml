@@ -62,9 +62,9 @@
     <string name="pref_category_tango_title">Tango</string>
     <string name="pref_category_tango_key">pref_category_tango</string>
 
-    <string name="pref_drift_correction">Single session drift correction</string>
-    <string name="pref_drift_correction_key">enable_drift_correction</string>
-    <string name="pref_drift_correction_summary">Enable to use Tango single session drift correction</string>
+    <string name="pref_area_learning_method_key">list_area_learning_method</string>
+    <string name="drift_correction_key">enable_drift_correction</string>
+    <string name="area_learning_key">enable_learning_mode</string>
 
     <string name="pref_category_general_title">General</string>
     <string name="pref_category_general_key">pref_category_general</string>

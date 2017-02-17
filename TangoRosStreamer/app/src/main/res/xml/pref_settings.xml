@@ -23,13 +23,14 @@
     <PreferenceCategory
         android:title="@string/pref_category_tango_title"
         android:key="@string/pref_category_tango_key">
-        <CheckBoxPreference
-            android:title="@string/pref_drift_correction"
-            android:key="@string/pref_drift_correction_key"
-            android:defaultValue="true"
-            android:enabled="false"
-            android:summary="@string/pref_drift_correction_summary"/>
+        <ListPreference
+            android:title="Area learning method"
+            android:key="@string/pref_area_learning_method_key"
+            android:defaultValue="1"
+            android:entries="@array/listAreaLearningMethods"
+            android:entryValues="@array/listAreaLearningMethodsValues" />
     </PreferenceCategory>
+
 
     <PreferenceCategory
         android:title="@string/pref_category_general_title"
