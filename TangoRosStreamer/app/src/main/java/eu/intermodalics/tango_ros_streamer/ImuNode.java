@@ -22,10 +22,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.SystemClock;
 
 import org.apache.commons.logging.Log;
-import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -109,8 +107,7 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
                 break;
         }
         if (mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
-            long timeOffset = System.currentTimeMillis() - SystemClock.uptimeMillis();
-            mImuMessage.getHeader().setStamp(Time.fromMillis(timeOffset + event.timestamp / 1000000));
+            mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
             mImuMessage.getHeader().setFrameId("imu");
             mImuPublisher.publish(mImuMessage);
             mNewRotationData = false;
