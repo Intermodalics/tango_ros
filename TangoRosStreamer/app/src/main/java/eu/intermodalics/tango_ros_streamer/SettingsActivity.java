@@ -28,13 +28,8 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
-import java.util.Arrays;
-
-import dynamic_reconfigure.BoolParameter;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On

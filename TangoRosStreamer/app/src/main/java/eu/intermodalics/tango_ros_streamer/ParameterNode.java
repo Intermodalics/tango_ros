@@ -18,7 +18,6 @@ package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.preference.ListPreference;
 import android.preference.PreferenceManager;
 
 import org.apache.commons.logging.Log;
