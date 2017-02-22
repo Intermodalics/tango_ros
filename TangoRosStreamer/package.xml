@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>tango_ros_streamer</name>
-  <version>0.1.0</version>
+  <version>1.0.13</version>
   <description>This package wraps Tango Ros Streamer application</description>
 
   <maintainer email="ruben@intermodalics.eu">Ruben Smits</maintainer>
