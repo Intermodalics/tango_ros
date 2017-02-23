@@ -41,7 +41,7 @@ cd roscpp_android
 ./do_docker.sh --portable
 ```
 
-Once this has ended, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
+Note that the last command take will take long time to complete. Once this has ended, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
 
 ```
 cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/lib/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
@@ -84,6 +84,6 @@ source ~/.bashrc
 ```
 
 ## Building the app
-In Android Studio, choose "Import project" and select the app folder (```~/tango_ros_ws/src/tango_ros/TangoRosStreamer/app```).
+In Android Studio, choose "Import project" and select the app folder (```~/tango_ros_ws/src/tango_ros/TangoRosStreamer```).
 
 For more details on building and running the app, see [here](https://github.com/Intermodalics/tango_ros/blob/master/TangoRosStreamer/README.md).  
