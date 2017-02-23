@@ -4,13 +4,13 @@ It is an Android application for [Tango](https://get.google.com/tango/)-enabled 
 Its main purpose is to provide Tango sensor data to the [ROS](http://wiki.ros.org/) ecosystem in order to easily use the Tango functionalities on robots.  
 You can read the ROS wiki [here](http://wiki.ros.org/tango_ros_streamer).
 
-This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/) and [Tango]().  
+This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/) and [Google Tango](https://get.google.com/tango/).  
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
 
 # Kickstart
 The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer
 
-# Step-by-step installation
+# Step-by-step instructions
 For this guide, we assume that you have a clean installation of Ubuntu 14.04 and we will use ROS Indigo. However, the app should also work on Ubuntu 16.04 in combination with ROS Kinetic.
 
 ## Install ROS
