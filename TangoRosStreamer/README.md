@@ -4,7 +4,7 @@
 
 #### The roscpp\_android\_ndk
 
-* Follow this [tutorial](http://wiki.ros.org/android_ndk/Tutorials/BuildingNativeROSPackages) to build the roscpp android ndk.
+* Follow this [tutorial](http://wiki.ros.org/android_ndk/Tutorials/BuildingNativeROSPackages) to build the roscpp android ndk in portable mode.
 
 * Once it ended succesfully, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
 ```
