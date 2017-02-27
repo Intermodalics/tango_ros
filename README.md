@@ -49,13 +49,6 @@ cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/include/ ~/tang
 cp ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/Application.mk ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
 ```
 
-## Install Java 
-```
-sudo apt-get update
-sudo apt-get install openjdk-6-jdk
-echo "export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64/" >> ~/.bashrc
-```
-
 ## Build the dependencies
 ```
 sudo apt-get install git python-catkin-tools
@@ -67,19 +60,45 @@ catkin build
 ```  
 
 ## Android Studio
-Download from [here](https://developer.android.com/studio/index.html), unzip and run:
+The steps detailed below are based on this [installation guide](http://wiki.ros.org/android/kinetic/Android%20Studio/Download).
+
+For Android Studio we need Java, so let's install this first:
+```
+sudo apt-get update
+sudo apt-get install openjdk-7-jdk
+echo "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/" >> ~/.bashrc
+```
+
+Subsequently, download Android Studio from [here](https://developer.android.com/studio/index.html) and unzip (for example) to /opt/android-studio:
 
 ```
-cd
-unzip ~/Downloads/android-studio-ide-145.3537739-linux.zip
-./android-studio/bin/studio.sh
+cd /opt
+sudo unzip ~/Downloads/android-studio-ide-145.3537739-linux.zip
 ```
 
-After lauch, open the Android SDK Manager. From SDK Platforms, install Android 4.4 and 5.1 (API level 19 + 22). From SDK Tools, install `NDK` and `Android SDK Build-Tools 21.1.2`. By default, this will be installed to ```$HOME/Android/Sdk```. 
+Let's add it to the path for convenience:
+```
+echo export PATH=\${PATH}:/opt/android-sdk/tools:/opt/android-sdk/platform-tools:/opt/android-studio/bin >> ~/.bashrc
+```
+
+Pick a directory where to store the Android SDK, for example here:
+```
+sudo mkdir /opt/android-sdk
+sudo chown $(whoami) /opt/android-sdk
+echo export ANDROID_HOME=/opt/android-sdk >> ~/.bashrc
+```
+
+Finally, launch Android Studio:
+```
+source ~/.bashrc
+studio.sh
+```
+
+After launch, open the Configure -- SDK Manager. From SDK Platforms, install Android 4.4 and 5.1 (API level 19 + 22). From SDK Tools, install `NDK` and `Android SDK Build-Tools 21.1.2`. 
 
 Now extend your PATH variable so that ```ndk-build``` can be executed:
 ```
-echo "export PATH=$PATH:$HOME/Android/Sdk/ndk-bundle" >> ~/.bashrc
+echo "export PATH=\{$ANDROID_HOME}/ndk-bundle:\${PATH}" >> ~/.bashrc
 source ~/.bashrc
 ```
 
