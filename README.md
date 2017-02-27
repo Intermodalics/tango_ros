@@ -14,7 +14,7 @@ The app is available in Google's Play Store: https://play.google.com/store/apps/
 For this guide, we assume that you have a clean installation of Ubuntu 14.04 and we will use ROS Indigo. However, the app should also work on Ubuntu 16.04 in combination with ROS Kinetic.
 
 ## Install ROS
-Follow this [guide](http://wiki.ros.org/indigo/Installation/Ubuntu) and go for the Desktop -- Full Install:
+Follow this the guide for [Indigo (14.04)](http://wiki.ros.org/indigo/Installation/Ubuntu) or [Kinetic (16.04)](http://wiki.ros.org/kinetic/Installation/Ubuntu) and go for the Desktop -- Full Install:
 
 ```
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
@@ -26,6 +26,7 @@ rosdep update
 echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
+Replace indigo by kinetic if you are using Ubuntu 16.04.
 
 ## Building roscpp_android
 Next, we need to build ```roscpp_android```. A more detailed guide is available [here](http://wiki.ros.org/android_ndk/Tutorials/BuildingNativeROSPackages).
@@ -62,7 +63,7 @@ catkin build
 ## Android Studio
 The steps detailed below are based on this [installation guide](http://wiki.ros.org/android/kinetic/Android%20Studio/Download).
 
-For Android Studio we need Java, so let's install this first:
+For Android Studio we need Java, so let's install this first. On Ubuntu 14.04, we need to install openjdk-7-jdk, while on Ubuntu 16.04 we recommend to use openjdk-8-jdk instead.
 ```
 sudo apt-get update
 sudo apt-get install openjdk-7-jdk
