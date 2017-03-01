@@ -1,3 +1,4 @@
 include ':tango_ros_node'
+project(':tango_ros_node').projectDir = new File(settingsDir, '../tango_ros_common/tango_ros_node')
 include ':app'
 
