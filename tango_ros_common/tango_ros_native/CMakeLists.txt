@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
    )
 
 find_package(cmake_modules REQUIRED)
-find_package(OpenCV 2 REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 
 generate_dynamic_reconfigure_options(
   cfg/Publisher.cfg

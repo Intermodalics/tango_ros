@@ -22,6 +22,14 @@ buildscript {
     apply from: "https://github.com/rosjava/android_core/raw/kinetic/buildscript.gradle"
 }
 
+apply plugin: 'catkin'
+
+allprojects {
+    /* A github url provides a good standard unique name for your project */
+    group 'eu.intermodalics'
+    version = project.catkin.pkg.version
+}
+
 subprojects {
     apply plugin: 'ros-android'
 

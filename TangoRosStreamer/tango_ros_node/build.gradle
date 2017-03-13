@@ -59,7 +59,7 @@ task ndkBuild(type: Exec) {
 
 dependencies {
     // e.g. official msgs
-    compile('org.ros.rosjava_core:rosjava:[0.3.0]') {
+    compile('org.ros.rosjava_core:rosjava:[0.3, 0.4)') {
         exclude group: 'junit'
         exclude group: 'xml-apis'
     }
