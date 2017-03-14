@@ -74,18 +74,20 @@ public class TangoInitializationHelper {
      * @return returns false if the device doesn't have the Tango running as Android Service.
      *     Otherwise ture.
      */
-    public static final boolean bindTangoService(final Context context,
+    public static final boolean bindTangoService(final Activity activity,
                                                  ServiceConnection connection) {
+        testTangoVersionOk(activity);
+
         Intent intent = new Intent();
         intent.setClassName("com.google.tango", "com.google.atap.tango.TangoService");
 
-        boolean hasJavaService = (context.getPackageManager().resolveService(intent, 0) != null);
+        boolean hasJavaService = (activity.getPackageManager().resolveService(intent, 0) != null);
 
         // User doesn't have the latest packagename for TangoCore, fallback to the previous name.
         if (!hasJavaService) {
             intent = new Intent();
             intent.setClassName("com.projecttango.tango", "com.google.atap.tango.TangoService");
-            hasJavaService = (context.getPackageManager().resolveService(intent, 0) != null);
+            hasJavaService = (activity.getPackageManager().resolveService(intent, 0) != null);
         }
 
         // User doesn't have a Java-fied TangoCore at all; fallback to the deprecated approach
@@ -95,7 +97,7 @@ public class TangoInitializationHelper {
             return false;
         }
 
-        return context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+        return activity.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
     /**
@@ -207,11 +209,11 @@ public class TangoInitializationHelper {
     }
 
     /**
-     * Checks if Tango Version is ok using native functions, and sets status variable.
+     * Tests if Tango Version is ok using native functions, and sets status variable.
      * @param activity Caller activity.
      * @return True if Tango Version is Ok.
      */
-    public static boolean checkTangoVersionOk(Activity activity) {
+    private static boolean testTangoVersionOk(Activity activity) {
         mIsTangoVersionOk = isTangoVersionOk(activity);
         return mIsTangoVersionOk;
     }
