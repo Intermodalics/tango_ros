@@ -108,12 +108,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         new DefaultTangoServiceConnection.AfterConnectionCallback() {
             @Override
             public void execute() {
-                Log.w(TAG, "executing DefaultTangoServiceConnection");
                 if (TangoInitializationHelper.isTangoServiceBound()) {
                     if (TangoInitializationHelper.isTangoVersionOk()) {
                         updateTangoStatus(TangoStatus.SERVICE_RUNNING);
                     } else {
-                        Log.w(TAG, "here isTangoVersionOk");
                         updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
                     }
                 } else {
@@ -163,7 +161,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     private void updateTangoStatus(TangoStatus status) {
         if (mTangoStatus != status) {
-            Log.w(TAG, "updateTangoStatus from " + mTangoStatus + " to " + status);
             mTangoStatus = status;
             switchTangoLight(status);
         }
@@ -345,16 +342,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             mTangoRosNode = new TangoRosNode();
             mTangoRosNode.attachCallbackListener(this);
 
-            Log.w(TAG, "calling checkTangoVersionOk");
             TangoInitializationHelper.checkTangoVersionOk(this);
-            Log.w(TAG, "calling bindTangoService");
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
-
             if (TangoInitializationHelper.isTangoVersionOk()) {
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
-                Log.w(TAG, "here isTangoVersionOk 2");
                 updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
                 displayToastMessage(R.string.tango_version_error);
