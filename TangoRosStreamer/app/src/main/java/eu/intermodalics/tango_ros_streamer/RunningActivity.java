@@ -341,8 +341,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                         != TangoInitializationHelper.ARCH_ERROR) {
             mTangoRosNode = new TangoRosNode();
             mTangoRosNode.attachCallbackListener(this);
-
-            TangoInitializationHelper.checkTangoVersionOk(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
                 nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
