@@ -9,7 +9,7 @@ Do not hesitate to give us feedback if something is broken or if you think it la
 
 # Kickstart
 The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer  
-It can be installed on any Tango-enable device. Note that the minimum Tango version required to run Tango Ros Streamer is Yildun (you will find the Tango release history [here](https://developers.google.com/tango/release-notes)). To check the Tango version of your device go to Settings->Apps->Tango Core. 
+It can be installed on any Tango-enabled device. Note that the minimum Tango version required to run Tango Ros Streamer is Yildun (you will find the Tango release history [here](https://developers.google.com/tango/release-notes)). To check the Tango version of your device go to Settings->Apps->Tango Core. 
 
 # Running the app
 
@@ -152,4 +152,4 @@ ndk.dir=/opt/android-ndk-r10b
 sdk.dir=/opt/android-sdk-linux
 ```
 
-Plug a Tango-enable Android device to your desktop and press the green arrow in Android Studio. It will build and install the app on the device.
+Plug your device to your desktop and press the green arrow in Android Studio. It will build and install the app on the device.
