@@ -72,6 +72,7 @@ cd ~/tango_ros_ws/src
 git clone --recursive git@github.com:Intermodalics/tango_ros.git
 cd ~/tango_ros_ws
 ```  
+Then, you can build the app either with catkin or with Android Studio. Follow the instructions below corresponding to your prefered way.
 
 ### Using catkin
 
