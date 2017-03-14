@@ -66,11 +66,11 @@ class TangoRosTest : public ::testing::Test {
         boost::bind(&TangoRosTest::PointCloudCallback, this, _1));
 
     sub_fisheye_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
-        tango_ros_native::PublisherConfiguration().fisheye_camera_topic, 1,
+        tango_ros_native::PublisherConfiguration().fisheye_image_topic, 1,
             boost::bind(&TangoRosTest::FisheyeImageCallback, this, _1));
 
     sub_color_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
-        tango_ros_native::PublisherConfiguration().color_camera_topic, 1,
+        tango_ros_native::PublisherConfiguration().color_image_topic, 1,
             boost::bind(&TangoRosTest::ColorImageCallback, this, _1));
   }
 
