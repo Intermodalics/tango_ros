@@ -64,7 +64,6 @@ public class TangoInitializationHelper {
     }
 
     public static boolean isTangoVersionOk() {
-        Log.w("InitializationHelper", "calling isTangoVersionOk: " + mIsTangoVersionOk);
         return mIsTangoVersionOk;
     }
 
@@ -77,7 +76,6 @@ public class TangoInitializationHelper {
      */
     public static final boolean bindTangoService(final Context context,
                                                  ServiceConnection connection) {
-        Log.w("InitializationHelper", "calling bindTangoService");
         Intent intent = new Intent();
         intent.setClassName("com.google.tango", "com.google.atap.tango.TangoService");
 
@@ -214,9 +212,7 @@ public class TangoInitializationHelper {
      * @return True if Tango Version is Ok.
      */
     public static boolean checkTangoVersionOk(Activity activity) {
-        Log.w("InitializationHelper", "calling checkTangoVersionOk");
         mIsTangoVersionOk = isTangoVersionOk(activity);
-        Log.w("InitializationHelper", "mIsTangoVersionOk updated to " + mIsTangoVersionOk);
         return mIsTangoVersionOk;
     }
 
