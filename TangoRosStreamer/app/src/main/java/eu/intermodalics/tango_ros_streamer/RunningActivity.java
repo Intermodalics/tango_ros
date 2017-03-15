@@ -326,8 +326,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         // The reason is that changing a Tango configuration parameter requires to disconnect and
         // reconnect to the Tango service at runtime.
         String[] tangoConfigurationParameters = {
-                getString(R.string.drift_correction_key),
-                getString(R.string.area_learning_key)};
+                getString(R.string.pref_localization_mode_key)};
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);

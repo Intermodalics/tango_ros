@@ -24,11 +24,11 @@
         android:title="@string/pref_category_tango_title"
         android:key="@string/pref_category_tango_key">
         <ListPreference
-            android:title="Area learning method"
-            android:key="@string/pref_area_learning_method_key"
+            android:title="Localization mode"
+            android:key="@string/pref_localization_mode_key"
             android:defaultValue="1"
-            android:entries="@array/listAreaLearningMethods"
-            android:entryValues="@array/listAreaLearningMethodsValues" />
+            android:entries="@array/listLocalizationMode"
+            android:entryValues="@array/listLocalizationModeValues" />
     </PreferenceCategory>
 
 

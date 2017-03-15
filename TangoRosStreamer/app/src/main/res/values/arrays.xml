@@ -2,13 +2,13 @@
 
 <resources>
 
-    <string-array name="listAreaLearningMethods">
-        <item>None</item>
-        <item>Single session drift correction</item>
-        <item>Learning mode</item>
+    <string-array name="listLocalizationMode">
+        <item>Odometry (no map)</item>
+        <item>Online SLAM (no map)</item>
+        <item>Localization (requires map)</item>
     </string-array>
 
-    <string-array name="listAreaLearningMethodsValues">
+    <string-array name="listLocalizationModeValues">
         <item>1</item>
         <item>2</item>
         <item>3</item>

@@ -106,8 +106,8 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
         // Set ROS params according to preferences.
         for (String paramName : mParamNames) {
-            Boolean paramValue = mSharedPreferences.getBoolean(paramName, false);
-            connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), paramValue);
+            String stringValue = mSharedPreferences.getString(paramName, "1");
+            connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
         }
     }
 
@@ -128,24 +128,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
                         callDynamicReconfigure(key, bool.booleanValue());
                     }
                 }.start();
-            }
-        }
-        
-        if (key == mCreatorActivity.getString(R.string.pref_area_learning_method_key)) {
-            String stringValue = mSharedPreferences.getString(key, "1");
-            SharedPreferences.Editor editor = mSharedPreferences.edit();
-            if (stringValue.equals("1")) {
-                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), false);
-                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), false);
-                editor.commit();
-            } else if (stringValue.equals("2")) {
-                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), true);
-                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), false);
-                editor.commit();
-            } else if (stringValue.equals("3")) {
-                editor.putBoolean(mCreatorActivity.getString(R.string.drift_correction_key), false);
-                editor.putBoolean(mCreatorActivity.getString(R.string.area_learning_key), true);
-                editor.commit();
             }
         }
     }
