@@ -432,7 +432,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   bool enable_drift_correction = false;
   int localization_mode;
   node_handle_.param(publisher_config_.localization_mode_param, localization_mode, 1);
-  if (localization_mode == 2) {
+  if (localization_mode == LocalizationMode::ONLINE_SLAM) {
     enable_drift_correction = true;
   }
   const char* config_enable_drift_correction = "config_enable_drift_correction";

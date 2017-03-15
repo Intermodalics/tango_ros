@@ -59,6 +59,19 @@ const uint32_t CAMERA_NONE = 0;
 const uint32_t CAMERA_FISHEYE = (1 << 1);
 const uint32_t CAMERA_COLOR = (1 << 2);
 
+// Localization mode values.
+// See http://developers.google.com/tango/overview/area-learning to know more
+// about Tango localization
+enum LocalizationMode {
+  // No map required. Internally runs VIO from Tango.
+  ODOMETRY = 1,
+  // No map required. Internally runs COM (also mentioned as drift correction)
+  // from Tango.
+  ONLINE_SLAM = 2,
+  // Map required. Internally runs Tango localization on ADF.
+  LOCALIZATION = 3
+};
+
 struct PublisherConfiguration {
   // True if pose needs to be published.
   std::atomic_bool publish_device_pose{false};
