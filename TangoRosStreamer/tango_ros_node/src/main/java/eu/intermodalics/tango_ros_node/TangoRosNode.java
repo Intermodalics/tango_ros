@@ -19,7 +19,7 @@ package eu.intermodalics.tango_ros_node;
 import android.content.ServiceConnection;
 
 import org.ros.namespace.GraphName;
-import org.ros.node.NativeNodeMainBeta;
+import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
 import java.util.Arrays;
@@ -33,7 +33,7 @@ import java.util.List;
  * See {@link TangoInitializationHelper.DefaultTangoServiceConnection} for a default handle.
  * - Create and execute node in the standard RosJava way.
  */
-public class TangoRosNode extends NativeNodeMainBeta {
+public class TangoRosNode extends NativeNodeMain {
     public static final int ROS_CONNECTION_ERROR = 1;
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
     public static final String ROS_CONNECTION_UNREACHABLE_ERROR_MSG = "ENETUNREACH";
