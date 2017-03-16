@@ -107,7 +107,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
      */
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
         if (key == getString(R.string.pref_master_is_local_key) ||
-                key == getString(R.string.pref_master_uri_key)) {
+                key == getString(R.string.pref_master_uri_key) ||
+                key == getString(R.string.pref_create_new_map_key) ||
+                key == getString(R.string.pref_drift_correction_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
                 Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
@@ -137,8 +139,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         super.onStart();
         boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
-            CheckBoxPreference driftCorrection = (CheckBoxPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_drift_correction_key));
-            driftCorrection.setEnabled(true);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

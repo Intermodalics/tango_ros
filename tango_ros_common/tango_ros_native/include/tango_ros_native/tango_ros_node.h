@@ -83,6 +83,8 @@ struct PublisherConfiguration {
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
   // Param name for the drift correction parameter.
   std::string enable_drift_correction_param = "tango/enable_drift_correction";
+  // Param name for the create new map parameter.
+  std::string create_new_map = "tango/create_new_map";
 };
 
 // Node collecting tango data and publishing it on ros topics.

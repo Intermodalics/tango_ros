@@ -62,6 +62,10 @@
     <string name="pref_category_tango_title">Tango</string>
     <string name="pref_category_tango_key">pref_category_tango</string>
 
+    <string name="pref_create_new_map">Create a new map</string>
+    <string name="pref_create_new_map_key">create_new_map</string>
+    <string name="pref_create_new_map_summary">Enable to create a new map. This map can be used for localization later.</string>
+
     <string name="pref_drift_correction">Single session drift correction</string>
     <string name="pref_drift_correction_key">enable_drift_correction</string>
     <string name="pref_drift_correction_summary">Enable to use Tango single session drift correction</string>

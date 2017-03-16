@@ -428,15 +428,25 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
         << config_enable_motion_tracking << " error: " << result;
     return result;
   }
-
-  bool enable_drift_correction;
-  node_handle_.param(publisher_config_.enable_drift_correction_param, enable_drift_correction, true);
-  const char* config_enable_drift_correction = "config_enable_drift_correction";
-  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
+  bool create_new_map;
+  node_handle_.param(publisher_config_.create_new_map, create_new_map, false);
+  const char* config_enable_learning_mode = "config_enable_learning_mode";
+  result = TangoConfig_setBool(tango_config_, config_enable_learning_mode, create_new_map);
   if(result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
-        << config_enable_drift_correction << " error: " << result;
+        << config_enable_learning_mode << " error: " << result;
     return result;
+  }
+  if (!create_new_map) {
+    bool enable_drift_correction;
+    node_handle_.param(publisher_config_.enable_drift_correction_param, enable_drift_correction, true);
+    const char* config_enable_drift_correction = "config_enable_drift_correction";
+    result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
+    if(result != TANGO_SUCCESS) {
+      LOG(ERROR) << function_name << ", TangoConfig_setBool "
+          << config_enable_drift_correction << " error: " << result;
+      return result;
+    }
   }
   const char* config_enable_auto_recovery = "config_enable_auto_recovery";
   result = TangoConfig_setBool(tango_config_, config_enable_auto_recovery, true);
