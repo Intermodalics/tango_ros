@@ -63,12 +63,12 @@ const uint32_t CAMERA_COLOR = (1 << 2);
 // See http://developers.google.com/tango/overview/area-learning to know more
 // about Tango localization
 enum LocalizationMode {
-  // No map required. Internally runs VIO from Tango.
+  // No map required. Internally runs VIO (Visual Inertial Odometry) from Tango.
   ODOMETRY = 1,
-  // No map required. Internally runs COM (also mentioned as drift correction)
-  // from Tango.
+  // No map required. Internally runs COM (Concurrent Odometry and Mapping,
+  // also mentioned as drift correction) from Tango.
   ONLINE_SLAM = 2,
-  // Map required. Internally runs Tango localization on ADF.
+  // Map required. Internally runs Tango localization on ADF (Area Description File).
   LOCALIZATION = 3
 };
 

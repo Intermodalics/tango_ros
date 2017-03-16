@@ -185,7 +185,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         } catch (ServiceNotFoundException e) {
             mLog.error("Service not found: " + e.getMessage());
         } catch (Exception e) {
-            mLog.error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
+            mLog.error("Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 
