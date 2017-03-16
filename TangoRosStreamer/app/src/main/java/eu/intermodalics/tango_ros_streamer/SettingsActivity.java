@@ -21,12 +21,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.SwitchPreference;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -154,6 +154,18 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             });
             snackbar.show();
         }
+        SwitchPreference createNewMapPref = (SwitchPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_create_new_map_key));
+        boolean createNewMap = createNewMapPref.isChecked();
+        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_drift_correction_key)).setEnabled(!createNewMap);
+        createNewMapPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                SwitchPreference createNewMapPref = (SwitchPreference) preference;
+                boolean createNewMap = createNewMapPref.isChecked();
+                mSettingsPreferenceFragment.findPreference(getString(R.string.pref_drift_correction_key)).setEnabled(!createNewMap);
+                return true;
+            }
+        });
         Preference aboutPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_about_app_key));
         aboutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
