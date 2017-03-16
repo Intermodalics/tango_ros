@@ -2,6 +2,7 @@
     <style name="AppTheme" parent="Theme.AppCompat">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+
     </style>
     <style name="AboutAppTheme" parent="Theme.AppCompat.Light">
         <item name="windowActionBar">false</item>

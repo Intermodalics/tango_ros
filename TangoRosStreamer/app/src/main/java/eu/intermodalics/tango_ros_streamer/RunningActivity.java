@@ -16,6 +16,7 @@
 
 package eu.intermodalics.tango_ros_streamer;
 
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -35,6 +36,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.ImageView;
@@ -52,7 +54,8 @@ import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
 import eu.intermodalics.tango_ros_node.TangoRosNode;
 
-public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
+public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener,
+ SaveMapDialog.CallbackListener{
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -83,6 +86,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
     private Logger mLogger;
+    private boolean mCreateNewMap = false;
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -92,6 +96,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Switch mlogSwitch;
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
+    private Button mSaveButton;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -192,6 +197,20 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
     }
 
+    public void onMapNameOk(String mapName) {
+        Log.w(TAG, "onMapNameOk: " + mapName);
+        if (mapName == null || mapName.isEmpty()) {
+            Log.e(TAG, "map name is null or empty, unable to save the map");
+            return;
+        }
+    }
+
+    private void showSaveMapDialog() {
+        FragmentManager manager = getFragmentManager();
+        SaveMapDialog saveMapDialog = new SaveMapDialog();
+        saveMapDialog.show(manager, "MapNameDialog");
+    }
+
     private void setupUI() {
         setContentView(R.layout.running_activity);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -212,6 +231,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
+        mSaveButton = (Button) findViewById(R.id.save_map_button);
+        mSaveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.w(TAG, "Save map");
+                showSaveMapDialog();
+            }
+        });
+        if (mCreateNewMap) {
+            mSaveButton.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -221,6 +251,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
+        mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+        Log.w(TAG, "create new map: " + mCreateNewMap);
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default));
         setupUI();

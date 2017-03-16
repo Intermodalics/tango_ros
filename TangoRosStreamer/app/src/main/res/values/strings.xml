@@ -20,6 +20,8 @@
     <string name="ros_website_address">http://wiki.ros.org/</string>
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
+    <string name="save_map_dialog_title">Enter the name of the map</string>
+
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
@@ -65,10 +67,6 @@
     <string name="pref_create_new_map">Create a new localization map</string>
     <string name="pref_create_new_map_key">create_new_map</string>
     <string name="pref_create_new_map_summary">Enable to create a new localization map. This map can be used for localization later.</string>
-
-    <string name="pref_map_file_title">Map file name</string>
-    <string name="pref_map_file_key">pref_map_file_name</string>
-    <string name="pref_map_file_default">tango_ros_streamer_map</string>
 
     <string name="pref_drift_correction">Single session drift correction</string>
     <string name="pref_drift_correction_key">enable_drift_correction</string>

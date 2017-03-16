@@ -27,20 +27,13 @@
             android:title="@string/pref_create_new_map"
             android:key="@string/pref_create_new_map_key"
             android:defaultValue="false"
+            android:disableDependentsState="true"
             android:summary="@string/pref_create_new_map_summary" />
-        <EditTextPreference
-            android:title="@string/pref_map_file_title"
-            android:key="@string/pref_map_file_key"
-            android:defaultValue="@string/pref_map_file_default"
-            android:dependency="@string/pref_create_new_map_key"
-            android:inputType="textCapWords"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:selectAllOnFocus="true"/>
         <CheckBoxPreference
             android:title="@string/pref_drift_correction"
             android:key="@string/pref_drift_correction_key"
             android:defaultValue="true"
+            android:dependency="@string/pref_create_new_map_key"
             android:summary="@string/pref_drift_correction_summary"/>
     </PreferenceCategory>
 
