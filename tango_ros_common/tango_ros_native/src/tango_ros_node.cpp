@@ -429,8 +429,12 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
 
-  bool enable_drift_correction;
-  node_handle_.param(publisher_config_.enable_drift_correction_param, enable_drift_correction, true);
+  bool enable_drift_correction = false;
+  int localization_mode;
+  node_handle_.param(publisher_config_.localization_mode_param, localization_mode, LocalizationMode::ODOMETRY);
+  if (localization_mode == LocalizationMode::ONLINE_SLAM) {
+    enable_drift_correction = true;
+  }
   const char* config_enable_drift_correction = "config_enable_drift_correction";
   result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
   if(result != TANGO_SUCCESS) {

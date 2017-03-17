@@ -21,7 +21,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -70,7 +69,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                         index >= 0
                                 ? listPreference.getEntries()[index]
                                 : null);
-
             } else {
                 // For all other preferences, set the summary to the value's
                 // simple string representation.
@@ -107,7 +105,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
      */
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
         if (key == getString(R.string.pref_master_is_local_key) ||
-                key == getString(R.string.pref_master_uri_key)) {
+                key == getString(R.string.pref_master_uri_key) ||
+                key == getString(R.string.pref_localization_mode_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
                 Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
@@ -137,8 +136,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         super.onStart();
         boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if(!previouslyStarted) {
-            CheckBoxPreference driftCorrection = (CheckBoxPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_drift_correction_key));
-            driftCorrection.setEnabled(true);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -190,6 +187,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
         }
     }
 

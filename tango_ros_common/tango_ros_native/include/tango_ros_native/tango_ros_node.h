@@ -59,6 +59,19 @@ const uint32_t CAMERA_NONE = 0;
 const uint32_t CAMERA_FISHEYE = (1 << 1);
 const uint32_t CAMERA_COLOR = (1 << 2);
 
+// Localization mode values.
+// See http://developers.google.com/tango/overview/area-learning to know more
+// about Tango localization
+enum LocalizationMode {
+  // No map required. Internally runs VIO (Visual Inertial Odometry) from Tango.
+  ODOMETRY = 1,
+  // No map required. Internally runs COM (Concurrent Odometry and Mapping,
+  // also mentioned as drift correction) from Tango.
+  ONLINE_SLAM = 2,
+  // Map required. Internally runs Tango localization on ADF (Area Description File).
+  LOCALIZATION = 3
+};
+
 struct PublisherConfiguration {
   // True if pose needs to be published.
   std::atomic_bool publish_device_pose{false};
@@ -82,7 +95,7 @@ struct PublisherConfiguration {
   // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
   // Param name for the drift correction parameter.
-  std::string enable_drift_correction_param = "tango/enable_drift_correction";
+  std::string localization_mode_param = "tango/localization_mode";
 };
 
 // Node collecting tango data and publishing it on ros topics.

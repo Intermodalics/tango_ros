@@ -23,13 +23,14 @@
     <PreferenceCategory
         android:title="@string/pref_category_tango_title"
         android:key="@string/pref_category_tango_key">
-        <CheckBoxPreference
-            android:title="@string/pref_drift_correction"
-            android:key="@string/pref_drift_correction_key"
-            android:defaultValue="true"
-            android:enabled="false"
-            android:summary="@string/pref_drift_correction_summary"/>
+        <ListPreference
+            android:title="Localization mode"
+            android:key="@string/pref_localization_mode_key"
+            android:defaultValue="1"
+            android:entries="@array/listLocalizationMode"
+            android:entryValues="@array/listLocalizationModeValues" />
     </PreferenceCategory>
+
 
     <PreferenceCategory
         android:title="@string/pref_category_general_title"
