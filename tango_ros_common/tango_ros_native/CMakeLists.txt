@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
    tf2_ros
    )
 
+# Use OpenCV3 if we are using ROS Kinetic (which is the default for that distro)
 if( $ENV{ROS_DISTRO} STRLESS "kinetic")
   find_package(OpenCV 2 REQUIRED)
 else()
