@@ -29,13 +29,15 @@
             android:defaultValue="false"
             android:disableDependentsState="true"
             android:summary="@string/pref_create_new_map_summary" />
-        <CheckBoxPreference
-            android:title="@string/pref_drift_correction"
-            android:key="@string/pref_drift_correction_key"
-            android:defaultValue="true"
-            android:dependency="@string/pref_create_new_map_key"
-            android:summary="@string/pref_drift_correction_summary"/>
+        <ListPreference
+            android:title="Localization mode"
+            android:key="@string/pref_localization_mode_key"
+            android:defaultValue="1"
+            android:entries="@array/listLocalizationMode"
+            android:entryValues="@array/listLocalizationModeValues"
+            android:dependency="@string/pref_create_new_map_key" />
     </PreferenceCategory>
+
 
     <PreferenceCategory
         android:title="@string/pref_category_general_title"

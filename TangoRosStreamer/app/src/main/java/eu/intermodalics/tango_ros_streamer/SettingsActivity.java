@@ -70,7 +70,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                         index >= 0
                                 ? listPreference.getEntries()[index]
                                 : null);
-
             } else {
                 // For all other preferences, set the summary to the value's
                 // simple string representation.
@@ -109,7 +108,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         if (key == getString(R.string.pref_master_is_local_key) ||
                 key == getString(R.string.pref_master_uri_key) ||
                 key == getString(R.string.pref_create_new_map_key) ||
-                key == getString(R.string.pref_drift_correction_key)) {
+                key == getString(R.string.pref_localization_mode_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
                 Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
@@ -190,6 +189,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
         }
     }
 

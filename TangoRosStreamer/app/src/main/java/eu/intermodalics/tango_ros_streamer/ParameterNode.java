@@ -55,7 +55,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
-    private Log log;
+    private Log mLog;
     private final String[] mDynamicParamNames;
     private final String[] mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
@@ -78,7 +78,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     @Override
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
-        log = connectedNode.getLog();
+        mLog = connectedNode.getLog();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
 
         // Overwrite preferences in server with local preferences.
@@ -106,8 +106,14 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
         // Set ROS params according to preferences.
         for (String paramName : mParamNames) {
-            Boolean paramValue = mSharedPreferences.getBoolean(paramName, true);
-            connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), paramValue);
+            if (paramName.equals(mCreatorActivity.getString(R.string.pref_create_new_map_key))) {
+                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
+                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+            }
+            if (paramName.equals(mCreatorActivity.getString(R.string.pref_localization_mode_key))) {
+                String stringValue = mSharedPreferences.getString(paramName, "1");
+                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+            }
         }
     }
 
@@ -172,20 +178,20 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
                 @Override
                 public void onSuccess(ReconfigureResponse reconfigureResponse) {
-                    log.info("Dynamic Reconfigure success");
+                    mLog.info("Dynamic Reconfigure success");
                     mParameterNodeCalledDynamicReconfigure = false;
                 }
 
                 @Override
                 public void onFailure(RemoteException e) {
-                    log.error("Dynamic Reconfigure failure: " + e.getMessage());
+                    mLog.error("Dynamic Reconfigure failure: " + e.getMessage());
                 }
             });
             mParameterNodeCalledDynamicReconfigure = true;
         } catch (ServiceNotFoundException e) {
-            log.error("Service not found: " + e.getMessage());
+            mLog.error("Service not found: " + e.getMessage());
         } catch (Exception e) {
-            log.error( "Error while calling Dynamic Reconfigure Service: " + e.getMessage());
+            mLog.error("Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
     }
 

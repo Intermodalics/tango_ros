@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <string-array name="listLocalizationMode">
+        <item>Odometry (no map)</item>
+        <item>Online SLAM (no map)</item>
+        <item>Localization (requires map)</item>
+    </string-array>
+
+    <string-array name="listLocalizationModeValues">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+</resources>
