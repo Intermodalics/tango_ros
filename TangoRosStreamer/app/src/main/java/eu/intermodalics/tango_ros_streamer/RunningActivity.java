@@ -49,6 +49,8 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
@@ -344,7 +346,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             }
         }
         if (requestCode == startActivityRequest.ADF_PERMISSION) {
-            if (mTangoRosNode.saveMap(mMapName)) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+            if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
                 displayToastMessage(R.string.save_map_success);
             } else {
                 Log.e(TAG, "Error while saving map");
