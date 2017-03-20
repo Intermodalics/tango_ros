@@ -728,6 +728,11 @@ bool TangoRosNode::SaveMap(std::string map_name) {
     LOG(ERROR) << "Error while trying to change area description metada, error: " << result;
     return false;
   }
+  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
+  if(result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metada, error: " << result;
+      return false;
+    }
   result = TangoAreaDescriptionMetadata_free(metadata);
   if(result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to free area description metada, error: " << result;
