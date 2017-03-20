@@ -74,4 +74,8 @@ void TangoRosNodeExecutor::Shutdown() {
   tango_ros_node_->TangoDisconnect();
 }
 
+bool TangoRosNodeExecutor::SaveMap(std::string map_name) {
+  return tango_ros_node_->SaveMap(map_name);
+}
+
 }  // namespace tango_ros_util

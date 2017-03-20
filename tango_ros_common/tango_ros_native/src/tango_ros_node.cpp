@@ -709,6 +709,33 @@ void TangoRosNode::StopPublishing() {
   }
 }
 
+bool TangoRosNode::SaveMap(std::string map_name) {
+  TangoErrorType result;
+  TangoUUID map_uuid;
+  result = TangoService_saveAreaDescription(&map_uuid);
+  if(result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving area description, error: " << result;
+    return false;
+  }
+  TangoAreaDescriptionMetadata metadata;
+  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
+  if(result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metada, error: " << result;
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
+  if(result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metada, error: " << result;
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if(result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metada, error: " << result;
+    return false;
+  }
+  return true;
+}
+
 void TangoRosNode::PublishDevicePose() {
   while(ros::ok()) {
     if (!run_threads_) {

@@ -60,11 +60,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
+    public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
 
-    public static class startSettingsActivityRequest {
-        public static final int FIRST_RUN = 1;
-        public static final int STANDARD_RUN = 2;
+    public static class startActivityRequest {
+        public static final int SETTINGS_ACTIVITY_FIRST_RUN = 1;
+        public static final int SETTINGS_ACTIVITY_STANDARD_RUN = 2;
+        public static final int ADF_PERMISSION = 3;
     }
+
     enum RosStatus {
         MASTER_NOT_CONNECTED,
         NODE_RUNNING
@@ -87,6 +91,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
     private Logger mLogger;
     private boolean mCreateNewMap = false;
+    private String mMapName = "";
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -197,14 +202,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
     }
 
-    public void onMapNameOk(String mapName) {
-        Log.w(TAG, "onMapNameOk: " + mapName);
-        if (mapName == null || mapName.isEmpty()) {
-            Log.e(TAG, "map name is null or empty, unable to save the map");
-            return;
-        }
-    }
-
     private void showSaveMapDialog() {
         FragmentManager manager = getFragmentManager();
         SaveMapDialog saveMapDialog = new SaveMapDialog();
@@ -235,13 +232,25 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mSaveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.w(TAG, "Save map");
                 showSaveMapDialog();
             }
         });
         if (mCreateNewMap) {
             mSaveButton.setVisibility(View.VISIBLE);
         }
+    }
+
+    public void onMapNameOk(String mapName) {
+        if (mapName == null || mapName.isEmpty()) {
+            Log.e(TAG, "Map name is null or empty, unable to save the map");
+            displayToastMessage(R.string.map_name_error);
+            return;
+        }
+        mMapName = mapName;
+        Intent intent = new Intent();
+        intent.setAction("android.intent.action.REQUEST_TANGO_PERMISSION");
+        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, EXTRA_VALUE_ADF);
+        startActivityForResult(intent, startActivityRequest.ADF_PERMISSION);
     }
 
     @Override
@@ -281,7 +290,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         switch (item.getItemId()) {
             case R.id.settings:
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
-                startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
+                startActivityForResult(settingsActivityIntent, startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN);
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -317,7 +326,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
-            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
+            if (requestCode == startActivityRequest.SETTINGS_ACTIVITY_FIRST_RUN) {
                 mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
@@ -327,11 +336,19 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
                 initAndStartRosJavaNode();
-            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
+            } else if (requestCode == startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
+            }
+        }
+        if (requestCode == startActivityRequest.ADF_PERMISSION) {
+            if (mTangoRosNode.saveMap(mMapName)) {
+                displayToastMessage(R.string.save_map_success);
+            } else {
+                Log.e(TAG, "Error while saving map");
+                displayToastMessage(R.string.save_map_error);
             }
         }
     }
@@ -402,7 +419,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
-            startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
+            startActivityForResult(intent, startActivityRequest.SETTINGS_ACTIVITY_FIRST_RUN);
         }
     }
 

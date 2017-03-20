@@ -61,6 +61,14 @@ Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_shutdown(JNIEnv* /*env*/, jo
   return 0;     // No error codes are defined for Shutdown; 0 is for success.
 }
 
+JNIEXPORT jboolean JNICALL
+Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_saveMap(JNIEnv* env, jobject /*obj*/,
+    jstring map_name_value) {
+  const char* map_name = env->GetStringUTFChars(map_name_value, NULL);
+  env->ReleaseStringUTFChars(map_name_value, map_name);
+  return tango_ros_node_executor.SaveMap(std::string(map_name));
+}
+
 #ifdef __cplusplus
 }
 #endif

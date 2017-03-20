@@ -117,6 +117,8 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
+  // Save the current map (ADF) to disc with the given name.
+  bool SaveMap(std::string map_name);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
