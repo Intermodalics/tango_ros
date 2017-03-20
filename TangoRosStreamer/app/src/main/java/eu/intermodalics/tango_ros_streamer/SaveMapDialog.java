@@ -28,7 +28,7 @@ import android.widget.EditText;
 /**
  * Displays custom view with progress bar and text information while saving an adf.
  */
-public class SaveMapDialog extends DialogFragment implements View.OnClickListener{
+public class SaveMapDialog extends DialogFragment implements View.OnClickListener {
     private static final String TAG = SaveMapDialog.class.getSimpleName();
 
     EditText mNameEditText;
@@ -48,6 +48,7 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
         View dialogView = inflator.inflate(R.layout.dialog_save_map, null);
+        getDialog().setTitle("Enter the name of the map");
         mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
         dialogView.findViewById(R.id.Ok).setOnClickListener(this);
         setCancelable(false);

@@ -16,6 +16,7 @@
 
 package eu.intermodalics.tango_ros_streamer;
 
+import android.app.DialogFragment;
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -207,6 +208,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private void showSaveMapDialog() {
         FragmentManager manager = getFragmentManager();
         SaveMapDialog saveMapDialog = new SaveMapDialog();
+        saveMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
         saveMapDialog.show(manager, "MapNameDialog");
     }
 
