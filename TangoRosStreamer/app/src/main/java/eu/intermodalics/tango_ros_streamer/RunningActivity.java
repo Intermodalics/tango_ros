@@ -263,7 +263,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
         mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
-        Log.w(TAG, "create new map: " + mCreateNewMap);
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default));
         setupUI();
@@ -337,6 +336,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
+                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+                if (mCreateNewMap) {
+                    mSaveButton.setVisibility(View.VISIBLE);
+                }
                 initAndStartRosJavaNode();
             } else if (requestCode == startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
