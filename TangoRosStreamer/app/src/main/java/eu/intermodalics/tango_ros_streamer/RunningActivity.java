@@ -95,6 +95,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Logger mLogger;
     private boolean mCreateNewMap = false;
     private String mMapName = "";
+    private boolean mMapSaved = false;
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -239,6 +240,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 showSaveMapDialog();
             }
         });
+        mSaveButton.setEnabled(!mMapSaved);
         if (mCreateNewMap) {
             mSaveButton.setVisibility(View.VISIBLE);
         }
@@ -353,6 +355,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         if (requestCode == startActivityRequest.ADF_PERMISSION) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
             if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
+                mMapSaved = true;
+                mSaveButton.setEnabled(!mMapSaved);
                 displayToastMessage(R.string.save_map_success);
             } else {
                 Log.e(TAG, "Error while saving map");
