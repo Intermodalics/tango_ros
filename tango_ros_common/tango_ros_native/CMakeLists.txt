@@ -14,8 +14,12 @@ find_package(catkin REQUIRED COMPONENTS
    tf2_ros
    )
 
-find_package(cmake_modules REQUIRED)
-find_package(OpenCV 3 REQUIRED)
+# Use OpenCV3 if we are using ROS Kinetic (which is the default for that distro)
+if( $ENV{ROS_DISTRO} STRLESS "kinetic")
+  find_package(OpenCV 2 REQUIRED)
+else()
+  find_package(OpenCV 3 REQUIRED)
+endif()
 
 generate_dynamic_reconfigure_options(
   cfg/Publisher.cfg
