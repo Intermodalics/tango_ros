@@ -253,10 +253,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             return;
         }
         mMapName = mapName;
-        Intent intent = new Intent();
-        intent.setAction("android.intent.action.REQUEST_TANGO_PERMISSION");
-        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, EXTRA_VALUE_ADF);
-        startActivityForResult(intent, startActivityRequest.ADF_PERMISSION);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+            /*if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
+                mMapSaved = true;
+                mSaveButton.setEnabled(!mMapSaved);
+                displayToastMessage(R.string.save_map_success);
+            } else {
+                Log.e(TAG, "Error while saving map");
+                displayToastMessage(R.string.save_map_error);
+            }*/
     }
 
     @Override
@@ -352,21 +357,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 mLogger.setLogFileName(logFileName);
             }
         }
-        if (requestCode == startActivityRequest.ADF_PERMISSION) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
-            if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
-                mMapSaved = true;
-                mSaveButton.setEnabled(!mMapSaved);
-                displayToastMessage(R.string.save_map_success);
-            } else {
-                Log.e(TAG, "Error while saving map");
-                displayToastMessage(R.string.save_map_error);
-            }
-        }
     }
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
+        //
+        if (mCreateNewMap) {
+            Intent intent = new Intent();
+            intent.setAction("android.intent.action.REQUEST_TANGO_PERMISSION");
+            intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, EXTRA_VALUE_ADF);
+            startActivityForResult(intent, startActivityRequest.ADF_PERMISSION);
+        }
         NodeConfiguration nodeConfiguration;
         try {
             nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());

@@ -43,8 +43,6 @@ class TangoRosNodeExecutor {
   int Execute(const char* master_uri, const char* host_ip, const char* node_name);
   // Stop the tango ros node and disconnect from the tango service.
   void Shutdown();
-  // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(std::string map_name);
 
  private:
   std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;

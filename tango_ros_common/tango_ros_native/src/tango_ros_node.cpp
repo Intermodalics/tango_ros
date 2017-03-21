@@ -340,6 +340,9 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
+
+  save_map_service_ = node_handle_.advertiseService<SaveMap::Request, SaveMap::Response>(
+      "/tango/save_map", boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
@@ -709,38 +712,6 @@ void TangoRosNode::StopPublishing() {
   }
 }
 
-bool TangoRosNode::SaveMap(std::string map_name) {
-  TangoErrorType result;
-  TangoUUID map_uuid;
-  result = TangoService_saveAreaDescription(&map_uuid);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving area description, error: " << result;
-    return false;
-  }
-  TangoAreaDescriptionMetadata metadata;
-  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
-    return false;
-  }
-  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
-    return false;
-  }
-  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
-      return false;
-    }
-  result = TangoAreaDescriptionMetadata_free(metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
-    return false;
-  }
-  return true;
-}
-
 void TangoRosNode::PublishDevicePose() {
   while(ros::ok()) {
     if (!run_threads_) {
@@ -890,5 +861,52 @@ void TangoRosNode::RunRosSpin() {
     ros::spinOnce();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+}
+
+bool TangoRosNode::SaveMap(SaveMap::Request &req,
+                           SaveMap::Response &res) {
+  TangoErrorType result;
+  TangoUUID map_uuid;
+  result = TangoService_saveAreaDescription(&map_uuid);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving area description, error: " << result;
+    res.message =  "Could not save the map. Did you turn on create_new_map? "
+        "Did you allow the app to use area learning?";
+    res.success = false;
+    return true;
+  }
+  TangoAreaDescriptionMetadata metadata;
+  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    res.message =  "Could not access map metadata";
+    res.success = false;
+    return true;
+  }
+  std::string map_name = req.map_name;
+  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
+    res.message =  "Could not set the name of the map";
+    res.success = false;
+    return true;
+  }
+  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
+    res.message =  "Could not save map metadata";
+    res.success = false;
+    return true;
+  }
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+    res.message =  "Could not free map metadata";
+    res.success = false;
+    return true;
+  }
+  res.message =  "Map successfully saved with the following name: " + map_name;
+  res.success = true;
+  return true;
 }
 } // namespace tango_ros_native

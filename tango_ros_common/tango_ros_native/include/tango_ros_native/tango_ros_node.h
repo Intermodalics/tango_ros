@@ -39,6 +39,7 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 
 #include "tango_ros_native/PublisherConfig.h"
+#include "tango_ros_native/SaveMap.h"
 
 namespace tango_ros_native {
 const std::string NODE_NAME = "tango";
@@ -117,8 +118,6 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(std::string map_name);
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -147,6 +146,9 @@ class TangoRosNode {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  // Function called when...
+  // Save the current map (ADF) to disc with the given name.
+  bool SaveMap(SaveMap::Request &req, SaveMap::Response &res);
 
 
   TangoConfig tango_config_;
@@ -212,6 +214,8 @@ class TangoRosNode {
   cv::Mat color_image_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
+
+  ros::ServiceServer save_map_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
