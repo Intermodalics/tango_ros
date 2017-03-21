@@ -432,7 +432,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   node_handle_.param(publisher_config_.create_new_map, create_new_map, false);
   const char* config_enable_learning_mode = "config_enable_learning_mode";
   result = TangoConfig_setBool(tango_config_, config_enable_learning_mode, create_new_map);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_learning_mode << " error: " << result;
     return result;
@@ -447,7 +447,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     }
     const char* config_enable_drift_correction = "config_enable_drift_correction";
     result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
-    if(result != TANGO_SUCCESS) {
+    if (result != TANGO_SUCCESS) {
       LOG(ERROR) << function_name << ", TangoConfig_setBool "
           << config_enable_drift_correction << " error: " << result;
       return result;
@@ -455,28 +455,28 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
   const char* config_enable_auto_recovery = "config_enable_auto_recovery";
   result = TangoConfig_setBool(tango_config_, config_enable_auto_recovery, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_auto_recovery << " error: " << result;
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
   result = TangoConfig_setBool(tango_config_, config_enable_depth, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_depth << " error: " << result;
     return result;
   }
   const char* config_depth_mode = "config_depth_mode";
   result = TangoConfig_setInt32(tango_config_, config_depth_mode, TANGO_POINTCLOUD_XYZC);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setInt "
         << config_depth_mode << " error: " << result;
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
   result = TangoConfig_setBool(tango_config_, config_enable_color_camera, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_color_camera << " error: " << result;
     return result;
@@ -713,29 +713,29 @@ bool TangoRosNode::SaveMap(std::string map_name) {
   TangoErrorType result;
   TangoUUID map_uuid;
   result = TangoService_saveAreaDescription(&map_uuid);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while saving area description, error: " << result;
     return false;
   }
   TangoAreaDescriptionMetadata metadata;
   result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
-  if(result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to access area description metada, error: " << result;
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
     return false;
   }
   result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
-  if(result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to change area description metada, error: " << result;
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
     return false;
   }
   result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
-  if(result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving new area description metada, error: " << result;
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
       return false;
     }
   result = TangoAreaDescriptionMetadata_free(metadata);
-  if(result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to free area description metada, error: " << result;
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
     return false;
   }
   return true;
