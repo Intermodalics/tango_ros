@@ -21,6 +21,8 @@
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
+    <string name="map_uuids">map_uuids</string>
+    <string name="map_names">map_names</string>
 
     <!-- Strings related to error messages -->
 
@@ -72,6 +74,7 @@
     <string name="pref_create_new_map_summary">Enable to create a new localization map. This map can be used for localization later.</string>
 
     <string name="pref_localization_mode_key">localization_mode</string>
+    <string name="pref_localization_map_id_key">localization_map_id</string>
 
     <string name="pref_category_general_title">General</string>
     <string name="pref_category_general_key">pref_category_general</string>

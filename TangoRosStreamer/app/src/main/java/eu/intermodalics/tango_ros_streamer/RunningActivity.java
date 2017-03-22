@@ -52,6 +52,11 @@ import org.ros.node.NodeMainExecutor;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
@@ -96,6 +101,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mCreateNewMap = false;
     private String mMapName = "";
     private boolean mMapSaved = false;
+    private Timer mTimer;
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -254,6 +260,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
         mMapName = mapName;
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+        mParameterNode.callSaveMapService(mMapName);
             /*if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
                 mMapSaved = true;
                 mSaveButton.setEnabled(!mMapSaved);
@@ -276,6 +283,35 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 getString(R.string.pref_log_file_default));
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
+
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                // This code will be executed after 3 seconds
+                String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
+                Log.w(TAG, "mapUUids: " + mapUuids);
+                StringTokenizer token = new StringTokenizer(mapUuids, ",");
+                Set<String> mapUuidsSet = new HashSet<String>();
+                while (token.hasMoreTokens()) {
+                    String uuid = token.nextToken();
+                    Log.w(TAG, uuid);
+                    mapUuidsSet.add(uuid);
+                }
+
+                Set<String> mapNamesSet = new HashSet<String>();
+                for (String uuid : mapUuidsSet) {
+                    String name = mTangoRosNode.getMapNameFromUuid(uuid);
+                    Log.w(TAG, name);
+                    mapNamesSet.add(name);
+                }
+
+                SharedPreferences.Editor editor = mSharedPref.edit();
+                editor.putStringSet(getString(R.string.map_uuids), mapUuidsSet);
+                editor.putStringSet(getString(R.string.map_names), mapNamesSet);
+                editor.commit();
+            }
+        }, 5000);
     }
 
     @Override
@@ -324,6 +360,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mTimer.cancel();
         if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             TangoInitializationHelper.unbindTangoService(this, mTangoServiceConnection);
@@ -362,12 +399,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
         //
-        if (mCreateNewMap) {
+        //if (mCreateNewMap || mSharedPref.getString(getString(R.string.pref_localization_mode_key), "1").equals("3")) {
             Intent intent = new Intent();
             intent.setAction("android.intent.action.REQUEST_TANGO_PERMISSION");
             intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, EXTRA_VALUE_ADF);
             startActivityForResult(intent, startActivityRequest.ADF_PERMISSION);
-        }
+        //}
         NodeConfiguration nodeConfiguration;
         try {
             nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());

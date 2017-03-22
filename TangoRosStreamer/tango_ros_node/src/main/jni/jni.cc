@@ -61,6 +61,25 @@ Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_shutdown(JNIEnv* /*env*/, jo
   return 0;     // No error codes are defined for Shutdown; 0 is for success.
 }
 
+JNIEXPORT jstring JNICALL
+Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_getAvailableMapUuidsList(JNIEnv* env, jobject /*obj*/) {
+  const char* map_uuids = tango_ros_node_executor.GetAvailableMapUuidsList();
+  jstring map_uuids_result = env->NewStringUTF(map_uuids);
+  return map_uuids_result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_getMapNameFromUuid(JNIEnv* env, jobject /*obj*/,
+  jstring map_uuid_value) {
+  const char* map_uuid = env->GetStringUTFChars(map_uuid_value, NULL);
+
+  const char* map_name = tango_ros_node_executor.GetMapNameFromUuid(map_uuid);
+  env->ReleaseStringUTFChars(map_uuid_value, map_uuid);
+
+  jstring map_name_result = env->NewStringUTF(map_name);
+  return map_name_result;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -410,7 +410,6 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   color_camera_info_manager_->setCameraName("color_1");
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
-
   return TANGO_SUCCESS;
 }
 
@@ -905,8 +904,45 @@ bool TangoRosNode::SaveMap(SaveMap::Request &req,
     res.success = false;
     return true;
   }
+
   res.message =  "Map successfully saved with the following name: " + map_name;
   res.success = true;
   return true;
+}
+
+char* TangoRosNode::GetAvailableMapUuidsList() {
+  char* uuid_list;
+  // uuid_list will contain a comma separated list of UUIDs.
+  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
+  if (result != TANGO_SUCCESS) {
+    LOG(INFO) << "Error while retrieving all available map UUIDs, error: " << result;
+  }
+  if (uuid_list != NULL && uuid_list[0] != '\0') {
+    LOG(INFO) << "UUID list: " << uuid_list;
+  } else {
+    LOG(ERROR) << "No area description file available.";
+  }
+  return uuid_list;
+}
+
+const char* TangoRosNode::GetMapNameFromUuid(const char* uuid) {
+  size_t size = 0;
+  char* value;
+  TangoAreaDescriptionMetadata metadata;
+  TangoErrorType result = TangoService_getAreaDescriptionMetadata(uuid, &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+  }
+  result = TangoAreaDescriptionMetadata_get(metadata, "name", &size, &value);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to get area description metadata, error: " << result;
+  }
+  std::string map_name(value);
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+  }
+  LOG(INFO) << "Successfully retrieved map name: " << map_name.c_str();
+  return map_name.c_str();
 }
 } // namespace tango_ros_native

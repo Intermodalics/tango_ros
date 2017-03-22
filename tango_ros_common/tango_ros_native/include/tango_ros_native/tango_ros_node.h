@@ -118,6 +118,11 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
+  //
+  char* GetAvailableMapUuidsList();
+  //
+  const char* GetMapNameFromUuid(const char* uuid);
+
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);

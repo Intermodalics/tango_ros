@@ -32,6 +32,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.HashSet;
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
@@ -108,7 +110,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         if (key == getString(R.string.pref_master_is_local_key) ||
                 key == getString(R.string.pref_master_uri_key) ||
                 key == getString(R.string.pref_create_new_map_key) ||
-                key == getString(R.string.pref_localization_mode_key)) {
+                key == getString(R.string.pref_localization_mode_key) ||
+                key == getString(R.string.pref_localization_map_id_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
                 Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
@@ -117,6 +120,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 snackbar.show();
             }
         }
+        updateMapChooserPreferenceStatus();
     }
 
     @Override
@@ -161,6 +165,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 return true;
             }
         });
+
+        updateMapChooserPreferenceStatus();
+        MapChooserPreference mapChooserPreference = (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key));
+        mapChooserPreference.setMapList(mSharedPref.getStringSet(getString(R.string.map_uuids), new HashSet<String>()),
+                mSharedPref.getStringSet(getString(R.string.map_names), new HashSet<String>()));
+    }
+
+    private void updateMapChooserPreferenceStatus() {
+        SwitchPreference createNewMapPref = (SwitchPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_create_new_map_key));
+        boolean createNewMap = createNewMapPref.isChecked();
+        ListPreference localizationModePref = (ListPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_mode_key));
+        String localizationMode = localizationModePref.getValue();
+        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key)).setEnabled(!createNewMap && localizationMode.equals("3"));
     }
 
     /**
@@ -190,6 +207,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_map_id_key)));
         }
     }
 
