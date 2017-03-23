@@ -471,6 +471,17 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
           << config_enable_drift_correction << " error: " << result;
       return result;
     }
+    if (localization_mode == LocalizationMode::LOCALIZATION) {
+      std::string map_uuid_to_load = "";
+      node_handle_.param<std::string>(publisher_config_.localization_map_uuid, map_uuid_to_load, "");
+      const char* config_load_area_description_UUID = "config_load_area_description_UUID";
+      result = TangoConfig_setString(tango_config_, config_load_area_description_UUID, map_uuid_to_load.c_str());
+      if (result != TANGO_SUCCESS) {
+        LOG(ERROR) << function_name << ", TangoConfig_setString "
+            << config_load_area_description_UUID << " error: " << result;
+        return result;
+      }
+    }
   }
   const char* config_enable_auto_recovery = "config_enable_auto_recovery";
   result = TangoConfig_setBool(tango_config_, config_enable_auto_recovery, true);

@@ -56,9 +56,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -293,28 +291,31 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             @Override
             public void run() {
                 // This code will be executed after 3 seconds
-                String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
-                StringTokenizer token = new StringTokenizer(mapUuids, ",");
-                Map<String, String> uuidNameMap = new HashMap<String, String>();
-                while (token.hasMoreTokens()) {
-                    String uuid = token.nextToken();
-                    String name = mTangoRosNode.getMapNameFromUuid(uuid);
-                    uuidNameMap.put(uuid, name);
-                }
-                // Save map from uuid to name to file.
-                File file = new File(getFilesDir(), "uuid_name_map");
-                try {
-                    ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
-                    outputStream.writeObject(uuidNameMap);
-                    outputStream.flush();
-                    outputStream.close();
-                } catch (FileNotFoundException e) {
-                    Log.e(TAG, e.getMessage());
-                } catch (IOException e) {
-                    Log.e(TAG, e.getMessage());
-                }
+                saveUuidsNamesMapToFile();
             }
         }, 5000);
+    }
+
+    private void saveUuidsNamesMapToFile() {
+        String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
+        StringTokenizer token = new StringTokenizer(mapUuids, ",");
+        Map<String, String> uuidNameMap = new HashMap<String, String>();
+        while (token.hasMoreTokens()) {
+            String uuid = token.nextToken();
+            String name = mTangoRosNode.getMapNameFromUuid(uuid);
+            uuidNameMap.put(uuid, name);
+        }
+        File file = new File(getFilesDir(), getString(R.string.uuids_names_map_file));
+        try {
+            ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
+            outputStream.writeObject(uuidNameMap);
+            outputStream.flush();
+            outputStream.close();
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 
     @Override
@@ -428,7 +429,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         // The reason is that changing a Tango configuration parameter requires to disconnect and
         // reconnect to the Tango service at runtime.
         String[] tangoConfigurationParameters = {getString(R.string.pref_create_new_map_key),
-                getString(R.string.pref_localization_mode_key)};
+                getString(R.string.pref_localization_mode_key),
+                getString(R.string.pref_localization_map_uuid_key)};
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);

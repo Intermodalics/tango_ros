@@ -36,12 +36,9 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -121,7 +118,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 key == getString(R.string.pref_master_uri_key) ||
                 key == getString(R.string.pref_create_new_map_key) ||
                 key == getString(R.string.pref_localization_mode_key) ||
-                key == getString(R.string.pref_localization_map_id_key)) {
+                key == getString(R.string.pref_localization_map_uuid_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
                 Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
@@ -175,11 +172,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 return true;
             }
         });
-
+        initMapChooserPreference();
         updateMapChooserPreferenceStatus();
-        final MapChooserPreference mapChooserPreference = (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key));
-        // Save map from uuid to name to file.
-        File file = new File(getFilesDir(), "uuid_name_map");
+    }
+
+    private void initMapChooserPreference() {
+        File file = new File(getFilesDir(), getString(R.string.uuids_names_map_file));
         Map<String, String> uuidNameMap = new HashMap<String, String>();
         try {
             ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file));
@@ -192,18 +190,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         } catch (ClassNotFoundException e) {
             Log.e(TAG, e.getMessage());
         }
-
-
+        final MapChooserPreference mapChooserPreference =
+                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
         mapChooserPreference.setMapList(uuidNameMap);
-        mapChooserPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                MapChooserPreference mapChooserPreference2 = (MapChooserPreference) preference;
-                Log.w(TAG, "value: "  + mapChooserPreference2.getValue());
-                Log.w(TAG, "entry: "  + mapChooserPreference2.getEntry());
-                return false;
-            }
-        });
     }
 
     private void updateMapChooserPreferenceStatus() {
@@ -211,7 +200,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         boolean createNewMap = createNewMapPref.isChecked();
         ListPreference localizationModePref = (ListPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_mode_key));
         String localizationMode = localizationModePref.getValue();
-        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key)).setEnabled(!createNewMap && localizationMode.equals("3"));
+        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key)).setEnabled(!createNewMap && localizationMode.equals("3"));
     }
 
     /**
@@ -241,7 +230,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
-            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_map_id_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_map_uuid_key)));
         }
     }
 

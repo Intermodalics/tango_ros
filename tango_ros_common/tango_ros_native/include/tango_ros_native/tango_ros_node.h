@@ -99,6 +99,8 @@ struct PublisherConfiguration {
   std::string create_new_map = "tango/create_new_map";
   // Param name for the drift correction parameter.
   std::string localization_mode_param = "tango/localization_mode";
+  // Param name for the drift correction parameter.
+  std::string localization_map_uuid = "/tango/localization_map_uuid";
 };
 
 // Node collecting tango data and publishing it on ros topics.

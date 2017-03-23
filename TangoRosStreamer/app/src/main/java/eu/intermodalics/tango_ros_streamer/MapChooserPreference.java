@@ -42,9 +42,7 @@ public class MapChooserPreference extends ListPreference {
         ArrayList<String> uuids = new ArrayList<String>();
         ArrayList<String> names = new ArrayList<String>();
         for (String uuid : uuidNameMap.keySet()) {
-            Log.i(TAG, uuid);
             uuids.add(uuid);
-            Log.i(TAG, uuidNameMap.get(uuid));
             names.add(uuidNameMap.get(uuid));
         }
         setEntries(names.toArray(new CharSequence[names.size()]));
