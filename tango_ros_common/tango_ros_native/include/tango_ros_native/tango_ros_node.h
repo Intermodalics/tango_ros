@@ -96,6 +96,10 @@ struct PublisherConfiguration {
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
   // Param name for the drift correction parameter.
   std::string localization_mode_param = "tango/localization_mode";
+  // Param name for the dataset base folder.
+  std::string datasets_path = "tango/dataset_datasets_path";
+  // Param name for the dataset UUID.
+  std::string dataset_uuid = "tango/dataset_uuid";
 };
 
 // Node collecting tango data and publishing it on ros topics.

@@ -57,6 +57,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
+    private static final String EXTRA_VALUE_DATASET = "DATASET_PERMISSION";
+    private static final String REQUEST_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
+    private static final int REQUEST_CODE_TANGO_PERMISSION = 111;
 
     public static class startSettingsActivityRequest {
         public static final int FIRST_RUN = 1;
@@ -225,6 +229,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 getString(R.string.pref_log_file_default));
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
+
+        getPermission(EXTRA_VALUE_DATASET);
+    }
+
+    private void getPermission(String permissionType) {
+        Intent intent = new Intent();
+        intent.setAction(REQUEST_PERMISSION_ACTION);
+        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, permissionType);
+        startActivityForResult(intent, REQUEST_CODE_TANGO_PERMISSION);
     }
 
     @Override
@@ -300,6 +313,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
+            }
+        }
+
+        if (requestCode == REQUEST_CODE_TANGO_PERMISSION) {
+            if (resultCode == RESULT_CANCELED) {
+                // No Tango permissions granted by the user.
+                finish();
             }
         }
     }
