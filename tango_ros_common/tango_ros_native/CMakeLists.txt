@@ -7,11 +7,10 @@ find_package(catkin REQUIRED COMPONENTS
    dynamic_reconfigure
    glog_catkin
    image_geometry
-   message_generation
    roscpp
    sensor_msgs
-   std_msgs
    tango_client_api
+   tango_ros_messages
    tf
    tf2_ros
    )
@@ -27,20 +26,9 @@ generate_dynamic_reconfigure_options(
   cfg/Publisher.cfg
 )
 
-add_service_files(
-  DIRECTORY srv
-  FILES
-  SaveMap.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
-
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry message_runtime roscpp sensor_msgs std_msgs tango_client_api tf tf2_ros
+  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_client_api tango_ros_messages tf tf2_ros
   LIBRARIES tango_ros_native
   DEPENDS OpenCV
   )
@@ -62,7 +50,7 @@ target_link_libraries(tango_ros_native
   ${OpenCV_LIBRARIES}
   )
 
-add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg  ${catkin_EXPORTED_TARGETS})
 
 install(TARGETS tango_ros_native
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -74,9 +62,6 @@ install(TARGETS tango_ros_native
 # Otherwise these header files can not be found when building for Android.
 set(file_names_to_copy
   PublisherConfig
-  SaveMap
-  SaveMapRequest
-  SaveMapResponse
 )
 set(generated_header_LOCATION  ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/)
 set(generated_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/)

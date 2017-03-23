@@ -51,7 +51,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private static final String NODE_NAME = "parameter_node";
     private static final String RECONFIGURE_TOPIC_NAME = "parameter_updates";
     private static final String RECONFIGURE_SRV_NAME = "set_parameters";
-    private static final String SAVEMAP_SRV_NAME = "save_map";
 
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
@@ -202,36 +201,5 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
 
     private String BuildTangoRosNodeNamespaceName(String paramName) {
         return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
-    }
-
-    /**
-     * Calls ROS Dynamic Reconfigure service to set a given boolean parameter.
-     * This service request triggers bound callbacks for Dynamic Reconfigure on its response, if any.
-     * @param mapName Name of the parameter to set.
-     */
-    public void callSaveMapService(String mapName) {
-        SaveMapRequest srv_req = mConnectedNode.getServiceRequestMessageFactory().newFromType(SaveMap._TYPE);
-        srv_req.setMapName(mapName);
-        try {
-            ServiceClient<SaveMapRequest, SaveMapResponse> serviceClient =
-                    mConnectedNode.newServiceClient(BuildTangoRosNodeNamespaceName(SAVEMAP_SRV_NAME),
-                            SaveMap._TYPE);
-
-            serviceClient.call(srv_req, new ServiceResponseListener<SaveMapResponse>() {
-                @Override
-                public void onSuccess(SaveMapResponse reconfigureResponse) {
-                    mLog.info("Save map service call success");
-                }
-
-                @Override
-                public void onFailure(RemoteException e) {
-                    mLog.error("Save map service failure: " + e.getMessage());
-                }
-            });
-        } catch (ServiceNotFoundException e) {
-            mLog.error("Service not found: " + e.getMessage());
-        } catch (Exception e) {
-            mLog.error("Error while calling Save map service: " + e.getMessage());
-        }
     }
 }

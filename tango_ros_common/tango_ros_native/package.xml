@@ -13,12 +13,11 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>glog_catkin</build_depend>
   <build_depend>image_geometry</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>opencv2</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
   <build_depend>tango_client_api</build_depend>
+  <build_depend>tango_ros_messages</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>tf2_ros</build_depend>
 
@@ -26,12 +25,11 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>glog_catkin</run_depend>
   <run_depend>image_geometry</run_depend>
-  <run_depend>message_runtime</run_depend>
   <run_depend>opencv2</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
   <run_depend>tango_client_api</run_depend>
+  <run_depend>tango_ros_messages</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>tf2_ros</run_depend>
 

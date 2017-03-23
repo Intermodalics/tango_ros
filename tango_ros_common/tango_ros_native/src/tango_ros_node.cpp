@@ -358,8 +358,9 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
 
-  save_map_service_ = node_handle_.advertiseService<SaveMap::Request, SaveMap::Response>(
-      "/tango/save_map", boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
+  save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
+      tango_ros_messages::SaveMap::Response>("/tango/save_map",
+                                             boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
@@ -890,8 +891,8 @@ void TangoRosNode::RunRosSpin() {
   }
 }
 
-bool TangoRosNode::SaveMap(SaveMap::Request &req,
-                           SaveMap::Response &res) {
+bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
+                           tango_ros_messages::SaveMap::Response &res) {
   TangoErrorType result;
   TangoUUID map_uuid;
   result = TangoService_saveAreaDescription(&map_uuid);

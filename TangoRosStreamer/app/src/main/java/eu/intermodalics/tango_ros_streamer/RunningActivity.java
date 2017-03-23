@@ -97,12 +97,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
+    private SaveMapServiceClientNode mSaveMapServiceClientNode;
     private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
     private Logger mLogger;
     private boolean mCreateNewMap = false;
-    private String mMapName = "";
     private boolean mMapSaved = false;
     private Timer mTimer;
 
@@ -261,16 +261,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.map_name_error);
             return;
         }
-        mMapName = mapName;
-        mParameterNode.callSaveMapService(mMapName);
-        /*if (mTangoRosNode.saveMap(mMapName)) {
+        mSaveMapServiceClientNode.callService(mapName);
+        if (mSaveMapServiceClientNode.getSuccess()) {
           mMapSaved = true;
           mSaveButton.setEnabled(!mMapSaved);
           displayToastMessage(R.string.save_map_success);
         } else {
-          Log.e(TAG, "Error while saving map");
+          Log.e(TAG, "Error while saving map " + mSaveMapServiceClientNode.getMessage());
           displayToastMessage(R.string.save_map_error);
-        }*/
+        }
     }
 
     @Override
@@ -434,6 +433,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+        //
+        mSaveMapServiceClientNode = new SaveMapServiceClientNode();
+        nodeConfiguration.setNodeName(mSaveMapServiceClientNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mSaveMapServiceClientNode, nodeConfiguration);
         // Create node publishing IMU data.
         mImuNode = new ImuNode(this);
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());

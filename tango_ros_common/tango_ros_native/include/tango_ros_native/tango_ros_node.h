@@ -35,11 +35,11 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tango_ros_messages/SaveMap.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
 #include "tango_ros_native/PublisherConfig.h"
-#include "tango_ros_native/SaveMap.h"
 
 namespace tango_ros_native {
 const std::string NODE_NAME = "tango";
@@ -155,7 +155,7 @@ class TangoRosNode {
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   // Function called when...
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(SaveMap::Request &req, SaveMap::Response &res);
+  bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
 
 
   TangoConfig tango_config_;

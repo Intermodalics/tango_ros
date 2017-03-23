@@ -9,7 +9,8 @@
   <license>Apache</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>tango_ros_native</build_depend>
   <build_depend>rosjava_build_tools</build_depend>
+  <build_depend>tango_ros_messages</build_depend>
+  <build_depend>tango_ros_native</build_depend>
 
 </package>
