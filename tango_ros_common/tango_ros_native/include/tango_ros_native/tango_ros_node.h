@@ -119,9 +119,9 @@ class TangoRosNode {
   // Will not return until all the internal threads have exited.
   void StopPublishing();
   //
-  char* GetAvailableMapUuidsList();
+  std::string GetAvailableMapUuidsList();
   //
-  const char* GetMapNameFromUuid(const char* uuid);
+  std::string GetMapNameFromUuid(const std::string& map_uuid);
 
 
   // Function called when a new device pose is available.

@@ -290,19 +290,19 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             public void run() {
                 // This code will be executed after 3 seconds
                 String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
-                Log.w(TAG, "mapUUids: " + mapUuids);
+                Log.i(TAG, "mapUUids: " + mapUuids);
                 StringTokenizer token = new StringTokenizer(mapUuids, ",");
                 Set<String> mapUuidsSet = new HashSet<String>();
                 while (token.hasMoreTokens()) {
                     String uuid = token.nextToken();
-                    Log.w(TAG, uuid);
+                    Log.i(TAG, uuid);
                     mapUuidsSet.add(uuid);
                 }
 
                 Set<String> mapNamesSet = new HashSet<String>();
                 for (String uuid : mapUuidsSet) {
                     String name = mTangoRosNode.getMapNameFromUuid(uuid);
-                    Log.w(TAG, name);
+                    Log.i(TAG, name);
                     mapNamesSet.add(name);
                 }
 

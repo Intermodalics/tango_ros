@@ -63,8 +63,8 @@ Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_shutdown(JNIEnv* /*env*/, jo
 
 JNIEXPORT jstring JNICALL
 Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_getAvailableMapUuidsList(JNIEnv* env, jobject /*obj*/) {
-  const char* map_uuids = tango_ros_node_executor.GetAvailableMapUuidsList();
-  jstring map_uuids_result = env->NewStringUTF(map_uuids);
+  std::string map_uuids = tango_ros_node_executor.GetAvailableMapUuidsList();
+  jstring map_uuids_result = env->NewStringUTF(map_uuids.c_str());
   return map_uuids_result;
 }
 
@@ -72,11 +72,11 @@ JNIEXPORT jstring JNICALL
 Java_eu_intermodalics_tango_1ros_1node_TangoRosNode_getMapNameFromUuid(JNIEnv* env, jobject /*obj*/,
   jstring map_uuid_value) {
   const char* map_uuid = env->GetStringUTFChars(map_uuid_value, NULL);
-
-  const char* map_name = tango_ros_node_executor.GetMapNameFromUuid(map_uuid);
+  std::string map_uuid_str = std::string(map_uuid);
   env->ReleaseStringUTFChars(map_uuid_value, map_uuid);
 
-  jstring map_name_result = env->NewStringUTF(map_name);
+  std::string map_name = tango_ros_node_executor.GetMapNameFromUuid(map_uuid_str);
+  jstring map_name_result = env->NewStringUTF(map_name.c_str());
   return map_name_result;
 }
 
