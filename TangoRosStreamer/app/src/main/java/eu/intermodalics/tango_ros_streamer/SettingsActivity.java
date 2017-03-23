@@ -29,10 +29,20 @@ import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -167,9 +177,33 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         });
 
         updateMapChooserPreferenceStatus();
-        MapChooserPreference mapChooserPreference = (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key));
-        mapChooserPreference.setMapList(mSharedPref.getStringSet(getString(R.string.map_uuids), new HashSet<String>()),
-                mSharedPref.getStringSet(getString(R.string.map_names), new HashSet<String>()));
+        final MapChooserPreference mapChooserPreference = (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_id_key));
+        // Save map from uuid to name to file.
+        File file = new File(getFilesDir(), "uuid_name_map");
+        Map<String, String> uuidNameMap = new HashMap<String, String>();
+        try {
+            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file));
+            uuidNameMap = (Map<String, String>) inputStream.readObject();
+            inputStream.close();
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+
+        mapChooserPreference.setMapList(uuidNameMap);
+        mapChooserPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                MapChooserPreference mapChooserPreference2 = (MapChooserPreference) preference;
+                Log.w(TAG, "value: "  + mapChooserPreference2.getValue());
+                Log.w(TAG, "entry: "  + mapChooserPreference2.getEntry());
+                return false;
+            }
+        });
     }
 
     private void updateMapChooserPreferenceStatus() {

@@ -49,10 +49,15 @@ import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Timer;
@@ -259,16 +264,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             return;
         }
         mMapName = mapName;
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
         mParameterNode.callSaveMapService(mMapName);
-            /*if (mTangoRosNode.saveMap(dateFormat.format(new Date()) + " " + mMapName)) {
-                mMapSaved = true;
-                mSaveButton.setEnabled(!mMapSaved);
-                displayToastMessage(R.string.save_map_success);
-            } else {
-                Log.e(TAG, "Error while saving map");
-                displayToastMessage(R.string.save_map_error);
-            }*/
+        /*if (mTangoRosNode.saveMap(mMapName)) {
+          mMapSaved = true;
+          mSaveButton.setEnabled(!mMapSaved);
+          displayToastMessage(R.string.save_map_success);
+        } else {
+          Log.e(TAG, "Error while saving map");
+          displayToastMessage(R.string.save_map_error);
+        }*/
     }
 
     @Override
@@ -290,26 +294,25 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             public void run() {
                 // This code will be executed after 3 seconds
                 String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
-                Log.i(TAG, "mapUUids: " + mapUuids);
                 StringTokenizer token = new StringTokenizer(mapUuids, ",");
-                Set<String> mapUuidsSet = new HashSet<String>();
+                Map<String, String> uuidNameMap = new HashMap<String, String>();
                 while (token.hasMoreTokens()) {
                     String uuid = token.nextToken();
-                    Log.i(TAG, uuid);
-                    mapUuidsSet.add(uuid);
-                }
-
-                Set<String> mapNamesSet = new HashSet<String>();
-                for (String uuid : mapUuidsSet) {
                     String name = mTangoRosNode.getMapNameFromUuid(uuid);
-                    Log.i(TAG, name);
-                    mapNamesSet.add(name);
+                    uuidNameMap.put(uuid, name);
                 }
-
-                SharedPreferences.Editor editor = mSharedPref.edit();
-                editor.putStringSet(getString(R.string.map_uuids), mapUuidsSet);
-                editor.putStringSet(getString(R.string.map_names), mapNamesSet);
-                editor.commit();
+                // Save map from uuid to name to file.
+                File file = new File(getFilesDir(), "uuid_name_map");
+                try {
+                    ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
+                    outputStream.writeObject(uuidNameMap);
+                    outputStream.flush();
+                    outputStream.close();
+                } catch (FileNotFoundException e) {
+                    Log.e(TAG, e.getMessage());
+                } catch (IOException e) {
+                    Log.e(TAG, e.getMessage());
+                }
             }
         }, 5000);
     }

@@ -19,7 +19,10 @@ package eu.intermodalics.tango_ros_streamer;
 import android.content.Context;
 import android.preference.ListPreference;
 import android.util.AttributeSet;
+import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -35,8 +38,16 @@ public class MapChooserPreference extends ListPreference {
         this(context, null);
     }
 
-    public void setMapList(Set<String> mapUuidsSet, Set<String> mapNamesSet) {
-        setEntryValues(mapUuidsSet.toArray(new CharSequence[mapUuidsSet.size()]));
-        setEntries(mapNamesSet.toArray(new CharSequence[mapNamesSet.size()]));
+    public void setMapList(Map<String, String> uuidNameMap) {
+        ArrayList<String> uuids = new ArrayList<String>();
+        ArrayList<String> names = new ArrayList<String>();
+        for (String uuid : uuidNameMap.keySet()) {
+            Log.i(TAG, uuid);
+            uuids.add(uuid);
+            Log.i(TAG, uuidNameMap.get(uuid));
+            names.add(uuidNameMap.get(uuid));
+        }
+        setEntries(names.toArray(new CharSequence[names.size()]));
+        setEntryValues(uuids.toArray(new CharSequence[uuids.size()]));
     }
 }

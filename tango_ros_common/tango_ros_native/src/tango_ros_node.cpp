@@ -13,7 +13,9 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_node.h"
 
+#include <iostream>
 #include <cmath>
+#include <ctime>
 
 #include <glog/logging.h>
 
@@ -309,6 +311,21 @@ void ComputeWarpMapsToRectifyFisheyeImage(
       cv_warp_map_y->at<float>(iu, ju) = id;
     }
   }
+}
+std::string getCurrentDateAndTime() {
+  std::time_t currentTime;
+  struct tm* currentDateTime;
+  std::time(&currentTime);
+  currentDateTime = std::localtime(&currentTime);
+  int day = currentDateTime->tm_mday;
+  int month = currentDateTime->tm_mon + 1;
+  int year = currentDateTime->tm_year + 1900;
+  int hour = currentDateTime->tm_hour;
+  int min = currentDateTime->tm_min;
+  int sec = currentDateTime->tm_sec;
+  std::ostringstream oss;
+  oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
+  return oss.str();
 }
 }  // namespace
 
@@ -882,7 +899,8 @@ bool TangoRosNode::SaveMap(SaveMap::Request &req,
     res.success = false;
     return true;
   }
-  std::string map_name = req.map_name;
+  // Prepend name with date and time.
+  std::string map_name = getCurrentDateAndTime() + " " + req.map_name;
   result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
@@ -942,7 +960,7 @@ std::string TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid) {
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
   }
-  LOG(INFO) << "Successfully retrieved map name: " << map_name;
+  LOG(INFO) << "Successfully retrieved map name: " << map_name << " from uuid " << map_uuid;
   return map_name;
 }
 } // namespace tango_ros_native
