@@ -472,7 +472,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
 
   std::string datasets_path;
-  node_handle_.param(publisher_config_.datasets_path, datasets_path, std::string("/sdcard/tango_ros_streamer/datasets/"));
+  node_handle_.param(publisher_config_.datasets_path, datasets_path, DATASETS_PATH);
   const char* config_datasets_path = "config_datasets_path";
   result = TangoConfig_setString(tango_config_, config_datasets_path, datasets_path.c_str());
   if (result != TANGO_SUCCESS) {

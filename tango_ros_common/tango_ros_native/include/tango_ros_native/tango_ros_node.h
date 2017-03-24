@@ -53,6 +53,7 @@ const float LASER_SCAN_SCAN_TIME= 0.3333;
 const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
+const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Camera bitfield values.
 const uint32_t CAMERA_NONE = 0;
