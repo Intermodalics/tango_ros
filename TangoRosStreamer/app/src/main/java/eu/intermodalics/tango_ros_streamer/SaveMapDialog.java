@@ -19,6 +19,7 @@ package eu.intermodalics.tango_ros_streamer;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,7 +51,8 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
         View dialogView = inflator.inflate(R.layout.dialog_save_map, null);
         getDialog().setTitle("Enter the name of the map");
         mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
-        dialogView.findViewById(R.id.Ok).setOnClickListener(this);
+        dialogView.findViewById(R.id.save_map_ok).setOnClickListener(this);
+        dialogView.findViewById(R.id.save_map_cancel).setOnClickListener(this);
         setCancelable(false);
         return dialogView;
     }
@@ -58,9 +60,14 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.Ok:
+            case R.id.save_map_ok:
+                Log.w(TAG, "OK");
                 mCallbackListener.onMapNameOk(
                         mNameEditText.getText().toString());
+                dismiss();
+                break;
+            case R.id.save_map_cancel:
+                Log.w(TAG, "CANCEL");
                 dismiss();
                 break;
         }
