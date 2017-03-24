@@ -173,6 +173,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
         mapChooserPreference.setMapList(uuidsNamesMap);
         updateMapChooserPreferenceStatus();
+
+        mSettingsPreferenceFragment.setPreferencesSummury();
     }
 
     private void updateMapChooserPreferenceStatus() {
@@ -202,11 +204,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_settings);
             setHasOptionsMenu(true);
+        }
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
+        // Bind the summaries of EditText/List/Dialog/Ringtone preferences
+        // to their values. When their values change, their summaries are
+        // updated to reflect the new value, per the Android Design
+        // guidelines.
+        public void setPreferencesSummury() {
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
