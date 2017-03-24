@@ -33,13 +33,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -172,27 +166,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 return true;
             }
         });
-        initMapChooserPreference();
-        updateMapChooserPreferenceStatus();
-    }
 
-    private void initMapChooserPreference() {
-        File file = new File(getFilesDir(), getString(R.string.uuids_names_map_file));
-        Map<String, String> uuidNameMap = new HashMap<String, String>();
-        try {
-            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file));
-            uuidNameMap = (Map<String, String>) inputStream.readObject();
-            inputStream.close();
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, e.getMessage());
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-        } catch (ClassNotFoundException e) {
-            Log.e(TAG, e.getMessage());
-        }
-        final MapChooserPreference mapChooserPreference =
+        Intent intent = getIntent();
+        HashMap<String, String> uuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
+        MapChooserPreference mapChooserPreference =
                 (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
-        mapChooserPreference.setMapList(uuidNameMap);
+        mapChooserPreference.setMapList(uuidsNamesMap);
+        updateMapChooserPreferenceStatus();
     }
 
     private void updateMapChooserPreferenceStatus() {

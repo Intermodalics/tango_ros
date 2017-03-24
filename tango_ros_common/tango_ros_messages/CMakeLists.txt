@@ -27,14 +27,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-#add_dependencies(tango_ros_messages ${${PROJECT_NAME}_EXPORTED_TARGETS})
-
-#install(TARGETS tango_ros_messages
-#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
-
 # Copy generated header files by dynamic reconfigure, srv,... into local include folder.
 # Otherwise these header files can not be found when building for Android.
 set(file_names_to_copy

@@ -21,7 +21,7 @@
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
-    <string name="uuids_names_map_file">uuids_names_map</string>
+    <string name="uuids_names_map">uuids_names_map</string>
 
     <!-- Strings related to error messages -->
 

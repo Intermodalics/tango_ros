@@ -49,17 +49,9 @@ import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
@@ -71,8 +63,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final String REQUEST_TANGO_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
     public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
     public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
+    private static final int REQUEST_CODE_TANGO_PERMISSION = 111;
 
     public static class startActivityRequest {
         public static final int SETTINGS_ACTIVITY_FIRST_RUN = 1;
@@ -104,7 +98,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Logger mLogger;
     private boolean mCreateNewMap = false;
     private boolean mMapSaved = false;
-    private Timer mTimer;
+    private HashMap<String, String> mUuidsNamesHashMap;
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -272,6 +266,24 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
+    private void saveUuidsNamestoHashMap() {
+        String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
+        StringTokenizer token = new StringTokenizer(mapUuids, ",");
+        mUuidsNamesHashMap = new HashMap<String, String>();
+        while (token.hasMoreTokens()) {
+            String uuid = token.nextToken();
+            String name = mTangoRosNode.getMapNameFromUuid(uuid);
+            mUuidsNamesHashMap.put(uuid, name);
+        }
+    }
+
+    private void getPermission(String permissionType) {
+        Intent intent = new Intent();
+        intent.setAction(REQUEST_TANGO_PERMISSION_ACTION);
+        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, permissionType);
+        startActivityForResult(intent, REQUEST_CODE_TANGO_PERMISSION);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -285,36 +297,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
 
-        mTimer = new Timer();
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                // This code will be executed after 3 seconds
-                saveUuidsNamesMapToFile();
-            }
-        }, 5000);
-    }
-
-    private void saveUuidsNamesMapToFile() {
-        String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
-        StringTokenizer token = new StringTokenizer(mapUuids, ",");
-        Map<String, String> uuidNameMap = new HashMap<String, String>();
-        while (token.hasMoreTokens()) {
-            String uuid = token.nextToken();
-            String name = mTangoRosNode.getMapNameFromUuid(uuid);
-            uuidNameMap.put(uuid, name);
-        }
-        File file = new File(getFilesDir(), getString(R.string.uuids_names_map_file));
-        try {
-            ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
-            outputStream.writeObject(uuidNameMap);
-            outputStream.flush();
-            outputStream.close();
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, e.getMessage());
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-        }
+        getPermission(EXTRA_VALUE_ADF);
     }
 
     @Override
@@ -338,7 +321,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
+                if (mUuidsNamesHashMap == null) {
+                    saveUuidsNamestoHashMap();
+                }
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
+                settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
                 startActivityForResult(settingsActivityIntent, startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN);
                 return true;
             case R.id.drawer:
@@ -363,7 +350,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mTimer.cancel();
         if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             TangoInitializationHelper.unbindTangoService(this, mTangoServiceConnection);
@@ -397,17 +383,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 mLogger.setLogFileName(logFileName);
             }
         }
+
+        if (requestCode == REQUEST_CODE_TANGO_PERMISSION) {
+            if (resultCode == RESULT_CANCELED) {
+                // No Tango permissions granted by the user.
+                finish();
+            }
+        }
     }
 
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
-        //
-        //if (mCreateNewMap || mSharedPref.getString(getString(R.string.pref_localization_mode_key), "1").equals("3")) {
-            Intent intent = new Intent();
-            intent.setAction("android.intent.action.REQUEST_TANGO_PERMISSION");
-            intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, EXTRA_VALUE_ADF);
-            startActivityForResult(intent, startActivityRequest.ADF_PERMISSION);
-        //}
         NodeConfiguration nodeConfiguration;
         try {
             nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
