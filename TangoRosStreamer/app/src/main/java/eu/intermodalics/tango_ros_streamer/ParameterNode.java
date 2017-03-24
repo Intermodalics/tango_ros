@@ -33,6 +33,7 @@ import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import dynamic_reconfigure.BoolParameter;
@@ -57,7 +58,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
     private ConnectedNode mConnectedNode;
     private Log mLog;
     private final String[] mDynamicParamNames;
-    private final String[] mParamNames;
+    private final HashMap<String, String> mParamNames;
     private boolean mParameterNodeCalledDynamicReconfigure = false;
 
     /**
@@ -66,7 +67,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
      * @param dynamicParamNames Names of the dynamic reconfigure parameters (without namespace).
      * @param paramNames Names of the (non-dynamic) ROS parameters (without namespace).
      */
-    public ParameterNode(Activity activity, String[] dynamicParamNames, String[] paramNames) {
+    public ParameterNode(Activity activity, String[] dynamicParamNames, HashMap<String, String> paramNames) {
         mCreatorActivity = activity;
         mDynamicParamNames = dynamicParamNames;
         mParamNames = paramNames;
@@ -105,16 +106,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         });
 
         // Set ROS params according to preferences.
-        for (String paramName : mParamNames) {
-            if (paramName.equals(mCreatorActivity.getString(R.string.pref_create_new_map_key))) {
+        for (String paramName : mParamNames.keySet()) {
+            if (mParamNames.get(paramName) == "boolean") {
                 Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
                 connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
-            if (paramName.equals(mCreatorActivity.getString(R.string.pref_localization_mode_key))) {
-                String stringValue = mSharedPreferences.getString(paramName, "1");
+            if (mParamNames.get(paramName) == "int_as_string") {
+                String stringValue = mSharedPreferences.getString(paramName, "");
                 connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
-            if (paramName.equals(mCreatorActivity.getString(R.string.pref_localization_map_uuid_key))) {
+            if (mParamNames.get(paramName) == "string") {
                 String stringValue = mSharedPreferences.getString(paramName, "");
                 connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), stringValue);
             }

@@ -412,9 +412,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         // Tango configuration parameters are non-runtime settings for now.
         // The reason is that changing a Tango configuration parameter requires to disconnect and
         // reconnect to the Tango service at runtime.
-        String[] tangoConfigurationParameters = {getString(R.string.pref_create_new_map_key),
-                getString(R.string.pref_localization_mode_key),
-                getString(R.string.pref_localization_map_uuid_key)};
+        HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
+        tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
+        tangoConfigurationParameters.put(getString(R.string.pref_localization_mode_key), "int_as_string");
+        tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
