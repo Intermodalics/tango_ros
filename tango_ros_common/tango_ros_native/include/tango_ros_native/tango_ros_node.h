@@ -95,11 +95,11 @@ struct PublisherConfiguration {
   std::string color_image_topic = "tango/camera/color_1/image_raw";
   // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
-  // Param name for the create new map parameter.
+  // Param name for boolean which indicates if we are creating a new map.
   std::string create_new_map = "tango/create_new_map";
-  // Param name for the drift correction parameter.
+  // Param name for the localization mode.
   std::string localization_mode_param = "tango/localization_mode";
-  // Param name for the drift correction parameter.
+  // Param name for localization map uuid.
   std::string localization_map_uuid = "/tango/localization_map_uuid";
 };
 
@@ -120,9 +120,11 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  //
+  // Gets the full list of map Uuids (Universally Unique IDentifier)
+  // available on the device.
+  // @return a list as a string: uuids are comma-separated.
   std::string GetAvailableMapUuidsList();
-  //
+  // Gets the map name corresponding to a given map uuid.
   std::string GetMapNameFromUuid(const std::string& map_uuid);
 
 
@@ -153,7 +155,7 @@ class TangoRosNode {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
-  // Function called when...
+  // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
 

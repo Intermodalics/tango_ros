@@ -512,6 +512,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
         << config_enable_color_camera << " error: " << result;
     return result;
   }
+
   return TANGO_SUCCESS;
 }
 
@@ -942,7 +943,6 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
 
 std::string TangoRosNode::GetAvailableMapUuidsList() {
   char* uuid_list;
-  // uuid_list will contain a comma separated list of UUIDs.
   TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
   if (result != TANGO_SUCCESS) {
     LOG(INFO) << "Error while retrieving all available map UUIDs, error: " << result;

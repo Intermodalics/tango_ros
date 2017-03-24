@@ -18,7 +18,7 @@ android {
 repositories {
   mavenLocal()
   maven {
-      url uri('/home/intermodalics/tango_ros_ws/devel/share/maven')
+      url uri(projectDir.toString() + '/../../../../devel/share/maven')
   }
 }
 

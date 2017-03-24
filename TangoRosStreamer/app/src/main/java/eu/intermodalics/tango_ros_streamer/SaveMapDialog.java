@@ -26,7 +26,7 @@ import android.widget.EditText;
 
 
 /**
- * Displays custom view with progress bar and text information while saving an adf.
+ * Displays dialog requesting name of the map before saving.
  */
 public class SaveMapDialog extends DialogFragment implements View.OnClickListener {
     private static final String TAG = SaveMapDialog.class.getSimpleName();

@@ -68,10 +68,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
     private static final int REQUEST_CODE_TANGO_PERMISSION = 111;
 
-    public static class startActivityRequest {
-        public static final int SETTINGS_ACTIVITY_FIRST_RUN = 1;
-        public static final int SETTINGS_ACTIVITY_STANDARD_RUN = 2;
-        public static final int ADF_PERMISSION = 3;
+    public static class startSettingsActivityRequest {
+        public static final int FIRST_RUN = 1;
+        public static final int STANDARD_RUN = 2;
     }
 
     enum RosStatus {
@@ -326,7 +325,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 }
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
-                startActivityForResult(settingsActivityIntent, startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN);
+                startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
                 return true;
             case R.id.drawer:
                 if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -362,7 +361,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
-            if (requestCode == startActivityRequest.SETTINGS_ACTIVITY_FIRST_RUN) {
+            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
                 mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
@@ -376,7 +375,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                     mSaveButton.setVisibility(View.VISIBLE);
                 }
                 initAndStartRosJavaNode();
-            } else if (requestCode == startActivityRequest.SETTINGS_ACTIVITY_STANDARD_RUN) {
+            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
@@ -419,7 +418,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-        //
+        // ServiceClient node which is responsible for calling the "save map" service.
         mSaveMapServiceClientNode = new SaveMapServiceClientNode();
         nodeConfiguration.setNodeName(mSaveMapServiceClientNode.getDefaultNodeName());
         nodeMainExecutor.execute(mSaveMapServiceClientNode, nodeConfiguration);
@@ -463,7 +462,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
-            startActivityForResult(intent, startActivityRequest.SETTINGS_ACTIVITY_FIRST_RUN);
+            startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
         }
     }
 
