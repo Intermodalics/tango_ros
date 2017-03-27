@@ -386,7 +386,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             public void onShutdown(NodeMainExecutorService nodeMainExecutorService) {
                 unbindFromTango();
                 mLogger.saveLogToFile();
-                // This ensures to kill all the process started by the app.
+                // This ensures to kill the process started by the app.
                 android.os.Process.killProcess(android.os.Process.myPid());
             }
         });
