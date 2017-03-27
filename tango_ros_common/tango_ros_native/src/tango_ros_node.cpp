@@ -512,7 +512,24 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
         << config_enable_color_camera << " error: " << result;
     return result;
   }
-
+  std::string datasets_path;
+  node_handle_.param(publisher_config_.datasets_path, datasets_path, DATASETS_PATH);
+  const char* config_datasets_path = "config_datasets_path";
+  result = TangoConfig_setString(tango_config_, config_datasets_path, datasets_path.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name << ", TangoConfig_setString "
+               << config_datasets_path << " error: " << result;
+    return result;
+  }
+  std::string dataset_uuid;
+  node_handle_.param(publisher_config_.dataset_uuid, dataset_uuid, std::string(""));
+  const char* config_experimental_load_dataset_UUID = "config_experimental_load_dataset_UUID";
+  result = TangoConfig_setString(tango_config_, config_experimental_load_dataset_UUID, dataset_uuid.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << function_name << ", TangoConfig_setString "
+               << config_experimental_load_dataset_UUID << " error: " << result;
+    return result;
+  }
   return TANGO_SUCCESS;
 }
 

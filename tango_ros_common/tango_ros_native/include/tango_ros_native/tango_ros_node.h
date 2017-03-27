@@ -54,6 +54,7 @@ const float LASER_SCAN_SCAN_TIME= 0.3333;
 const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
+const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Camera bitfield values.
 const uint32_t CAMERA_NONE = 0;
@@ -95,12 +96,16 @@ struct PublisherConfiguration {
   std::string color_image_topic = "tango/camera/color_1/image_raw";
   // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
-  // Param name for boolean which indicates if we are creating a new map.
+  // Param name which indicates if we are creating a new map.
   std::string create_new_map = "tango/create_new_map";
   // Param name for the localization mode.
   std::string localization_mode_param = "tango/localization_mode";
-  // Param name for localization map uuid.
+  // Param name for the localization map uuid.
   std::string localization_map_uuid = "/tango/localization_map_uuid";
+  // Param name for the dataset base folder.
+  std::string datasets_path = "tango/dataset_datasets_path";
+  // Param name for the dataset UUID.
+  std::string dataset_uuid = "tango/dataset_uuid";
 };
 
 // Node collecting tango data and publishing it on ros topics.
