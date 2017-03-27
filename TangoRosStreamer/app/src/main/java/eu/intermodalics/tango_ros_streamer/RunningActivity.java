@@ -42,6 +42,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.android.NodeMainExecutorService;
+import org.ros.android.NodeMainExecutorServiceListener;
 import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
@@ -270,15 +272,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void unbindFromTango() {
         if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             TangoInitializationHelper.unbindTangoService(this, mTangoServiceConnection);
             updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
         }
-        mLogger.saveLogToFile();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         this.nodeMainExecutorService.forceShutdown();
     }
 
@@ -378,6 +382,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
      * This function initializes the tango ros node with RosJava interface.
      */
     private void initAndStartRosJavaNode() {
+        this.nodeMainExecutorService.addListener(new NodeMainExecutorServiceListener() {
+            @Override
+            public void onShutdown(NodeMainExecutorService nodeMainExecutorService) {
+                unbindFromTango();
+                mLogger.saveLogToFile();
+                // This ensures to kill all the process started by the app.
+                android.os.Process.killProcess(android.os.Process.myPid());
+            }
+        });
         if (mRunLocalMaster) {
             this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
             mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
