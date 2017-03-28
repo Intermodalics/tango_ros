@@ -623,7 +623,6 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
         && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
-        LOG(INFO) << "Not localized";
         if (!first_localized_) {
           // We are not using localization or we are not localized yet,
           // start_of_service_T_area_description is the identity.
@@ -643,11 +642,11 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
             TangoService_getPoseAtTime(0.0, pair, &area_description_T_device);
             first_localized_ = (area_description_T_device.status_code == TANGO_POSE_VALID);
             if (first_localized_) {
-              LOG(INFO) << "Localized!";
+              LOG(INFO) << "We are localized!";
             }
           }
         } else if (localization_lost_) {
-          LOG(INFO) << "Localization lost";
+          LOG(WARNING) << "Recovering tracking...";
           // We lost localization, use old start_of_service_T_area_description
           // to compute area_description_T_device.
           geometry_msgs::TransformStamped star_of_service_T_device;
