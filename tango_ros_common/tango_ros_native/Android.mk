@@ -15,9 +15,9 @@ LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_DISABLE_FATAL_LINKER_WARNINGS=true
 include $(BUILD_SHARED_LIBRARY)
 
-include $(PROJECT_ROOT)/../third_party/miniglog/Android.mk
 $(call import-add-path, $(PROJECT_ROOT)/../third_party)
 $(call import-module,roscpp_android_ndk)
+$(call import-module,miniglog)
 $(call import-add-path, $(PROJECT_ROOT)/../third_party/tango_api)
 $(call import-module,tango_client_api)
 $(call import-module,tango_support_api)
