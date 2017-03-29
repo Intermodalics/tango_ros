@@ -73,6 +73,12 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
+enum LocalizationStatus {
+  LOCALIZING,
+  LOCALIZED,
+  LOCALIZATION_LOST
+};
+
 struct PublisherConfiguration {
   // True if pose needs to be published.
   std::atomic_bool publish_device_pose{false};
@@ -175,8 +181,8 @@ class TangoRosNode {
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   int localization_mode_;
-  bool first_localized_ = false;
-  bool localization_lost_ = false;
+  LocalizationStatus localization_status_ = LOCALIZING;
+
 
   tf::TransformBroadcaster tf_broadcaster_;
   geometry_msgs::TransformStamped start_of_service_T_area_description_;
