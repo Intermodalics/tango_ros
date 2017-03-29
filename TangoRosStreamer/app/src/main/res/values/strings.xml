@@ -20,6 +20,9 @@
     <string name="ros_website_address">http://wiki.ros.org/</string>
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
+    <string name="save_map_dialog_title">Enter the name of the map</string>
+    <string name="uuids_names_map">uuids_names_map</string>
+
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
@@ -28,6 +31,9 @@
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
+    <string name="map_name_error">Please enter a valid name to save a map</string>
+    <string name="save_map_error">Unable to save the map</string>
+    <string name="save_map_success">Map saved successfully!</string>
 
     <!-- Strings related to running preferences -->
 
@@ -62,7 +68,12 @@
     <string name="pref_category_tango_title">Tango</string>
     <string name="pref_category_tango_key">pref_category_tango</string>
 
+    <string name="pref_create_new_map">Create a new localization map</string>
+    <string name="pref_create_new_map_key">create_new_map</string>
+    <string name="pref_create_new_map_summary">Enable to create a new localization map. This map can be used for localization later.</string>
+
     <string name="pref_localization_mode_key">localization_mode</string>
+    <string name="pref_localization_map_uuid_key">localization_map_uuid</string>
 
     <string name="pref_category_general_title">General</string>
     <string name="pref_category_general_key">pref_category_general</string>

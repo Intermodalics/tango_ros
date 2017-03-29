@@ -43,6 +43,12 @@ class TangoRosNodeExecutor {
   int Execute(const char* master_uri, const char* host_ip, const char* node_name);
   // Stop the tango ros node and disconnect from the tango service.
   void Shutdown();
+  // Gets the full list of map Uuids (Universally Unique IDentifier)
+  // available on the device.
+  // @return a list as a string: uuids are comma-separated.
+  std::string GetAvailableMapUuidsList();
+  // Gets the map name corresponding to a given map uuid.
+  std::string GetMapNameFromUuid(const std::string& map_uuid);
 
  private:
   std::shared_ptr<tango_ros_native::TangoRosNode> tango_ros_node_;

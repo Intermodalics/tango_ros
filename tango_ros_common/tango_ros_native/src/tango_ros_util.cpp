@@ -74,4 +74,12 @@ void TangoRosNodeExecutor::Shutdown() {
   tango_ros_node_->TangoDisconnect();
 }
 
+std::string TangoRosNodeExecutor::GetAvailableMapUuidsList() {
+  return tango_ros_node_->GetAvailableMapUuidsList();
+}
+
+std::string TangoRosNodeExecutor::GetMapNameFromUuid(const std::string& map_uuid) {
+  return tango_ros_node_->GetMapNameFromUuid(map_uuid);
+}
+
 }  // namespace tango_ros_util

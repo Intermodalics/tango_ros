@@ -35,6 +35,7 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tango_ros_messages/SaveMap.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
@@ -95,8 +96,12 @@ struct PublisherConfiguration {
   std::string color_image_topic = "tango/camera/color_1/image_raw";
   // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
-  // Param name for the drift correction parameter.
+  // Param name which indicates if we are creating a new map.
+  std::string create_new_map = "tango/create_new_map";
+  // Param name for the localization mode.
   std::string localization_mode_param = "tango/localization_mode";
+  // Param name for the localization map uuid.
+  std::string localization_map_uuid = "/tango/localization_map_uuid";
   // Param name for the dataset base folder.
   std::string datasets_path = "tango/dataset_datasets_path";
   // Param name for the dataset UUID.
@@ -120,6 +125,13 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
+  // Gets the full list of map Uuids (Universally Unique IDentifier)
+  // available on the device.
+  // @return a list as a string: uuids are comma-separated.
+  std::string GetAvailableMapUuidsList();
+  // Gets the map name corresponding to a given map uuid.
+  std::string GetMapNameFromUuid(const std::string& map_uuid);
+
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -148,6 +160,9 @@ class TangoRosNode {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  // Function called when the SaveMap service is called.
+  // Save the current map (ADF) to disc with the given name.
+  bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
 
 
   TangoConfig tango_config_;
@@ -213,6 +228,8 @@ class TangoRosNode {
   cv::Mat color_image_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
+
+  ros::ServiceServer save_map_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

@@ -64,6 +64,10 @@ public class TangoRosNode extends NativeNodeMain {
     @Override
     public native int shutdown();
 
+    public native String getAvailableMapUuidsList();
+
+    public native String getMapNameFromUuid(String uuid);
+
     @Override
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
