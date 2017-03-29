@@ -252,7 +252,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
-    public void onMapNameOk(final String mapName) {
+    public void onClickOkSaveMapDialog(final String mapName) {
         if (mapName == null || mapName.isEmpty()) {
             Log.e(TAG, "Map name is null or empty, unable to save the map");
             displayToastMessage(R.string.map_name_error);
