@@ -16,6 +16,8 @@
 
 package eu.intermodalics.tango_ros_streamer;
 
+import android.app.Activity;
+
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -39,10 +41,14 @@ public class SaveMapServiceClientNode extends AbstractNodeMain {
 
     ConnectedNode mconnectedNode;
     private Log mLog;
-    private boolean mSuccess = false;
-    private String mMessage = "";
+    CallbackListener mCallbackListener;
 
-    public SaveMapServiceClientNode() {
+    public interface CallbackListener {
+        void onSaveMapServiceCallFinish(boolean success, String message);
+    }
+
+    public SaveMapServiceClientNode(Activity activity) {
+        mCallbackListener = (CallbackListener) activity;
     }
 
     @Override
@@ -64,13 +70,11 @@ public class SaveMapServiceClientNode extends AbstractNodeMain {
             saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
                 @Override
                 public void onSuccess(SaveMapResponse saveMapResponse) {
-                    mLog.info("Save map service call success");
-                    mSuccess = saveMapResponse.getSuccess();
-                    mMessage = saveMapResponse.getMessage();
+                    mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(), saveMapResponse.getMessage());
                 }
                 @Override
                 public void onFailure(RemoteException e) {
-                    mLog.error("Save map service failure: " + e.getMessage());
+                    mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage());
                 }
             });
         } catch (ServiceNotFoundException e) {
@@ -78,13 +82,5 @@ public class SaveMapServiceClientNode extends AbstractNodeMain {
         } catch (Exception e) {
             mLog.error("Error while calling Save map Service: " + e.getMessage());
         }
-    }
-
-    public boolean getSuccess() {
-        return mSuccess;
-    }
-
-    public String getMessage() {
-        return mMessage;
     }
 }
