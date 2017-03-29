@@ -60,7 +60,7 @@ import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoSer
 import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener,
- SaveMapDialog.CallbackListener{
+ SaveMapDialog.CallbackListener, SaveMapServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -252,20 +252,34 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
-    public void onMapNameOk(String mapName) {
+    public void onClickOkSaveMapDialog(final String mapName) {
         if (mapName == null || mapName.isEmpty()) {
             Log.e(TAG, "Map name is null or empty, unable to save the map");
             displayToastMessage(R.string.map_name_error);
             return;
         }
-        mSaveMapServiceClientNode.callService(mapName);
-        if (mSaveMapServiceClientNode.getSuccess()) {
-          mMapSaved = true;
-          mSaveButton.setEnabled(!mMapSaved);
-          displayToastMessage(R.string.save_map_success);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                mSaveMapServiceClientNode.callService(mapName);
+                return null;
+            }
+        }.execute();
+    }
+
+    public void onSaveMapServiceCallFinish(boolean success, String message) {
+        if (success) {
+            mMapSaved = true;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mSaveButton.setEnabled(!mMapSaved);
+                }
+            });
+            displayToastMessage(R.string.save_map_success);
         } else {
-          Log.e(TAG, "Error while saving map " + mSaveMapServiceClientNode.getMessage());
-          displayToastMessage(R.string.save_map_error);
+            Log.e(TAG, "Error while saving map: " + message);
+            displayToastMessage(R.string.save_map_error);
         }
     }
 
@@ -427,7 +441,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // ServiceClient node which is responsible for calling the "save map" service.
-        mSaveMapServiceClientNode = new SaveMapServiceClientNode();
+        mSaveMapServiceClientNode = new SaveMapServiceClientNode(this);
         nodeConfiguration.setNodeName(mSaveMapServiceClientNode.getDefaultNodeName());
         nodeMainExecutor.execute(mSaveMapServiceClientNode, nodeConfiguration);
         // Create node publishing IMU data.

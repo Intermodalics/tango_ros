@@ -36,7 +36,7 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     CallbackListener mCallbackListener;
 
     public interface CallbackListener {
-        void onMapNameOk(String name);
+        void onClickOkSaveMapDialog(String name);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
         switch (v.getId()) {
             case R.id.save_map_ok:
                 Log.w(TAG, "OK");
-                mCallbackListener.onMapNameOk(
+                mCallbackListener.onClickOkSaveMapDialog(
                         mNameEditText.getText().toString());
                 dismiss();
                 break;
