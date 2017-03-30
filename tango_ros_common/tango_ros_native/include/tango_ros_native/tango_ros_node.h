@@ -73,41 +73,30 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
-struct PublisherConfiguration {
-  // True if pose needs to be published.
-  std::atomic_bool publish_device_pose{false};
-  // True if point cloud needs to be published.
-  std::atomic_bool publish_point_cloud{false};
-  // True if laser scan needs to be published.
-  std::atomic_bool publish_laser_scan{false};
-  // Flag corresponding to which cameras need to be published.
-  std::atomic<uint32_t> publish_camera{CAMERA_NONE};
-
   // Topic name for the point cloud publisher.
-  std::string point_cloud_topic = "tango/point_cloud";
+const std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the laser scan publisher.
-  std::string laser_scan_topic = "tango/laser_scan";
+const std::string laser_scan_topic = "tango/laser_scan";
   // Topic name for the fisheye raw image publisher.
-  std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
+const std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
   // Topic name for the fisheye rectified image publisher.
-  std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
+const std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
   // Topic name for the color raw image publisher.
-  std::string color_image_topic = "tango/camera/color_1/image_raw";
+const std::string color_image_topic = "tango/camera/color_1/image_raw";
   // Topic name for the color rectified image publisher.
-  std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
+const std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
+
   // Param name for the drift correction parameter.
-  std::string localization_mode_param = "tango/localization_mode";
+const std::string localization_mode_param = "tango/localization_mode";
   // Param name for the dataset base folder.
-  std::string datasets_path = "tango/dataset_datasets_path";
+const std::string datasets_path = "tango/dataset_datasets_path";
   // Param name for the dataset UUID.
-  std::string dataset_uuid = "tango/dataset_uuid";
-};
+const std::string dataset_uuid = "tango/dataset_uuid";
 
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode();
-  TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
@@ -153,7 +142,6 @@ class TangoRosNode {
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
 
-  PublisherConfiguration publisher_config_;
   std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
   std::thread publish_laserscan_thread_;
