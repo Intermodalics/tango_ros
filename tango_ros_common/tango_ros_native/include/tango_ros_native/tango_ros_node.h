@@ -123,6 +123,18 @@ class TangoRosNode {
   std::string GetMapNameFromUuid(const std::string& map_uuid);
 
 
+  // Sets the tango config and connects to the tango service.
+  // It also publishes the necessary static transforms (device_T_camera_*).
+  // @return returns success if it ended successfully.
+  TangoErrorType OnTangoServiceConnected();
+  // Disconnects from the tango service.
+  void TangoDisconnect();
+  // Starts the threads that publish data.
+  void StartPublishing();
+  // Stops the threads that publish data.
+  // Will not return until all the internal threads have exited.
+  void StopPublishing();
+
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
   // Function called when a new point cloud is available.
@@ -137,17 +149,6 @@ class TangoRosNode {
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
   TangoErrorType TangoConnect();
-  // Disconnects from the tango service.
-  void TangoDisconnect();
-  // Starts the threads that publish data.
-  void StartPublishing();
-  // Stops the threads that publish data.
-  // Will not return until all the internal threads have exited.
-  void StopPublishing();
-  // Sets the tango config and connects to the tango service.
-  // It also publishes the necessary static transforms (device_T_camera_*).
-  // @return returns success if it ended successfully.
-  TangoErrorType OnTangoServiceConnected();
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, laser scan, images).
