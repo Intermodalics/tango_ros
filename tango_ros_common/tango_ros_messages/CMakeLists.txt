@@ -10,6 +10,7 @@ add_service_files(
   DIRECTORY srv
   FILES
   SaveMap.srv
+  TangoConnect.srv
 )
 
 generate_messages(
@@ -33,6 +34,9 @@ set(file_names_to_copy
   SaveMap
   SaveMapRequest
   SaveMapResponse
+  TangoConnect
+  TangoConnectRequest
+  TangoConnectResponse
 )
 set(generated_header_LOCATION  ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/)
 set(generated_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/)

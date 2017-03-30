@@ -330,7 +330,7 @@ std::string getCurrentDateAndTime() {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : run_threads_(false) {
+TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   point_cloud_publisher_ =
@@ -361,6 +361,11 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>("/tango/save_map",
                                              boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
+
+  tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
+          tango_ros_messages::TangoConnect::Response>(
+              "/tango/connect", boost::bind(
+                  &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
@@ -373,24 +378,10 @@ TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
 
 TangoRosNode::~TangoRosNode() {
   StopPublishing();
-  if (tango_config_ != nullptr) {
-    TangoConfig_free(tango_config_);
-  }
+  TangoDisconnect();
 }
 
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
-  TangoErrorType result = TangoSetupConfig();
-  if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << "Error while setting up Tango config.";
-      return result;
-  }
-  result = TangoConnect();
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while connecting to Tango Service.";
-    return result;
-  }
-
-  PublishStaticTransforms();
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
@@ -580,8 +571,10 @@ TangoErrorType TangoRosNode::TangoConnect() {
 }
 
 void TangoRosNode::TangoDisconnect() {
-  TangoConfig_free(tango_config_);
-  tango_config_ = nullptr;
+  if (tango_config_ != nullptr) {
+      TangoConfig_free(tango_config_);
+      tango_config_ = nullptr;
+  }
   TangoService_disconnect();
 }
 
@@ -744,16 +737,46 @@ void TangoRosNode::StartPublishing() {
 void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
-    if (publisher_config_.publish_device_pose)
+    if (publish_device_pose_thread_.joinable()) {
+      if (!publisher_config_.publish_device_pose) {
+        std::unique_lock<std::mutex> lock(pose_available_mutex_);
+        pose_available_.notify_all();
+        pose_available_mutex_.unlock();
+      }
       publish_device_pose_thread_.join();
-    if (publisher_config_.publish_point_cloud)
+    }
+    if (publish_pointcloud_thread_.joinable()) {
+      if (!publisher_config_.publish_point_cloud) {
+        std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
+        point_cloud_available_.notify_all();
+        point_cloud_available_mutex_.unlock();
+      }
       publish_pointcloud_thread_.join();
-    if (publisher_config_.publish_laser_scan)
+    }
+    if (publish_laserscan_thread_.joinable()) {
+      if (!publisher_config_.publish_laser_scan) {
+        std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
+        laser_scan_available_.notify_all();
+        laser_scan_available_mutex_.unlock();
+      }
       publish_laserscan_thread_.join();
-    if (publisher_config_.publish_camera & CAMERA_FISHEYE)
+    }
+    if (publish_fisheye_image_thread_.joinable()) {
+      if (!(publisher_config_.publish_camera & CAMERA_FISHEYE)) {
+        std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
+        fisheye_image_available_.notify_all();
+        fisheye_image_available_mutex_.unlock();
+      }
       publish_fisheye_image_thread_.join();
-    if (publisher_config_.publish_camera & CAMERA_COLOR)
+    }
+    if (publish_color_image_thread_.joinable()) {
+      if (!(publisher_config_.publish_camera & CAMERA_COLOR)) {
+        std::unique_lock<std::mutex> lock(color_image_available_mutex_);
+        color_image_available_.notify_all();
+        color_image_available_mutex_.unlock();
+      }
       publish_color_image_thread_.join();
+    }
     ros_spin_thread_.join();
   }
 }
@@ -907,6 +930,44 @@ void TangoRosNode::RunRosSpin() {
     ros::spinOnce();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+}
+
+bool TangoRosNode::TangoConnectServiceCallback(
+        const tango_ros_messages::TangoConnect::Request& request,
+        tango_ros_messages::TangoConnect::Response& response) {
+    switch (request.request) {
+        case tango_ros_messages::TangoConnect::Request::CONNECT:
+            // Setup config.
+            response.response = TangoSetupConfig();
+            // Early return if config setup failed.
+            if (response.response != TANGO_SUCCESS) return true;
+            // Connect to Tango.
+            response.response = TangoConnect();
+            // Early return if Tango connect call failed.
+            if (response.response != TANGO_SUCCESS) return true;
+            // Publish static transforms.
+            PublishStaticTransforms();
+            OnTangoServiceConnected();
+            // Create publishing threads.
+            StartPublishing();
+            break;
+        case tango_ros_messages::TangoConnect::Request::DISCONNECT:
+            StopPublishing();
+            // Disconnect from Tango Service.
+            TangoDisconnect();
+            response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
+            break;
+        default:
+            LOG(ERROR) << "Did not understand request " << request.request
+                       << ", valid requests are (CONNECT: "
+                       << tango_ros_messages::TangoConnect::Request::CONNECT
+                       << ", DISCONNECT: "
+                       << tango_ros_messages::TangoConnect::Request::DISCONNECT
+                       << ")";
+            return false;
+    }
+
+    return true;
 }
 
 bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,

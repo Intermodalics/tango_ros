@@ -36,6 +36,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/SaveMap.h>
+#include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
@@ -114,17 +115,6 @@ class TangoRosNode {
   TangoRosNode();
   TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
-  // Sets the tango config and connects to the tango service.
-  // It also publishes the necessary static transforms (device_T_camera_*).
-  // @return returns success if it ended successfully.
-  TangoErrorType OnTangoServiceConnected();
-  // Disconnects from the tango service.
-  void TangoDisconnect();
-  // Starts the threads that publish data.
-  void StartPublishing();
-  // Stops the threads that publish data.
-  // Will not return until all the internal threads have exited.
-  void StopPublishing();
   // Gets the full list of map Uuids (Universally Unique IDentifier)
   // available on the device.
   // @return a list as a string: uuids are comma-separated.
@@ -147,6 +137,17 @@ class TangoRosNode {
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
   TangoErrorType TangoConnect();
+  // Disconnects from the tango service.
+  void TangoDisconnect();
+  // Starts the threads that publish data.
+  void StartPublishing();
+  // Stops the threads that publish data.
+  // Will not return until all the internal threads have exited.
+  void StopPublishing();
+  // Sets the tango config and connects to the tango service.
+  // It also publishes the necessary static transforms (device_T_camera_*).
+  // @return returns success if it ended successfully.
+  TangoErrorType OnTangoServiceConnected();
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, laser scan, images).
@@ -163,7 +164,9 @@ class TangoRosNode {
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
-
+  bool TangoConnectServiceCallback(
+          const tango_ros_messages::TangoConnect::Request &request,
+          tango_ros_messages::TangoConnect::Response& response);
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -230,6 +233,7 @@ class TangoRosNode {
   cv::Mat color_image_rect_;
 
   ros::ServiceServer save_map_service_;
+  ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

@@ -19,7 +19,7 @@
 
 namespace tango_ros_util {
 int InitRos(const char* master_uri, const char* host_ip,
-                                   const char* node_name) {
+            const char* node_name) {
   int argc = 3;
   char* master_uri_copy = strdup(master_uri);
   char* host_ip_copy = strdup(host_ip);
@@ -46,40 +46,35 @@ TangoRosNodeExecutor::~TangoRosNodeExecutor() {}
 
 
 int TangoRosNodeExecutor::Execute(const char* master_uri, const char* host_ip,
-                                   const char* node_name) {
+                                  const char* node_name) {
   int result = InitRos(master_uri, host_ip, node_name);
-  if (result == ROS_INIT_SUCCESS) {
-    tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
-    result = tango_ros_node_->OnTangoServiceConnected();
-    if (result == TANGO_SUCCESS) {
-      tango_ros_node_->StartPublishing();
-      ros::Rate loop_rate(30);
-      while(ros::ok()) {
-        ros::spinOnce();
-        loop_rate.sleep();
-      }
-    } else {
-      LOG(ERROR) << "Could not connect to the Tango service.";
-      return result;
-    }
-  } else {
-    LOG(ERROR) << "Could not init ROS.";
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Failed to initialize node.";
     return result;
   }
+
+  tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
+
+  ros::Rate loop_rate(30);
+  while(ros::ok()) {
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+
   return TANGO_SUCCESS;
 }
 
 void TangoRosNodeExecutor::Shutdown() {
-  tango_ros_node_->StopPublishing();
-  tango_ros_node_->TangoDisconnect();
+  tango_ros_node_ = nullptr;
 }
 
 std::string TangoRosNodeExecutor::GetAvailableMapUuidsList() {
+  if (!tango_ros_node_) return "";
   return tango_ros_node_->GetAvailableMapUuidsList();
 }
 
 std::string TangoRosNodeExecutor::GetMapNameFromUuid(const std::string& map_uuid) {
+  if (!tango_ros_node_) return "";
   return tango_ros_node_->GetMapNameFromUuid(map_uuid);
 }
-
 }  // namespace tango_ros_util
