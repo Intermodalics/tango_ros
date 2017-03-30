@@ -59,8 +59,11 @@ import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
 import eu.intermodalics.tango_ros_node.TangoRosNode;
 
+import tango_ros_messages.TangoConnectRequest;
+import tango_ros_messages.TangoConnectResponse;
+
 public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener,
- SaveMapDialog.CallbackListener, SaveMapServiceClientNode.CallbackListener {
+ SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -94,7 +97,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
-    private SaveMapServiceClientNode mSaveMapServiceClientNode;
+    private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
     private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
@@ -156,6 +159,24 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.tango_service_error));
             displayToastMessage(R.string.tango_service_error);
+        }
+    }
+
+    @Override
+    public void onTangoRosStartHook() {
+        // Tango ROS node thread started, so Tango Connect service will be advertised.
+        // Ready to call service to connect to Tango once service is advertised.
+        // ROS Java does not provide a way to wait until service becomes available so retry to
+        // connect 20 times.
+        int count = 0;
+        while (count < 20 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+            try {
+                count++;
+                Log.e(TAG, "Trying to connect to Tango, attempt " + count);
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -261,12 +282,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                mSaveMapServiceClientNode.callService(mapName);
+                mTangoServiceClientNode.callSaveMapService(mapName);
                 return null;
             }
         }.execute();
     }
 
+    @Override
     public void onSaveMapServiceCallFinish(boolean success, String message) {
         if (success) {
             mMapSaved = true;
@@ -281,6 +303,30 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
         }
+    }
+
+    @Override
+    public void onTangoConnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error connecting to Tango: " + response + ", message: " + message);
+            switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
+            displayToastMessage(R.string.tango_connect_error);
+            return;
+        }
+
+        displayToastMessage(R.string.tango_connect_success);
+    }
+
+    @Override
+    public void onTangoDisconnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error disconnecting from Tango: " + response + ", message: " + message);
+            switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
+            displayToastMessage(R.string.tango_disconnect_error);
+            return;
+        }
+
+        displayToastMessage(R.string.tango_disconnect_success);
     }
 
     private void saveUuidsNamestoHashMap() {
@@ -441,9 +487,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // ServiceClient node which is responsible for calling the "save map" service.
-        mSaveMapServiceClientNode = new SaveMapServiceClientNode(this);
-        nodeConfiguration.setNodeName(mSaveMapServiceClientNode.getDefaultNodeName());
-        nodeMainExecutor.execute(mSaveMapServiceClientNode, nodeConfiguration);
+        mTangoServiceClientNode = new TangoServiceClientNode(this);
+        nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);
         // Create node publishing IMU data.
         mImuNode = new ImuNode(this);
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
