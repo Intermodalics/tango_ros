@@ -53,25 +53,17 @@ const float LASER_SCAN_SCAN_TIME= 0.3333;
 const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
-const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
-// Topic name for the point cloud publisher.
+
 const std::string POINT_CLOUD_TOPIC_NAME = "tango/point_cloud";
-// Topic name for the laser scan publisher.
 const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
-// Topic name for the fisheye raw image publisher.
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
-// Topic name for the fisheye rectified image publisher.
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
-// Topic name for the color raw image publisher.
 const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
-// Topic name for the color rectified image publisher.
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
-// Param name for the drift correction parameter.
-const std::string localization_mode_param = "tango/localization_mode";
-// Param name for the dataset base folder.
-const std::string datasets_path = "tango/dataset_datasets_path";
-// Param name for the dataset UUID.
-const std::string dataset_uuid = "tango/dataset_uuid";
+const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
+const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
+const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
+const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
