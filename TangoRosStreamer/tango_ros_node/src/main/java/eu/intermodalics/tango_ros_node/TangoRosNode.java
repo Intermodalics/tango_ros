@@ -19,7 +19,6 @@ package eu.intermodalics.tango_ros_node;
 import android.content.ServiceConnection;
 
 import org.ros.namespace.GraphName;
-import org.ros.node.ConnectedNode;
 import org.ros.node.NativeNodeMain;
 import org.ros.node.Node;
 
@@ -76,19 +75,10 @@ public class TangoRosNode extends NativeNodeMain {
 
     public interface CallbackListener {
         void onTangoRosErrorHook(int returnCode);
-        void onTangoRosStartHook();
     }
 
     public void attachCallbackListener(CallbackListener callbackListener) {
         mCallbackListener = callbackListener;
-    }
-
-    @Override
-    public void onStart(final ConnectedNode connectedNode) {
-        super.onStart(connectedNode);
-        if (mCallbackListener != null) {
-            mCallbackListener.onTangoRosStartHook();
-        }
     }
 
     @Override

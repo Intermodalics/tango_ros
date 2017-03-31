@@ -48,10 +48,14 @@ import org.ros.address.InetAddressFactory;
 import org.ros.android.NodeMainExecutorService;
 import org.ros.android.NodeMainExecutorServiceListener;
 import org.ros.exception.RosRuntimeException;
+import org.ros.node.ConnectedNode;
+import org.ros.node.DefaultNodeListener;
 import org.ros.node.NodeConfiguration;
+import org.ros.node.NodeListener;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
@@ -88,6 +92,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     enum TangoStatus {
         SERVICE_NOT_BOUND,
         SERVICE_NOT_CONNECTED,
+        SERVICE_CONNECTED,
         VERSION_NOT_SUPPORTED,
         SERVICE_RUNNING,
     }
@@ -162,24 +167,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
-    @Override
-    public void onTangoRosStartHook() {
-        // Tango ROS node thread started, so Tango Connect service will be advertised.
-        // Ready to call service to connect to Tango once service is advertised.
-        // ROS Java does not provide a way to wait until service becomes available so retry to
-        // connect 20 times.
-        int count = 0;
-        while (count < 20 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
-            try {
-                count++;
-                Log.e(TAG, "Trying to connect to Tango, attempt " + count);
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     private void updateRosStatus(RosStatus status) {
         if (mRosStatus != status) {
             mRosStatus = status;
@@ -211,7 +198,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (status == TangoStatus.SERVICE_RUNNING) {
+                if (status == TangoStatus.SERVICE_RUNNING || status == TangoStatus.SERVICE_CONNECTED) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                 } else {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
@@ -314,6 +301,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             return;
         }
 
+        switchTangoLight(TangoStatus.SERVICE_CONNECTED);
         displayToastMessage(R.string.tango_connect_success);
     }
 
@@ -321,11 +309,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public void onTangoDisconnectServiceFinish(int response, String message) {
         if (response != TangoConnectResponse.TANGO_SUCCESS) {
             Log.e(TAG, "Error disconnecting from Tango: " + response + ", message: " + message);
-            switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
+            // Do not switch Tango lights in this case because Tango disconnect can never fail.
+            // Failure occured due to something else, so Tango is still connected.
             displayToastMessage(R.string.tango_disconnect_error);
             return;
         }
 
+        switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
         displayToastMessage(R.string.tango_disconnect_success);
     }
 
@@ -504,7 +494,27 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
-                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration, new ArrayList<NodeListener>(){{
+                    add(new DefaultNodeListener() {
+                        @Override
+                        public void onStart(ConnectedNode connectedNode) {
+                            int count = 0;
+                            if (mTangoStatus == TangoStatus.SERVICE_CONNECTED) {
+                                Log.e(TAG, "Service already connected. Return and skip connect service call.");
+                                return;
+                            }
+                            while (count < 20 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                                try {
+                                    count++;
+                                    Log.e(TAG, "Trying to connect to Tango, attempt " + count);
+                                    Thread.sleep(200);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                }});
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
                 updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
