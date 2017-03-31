@@ -503,7 +503,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                                 Log.e(TAG, "Service already connected. Return and skip connect service call.");
                                 return;
                             }
-                            while (count < 20 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                            while (count < 50 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
                                 try {
                                     count++;
                                     Log.e(TAG, "Trying to connect to Tango, attempt " + count);

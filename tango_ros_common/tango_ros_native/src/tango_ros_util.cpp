@@ -55,11 +55,9 @@ int TangoRosNodeExecutor::Execute(const char* master_uri, const char* host_ip,
 
   tango_ros_node_.reset(new tango_ros_native::TangoRosNode());
 
-  ros::Rate loop_rate(30);
-  while(ros::ok()) {
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
+  ros::AsyncSpinner spinner(4);
+  spinner.start();
+  ros::waitForShutdown();
 
   return TANGO_SUCCESS;
 }

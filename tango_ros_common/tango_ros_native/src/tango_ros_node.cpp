@@ -747,33 +747,25 @@ void TangoRosNode::StopPublishing() {
     }
     if (publish_pointcloud_thread_.joinable()) {
       if (!publisher_config_.publish_point_cloud) {
-        std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
         point_cloud_available_.notify_all();
-        point_cloud_available_mutex_.unlock();
       }
       publish_pointcloud_thread_.join();
     }
     if (publish_laserscan_thread_.joinable()) {
       if (!publisher_config_.publish_laser_scan) {
-        std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
         laser_scan_available_.notify_all();
-        laser_scan_available_mutex_.unlock();
       }
       publish_laserscan_thread_.join();
     }
     if (publish_fisheye_image_thread_.joinable()) {
       if (!(publisher_config_.publish_camera & CAMERA_FISHEYE)) {
-        std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
         fisheye_image_available_.notify_all();
-        fisheye_image_available_mutex_.unlock();
       }
       publish_fisheye_image_thread_.join();
     }
     if (publish_color_image_thread_.joinable()) {
       if (!(publisher_config_.publish_camera & CAMERA_COLOR)) {
-        std::unique_lock<std::mutex> lock(color_image_available_mutex_);
         color_image_available_.notify_all();
-        color_image_available_mutex_.unlock();
       }
       publish_color_image_thread_.join();
     }
