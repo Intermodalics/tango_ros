@@ -89,7 +89,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         NODE_RUNNING
     }
 
+    // Symmetric implementation to tango_ros_node.h.
     enum TangoStatus {
+        UNKNOWN,
         SERVICE_NOT_BOUND,
         SERVICE_NOT_CONNECTED,
         SERVICE_CONNECTED,
@@ -105,7 +107,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
-    private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
+    private TangoStatus mTangoStatus = TangoStatus.UNKNOWN;
     private Logger mLogger;
     private boolean mCreateNewMap = false;
     private boolean mMapSaved = false;
@@ -296,12 +298,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public void onTangoConnectServiceFinish(int response, String message) {
         if (response != TangoConnectResponse.TANGO_SUCCESS) {
             Log.e(TAG, "Error connecting to Tango: " + response + ", message: " + message);
-            switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
             displayToastMessage(R.string.tango_connect_error);
             return;
         }
 
-        switchTangoLight(TangoStatus.SERVICE_CONNECTED);
         displayToastMessage(R.string.tango_connect_success);
     }
 
@@ -315,8 +315,16 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             return;
         }
 
-        switchTangoLight(TangoStatus.SERVICE_NOT_CONNECTED);
         displayToastMessage(R.string.tango_disconnect_success);
+    }
+
+    @Override
+    public void onTangoStatus(int status) {
+        if (status >= TangoStatus.values().length) {
+            Log.e(TAG, "Invalid Tango status " + status);
+            return;
+        }
+        switchTangoLight(TangoStatus.values()[status]);
     }
 
     private void saveUuidsNamestoHashMap() {
@@ -499,10 +507,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                         @Override
                         public void onStart(ConnectedNode connectedNode) {
                             int count = 0;
-                            if (mTangoStatus == TangoStatus.SERVICE_CONNECTED) {
-                                Log.e(TAG, "Service already connected. Return and skip connect service call.");
-                                return;
-                            }
                             while (count < 50 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
                                 try {
                                     count++;

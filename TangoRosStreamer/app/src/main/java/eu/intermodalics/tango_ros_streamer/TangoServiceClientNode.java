@@ -22,11 +22,15 @@ import android.app.Service;
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
+import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Subscriber;
+
+import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 import tango_ros_messages.SaveMap;
 import tango_ros_messages.SaveMapRequest;
@@ -34,6 +38,8 @@ import tango_ros_messages.SaveMapResponse;
 import tango_ros_messages.TangoConnect;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
+
+import std_msgs.Int8;
 
 /**
  * Rosjava node that implements a service client.
@@ -43,6 +49,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String NODE_NAME = "tango_service_client_node";
     private static final String SAVE_MAP_SRV_NAME = "/tango/save_map";
     private static final String TANGO_CONNECT_SRV_NAME = "/tango/connect";
+    private static final String TANGO_STATUS_TOPIC_NAME = "status";
 
     ConnectedNode mConnectedNode;
     private Log mLog;
@@ -52,6 +59,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onSaveMapServiceCallFinish(boolean success, String message);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
+        void onTangoStatus(int status);
     }
 
     public TangoServiceClientNode(Activity activity) {
@@ -66,6 +74,14 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
+
+        Subscriber<Int8> subscriber = mConnectedNode.newSubscriber(BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
+        subscriber.addMessageListener(new MessageListener<Int8>() {
+            @Override
+            public void onNewMessage(Int8 status) {
+                mCallbackListener.onTangoStatus(status.getData());
+            }
+        });
     }
 
     public boolean callSaveMapService(String mapName) {
@@ -139,5 +155,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
             return false;
         }
         return true;
+    }
+
+    private String BuildTangoRosNodeNamespaceName(String paramName) {
+        return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }

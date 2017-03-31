@@ -75,6 +75,15 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
+enum class TangoStatus {
+  UNKNOWN = 0,
+  SERVICE_NOT_BOUND,
+  SERVICE_NOT_CONNECTED,
+  SERVICE_CONNECTED,
+  VERSION_NOT_SUPPORTED,
+  SERVICE_RUNNING
+};
+
 struct PublisherConfiguration {
   // True if pose needs to be published.
   std::atomic_bool publish_device_pose{false};
@@ -85,6 +94,8 @@ struct PublisherConfiguration {
   // Flag corresponding to which cameras need to be published.
   std::atomic<uint32_t> publish_camera{CAMERA_NONE};
 
+  // Topic name for the Tango status;
+  std::string tango_status_topic = "tango/status";
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the laser scan publisher.
@@ -147,8 +158,15 @@ class TangoRosNode {
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
   // Connects to the tango service and to the necessary callbacks.
-  // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
+  // @return returns TANGO_SUCCESS if connecting to tango ended successfully
+  // or if service was already connected.
   TangoErrorType TangoConnect();
+  // Sets up config, connect to Tango service, starts publishing threads and
+  // publishes first static transforms.
+  TangoErrorType ConnectToTangoAndSetUpNode();
+  // Helper function to update and publish the Tango status. Publishes always
+  // for convenience, even if Tango status did not change.
+  void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, laser scan, images).
@@ -211,6 +229,9 @@ class TangoRosNode {
   // TODO: make these ros params.
   double laser_scan_min_height_ = -1.0; // meter
   double laser_scan_max_height_ = 1.0; // meter
+
+  ros::Publisher tango_status_publisher_;
+  TangoStatus tango_status_;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 

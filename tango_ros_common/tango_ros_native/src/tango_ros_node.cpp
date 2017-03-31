@@ -25,6 +25,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <std_msgs/Int8.h>
 
 namespace {
 // This function routes onPoseAvailable callback to the application object for
@@ -333,13 +334,15 @@ namespace tango_ros_native {
 TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
+  tango_status_publisher_ =
+      node_handle_.advertise<std_msgs::Int8>(
+        publisher_config_.tango_status_topic, queue_size, latching);
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
           publisher_config_.point_cloud_topic, queue_size, latching);
   laser_scan_publisher_ =
       node_handle_.advertise<sensor_msgs::LaserScan>(
           publisher_config_.laser_scan_topic, queue_size, latching);
-
   image_transport_.reset(new image_transport::ImageTransport(node_handle_));
   try {
     fisheye_camera_publisher_ =
@@ -366,6 +369,8 @@ TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
           tango_ros_messages::TangoConnect::Response>(
               "/tango/connect", boost::bind(
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
+
+  tango_status_ = TangoStatus::UNKNOWN;
 }
 
 TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
@@ -377,7 +382,6 @@ TangoRosNode::TangoRosNode(const PublisherConfiguration& publisher_config) :
 }
 
 TangoRosNode::~TangoRosNode() {
-  StopPublishing();
   TangoDisconnect();
 }
 
@@ -570,12 +574,55 @@ TangoErrorType TangoRosNode::TangoConnect() {
   return TANGO_SUCCESS;
 }
 
+void TangoRosNode::UpdateAndPublishTangoStatus(const TangoStatus& status) {
+  tango_status_ = status;
+  std_msgs::Int8 tango_status_msg;
+  tango_status_msg.data = static_cast<int>(tango_status_);
+  tango_status_publisher_.publish(tango_status_msg);
+}
+
+TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
+  if (tango_status_ == TangoStatus::SERVICE_CONNECTED) {
+    // Connecting twice to Tango results in TANGO_ERROR. Early return to avoid
+    // this.
+    LOG(WARNING) << "Already connected to Tango service.";
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
+    return TANGO_SUCCESS;
+  }
+
+  TangoErrorType success;
+  // Setup config.
+  success = TangoSetupConfig();
+  // Early return if config setup failed.
+  if (success != TANGO_SUCCESS) {
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
+    return success;
+  }
+  // Connect to Tango.
+  success = TangoConnect();
+  // Early return if Tango connect call failed.
+  if (success != TANGO_SUCCESS) {
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
+    return success;
+  }
+  // Publish static transforms.
+  PublishStaticTransforms();
+  OnTangoServiceConnected();
+  // Create publishing threads.
+  StartPublishing();
+  UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
+  return success;
+}
+
+
 void TangoRosNode::TangoDisconnect() {
+  StopPublishing();
   if (tango_config_ != nullptr) {
       TangoConfig_free(tango_config_);
       tango_config_ = nullptr;
   }
   TangoService_disconnect();
+  UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
 }
 
 void TangoRosNode::PublishStaticTransforms() {
@@ -929,22 +976,9 @@ bool TangoRosNode::TangoConnectServiceCallback(
         tango_ros_messages::TangoConnect::Response& response) {
     switch (request.request) {
         case tango_ros_messages::TangoConnect::Request::CONNECT:
-            // Setup config.
-            response.response = TangoSetupConfig();
-            // Early return if config setup failed.
-            if (response.response != TANGO_SUCCESS) return true;
-            // Connect to Tango.
-            response.response = TangoConnect();
-            // Early return if Tango connect call failed.
-            if (response.response != TANGO_SUCCESS) return true;
-            // Publish static transforms.
-            PublishStaticTransforms();
-            OnTangoServiceConnected();
-            // Create publishing threads.
-            StartPublishing();
+            response.response = ConnectToTangoAndSetUpNode();
             break;
         case tango_ros_messages::TangoConnect::Request::DISCONNECT:
-            StopPublishing();
             // Disconnect from Tango Service.
             TangoDisconnect();
             response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
