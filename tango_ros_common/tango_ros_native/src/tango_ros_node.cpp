@@ -512,7 +512,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
 
-  uint32_t num_frame_pairs_to_listen = 2;
+  const uint32_t num_frame_pairs_to_listen = 2;
   TangoCoordinateFramePair pairs[num_frame_pairs_to_listen] = {
       { TANGO_COORDINATE_FRAME_START_OF_SERVICE,
         TANGO_COORDINATE_FRAME_DEVICE }, {
