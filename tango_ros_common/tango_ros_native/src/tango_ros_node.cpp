@@ -318,24 +318,24 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   const bool latching = true;
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
-          point_cloud_topic, queue_size, latching);
+          POINT_CLOUD_TOPIC_NAME, queue_size, latching);
   laser_scan_publisher_ =
       node_handle_.advertise<sensor_msgs::LaserScan>(
-          laser_scan_topic, queue_size, latching);
+          LASER_SCAN_TOPIC_NAME, queue_size, latching);
 
   image_transport_.reset(new image_transport::ImageTransport(node_handle_));
   try {
     fisheye_camera_publisher_ =
-        image_transport_->advertiseCamera(fisheye_image_topic,
+        image_transport_->advertiseCamera(FISHEYE_IMAGE_TOPIC_NAME,
                                           queue_size, latching);
     fisheye_rectified_image_publisher_ =
-        image_transport_->advertise(fisheye_rectified_image_topic,
+        image_transport_->advertise(FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME,
                                    queue_size, latching);
     color_camera_publisher_ =
-        image_transport_->advertiseCamera(color_image_topic,
+        image_transport_->advertiseCamera(COLOR_IMAGE_TOPIC_NAME,
                                           queue_size, latching);
     color_rectified_image_publisher_ =
-        image_transport_->advertise(color_rectified_image_topic,
+        image_transport_->advertise(COLOR_RECTIFIED_IMAGE_TOPIC_NAME,
                                    queue_size, latching);
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
@@ -648,7 +648,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
 }
 
 void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
-  if ((fisheye_camera_publisher_.getNumSubscribers() > 0 & CAMERA_FISHEYE) &&
+  if ((fisheye_camera_publisher_.getNumSubscribers() > 0) &&
        camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE &&
        fisheye_image_available_mutex_.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
@@ -659,7 +659,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     fisheye_image_available_.notify_all();
     fisheye_image_available_mutex_.unlock();
   }
-  if ((color_camera_publisher_.getNumSubscribers() > 0 & CAMERA_COLOR) &&
+  if ((color_camera_publisher_.getNumSubscribers() > 0) &&
        camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
        color_image_available_mutex_.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,

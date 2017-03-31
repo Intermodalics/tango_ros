@@ -54,11 +54,24 @@ const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
-
-// Camera bitfield values.
-const uint32_t CAMERA_NONE = 0;
-const uint32_t CAMERA_FISHEYE = (1 << 1);
-const uint32_t CAMERA_COLOR = (1 << 2);
+// Topic name for the point cloud publisher.
+const std::string POINT_CLOUD_TOPIC_NAME = "tango/point_cloud";
+// Topic name for the laser scan publisher.
+const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
+// Topic name for the fisheye raw image publisher.
+const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
+// Topic name for the fisheye rectified image publisher.
+const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
+// Topic name for the color raw image publisher.
+const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
+// Topic name for the color rectified image publisher.
+const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
+// Param name for the drift correction parameter.
+const std::string localization_mode_param = "tango/localization_mode";
+// Param name for the dataset base folder.
+const std::string datasets_path = "tango/dataset_datasets_path";
+// Param name for the dataset UUID.
+const std::string dataset_uuid = "tango/dataset_uuid";
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
@@ -72,26 +85,6 @@ enum LocalizationMode {
   // Map required. Internally runs Tango localization on ADF (Area Description File).
   LOCALIZATION = 3
 };
-
-// Topic name for the point cloud publisher.
-const std::string point_cloud_topic = "tango/point_cloud";
-// Topic name for the laser scan publisher.
-const std::string laser_scan_topic = "tango/laser_scan";
-// Topic name for the fisheye raw image publisher.
-const std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
-// Topic name for the fisheye rectified image publisher.
-const std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
-// Topic name for the color raw image publisher.
-const std::string color_image_topic = "tango/camera/color_1/image_raw";
-// Topic name for the color rectified image publisher.
-const std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
-
-// Param name for the drift correction parameter.
-const std::string localization_mode_param = "tango/localization_mode";
-// Param name for the dataset base folder.
-const std::string datasets_path = "tango/dataset_datasets_path";
-// Param name for the dataset UUID.
-const std::string dataset_uuid = "tango/dataset_uuid";
 
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {

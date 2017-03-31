@@ -43,9 +43,7 @@ import dynamic_reconfigure.ReconfigureResponse;
 import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 /**
- * RosJava node that handles interactions with Dynamic Reconfigure.
- * It provides callbacks to update the app's state with changes on Dynamic Reconfigure,
- * and to update Dynamic Reconfigure with changes applied on the app's preferences by the user.
+ * RosJava node that handles interactions with the ros parameter server.
  */
 public class ParameterNode extends AbstractNodeMain implements NodeMain {
     private static final String NODE_NAME = "parameter_node";
