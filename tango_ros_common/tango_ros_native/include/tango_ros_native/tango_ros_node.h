@@ -36,6 +36,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/SaveMap.h>
+#include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
@@ -74,6 +75,15 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
+enum class TangoStatus {
+  UNKNOWN = 0,
+  SERVICE_NOT_BOUND,
+  SERVICE_NOT_CONNECTED,
+  SERVICE_CONNECTED,
+  VERSION_NOT_SUPPORTED,
+  SERVICE_RUNNING
+};
+
 struct PublisherConfiguration {
   // True if pose needs to be published.
   std::atomic_bool publish_device_pose{false};
@@ -84,6 +94,8 @@ struct PublisherConfiguration {
   // Flag corresponding to which cameras need to be published.
   std::atomic<uint32_t> publish_camera{CAMERA_NONE};
 
+  // Topic name for the Tango status;
+  std::string tango_status_topic = "tango/status";
   // Topic name for the point cloud publisher.
   std::string point_cloud_topic = "tango/point_cloud";
   // Topic name for the laser scan publisher.
@@ -115,6 +127,14 @@ class TangoRosNode {
   TangoRosNode();
   TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
+  // Gets the full list of map Uuids (Universally Unique IDentifier)
+  // available on the device.
+  // @return a list as a string: uuids are comma-separated.
+  std::string GetAvailableMapUuidsList();
+  // Gets the map name corresponding to a given map uuid.
+  std::string GetMapNameFromUuid(const std::string& map_uuid);
+
+
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
   // @return returns success if it ended successfully.
@@ -126,13 +146,6 @@ class TangoRosNode {
   // Stops the threads that publish data.
   // Will not return until all the internal threads have exited.
   void StopPublishing();
-  // Gets the full list of map Uuids (Universally Unique IDentifier)
-  // available on the device.
-  // @return a list as a string: uuids are comma-separated.
-  std::string GetAvailableMapUuidsList();
-  // Gets the map name corresponding to a given map uuid.
-  std::string GetMapNameFromUuid(const std::string& map_uuid);
-
 
   // Function called when a new device pose is available.
   void OnPoseAvailable(const TangoPoseData* pose);
@@ -146,8 +159,15 @@ class TangoRosNode {
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
   // Connects to the tango service and to the necessary callbacks.
-  // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
+  // @return returns TANGO_SUCCESS if connecting to tango ended successfully
+  // or if service was already connected.
   TangoErrorType TangoConnect();
+  // Sets up config, connect to Tango service, starts publishing threads and
+  // publishes first static transforms.
+  TangoErrorType ConnectToTangoAndSetUpNode();
+  // Helper function to update and publish the Tango status. Publishes always
+  // for convenience, even if Tango status did not change.
+  void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, laser scan, images).
@@ -164,7 +184,9 @@ class TangoRosNode {
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
-
+  bool TangoConnectServiceCallback(
+          const tango_ros_messages::TangoConnect::Request &request,
+          tango_ros_messages::TangoConnect::Response& response);
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -208,6 +230,9 @@ class TangoRosNode {
   double laser_scan_max_height_ = 1.0;
   double laser_scan_min_height_ = -1.0;
 
+  ros::Publisher tango_status_publisher_;
+  TangoStatus tango_status_;
+
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
   image_transport::CameraPublisher fisheye_camera_publisher_;
@@ -230,6 +255,7 @@ class TangoRosNode {
   cv::Mat color_image_rect_;
 
   ros::ServiceServer save_map_service_;
+  ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
