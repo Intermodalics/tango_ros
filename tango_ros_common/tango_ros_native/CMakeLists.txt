@@ -50,7 +50,7 @@ target_link_libraries(tango_ros_native
   ${OpenCV_LIBRARIES}
   )
 
-add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg  ${catkin_EXPORTED_TARGETS})
+add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 
 install(TARGETS tango_ros_native
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

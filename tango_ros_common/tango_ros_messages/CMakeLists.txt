@@ -41,7 +41,7 @@ foreach(file_name ${file_names_to_copy})
   set(to ${generated_header_DESTINATION}${file_name}.h)
   add_custom_command(
     OUTPUT ${to}
-    DEPENDS ${from}
+    DEPENDS ${from} ${${PROJECT_NAME}_EXPORTED_TARGETS}
     COMMAND cmake -E copy ${from} ${to})
   add_custom_target(copy_${file_name} ALL DEPENDS ${to})
 endforeach(file_name)
