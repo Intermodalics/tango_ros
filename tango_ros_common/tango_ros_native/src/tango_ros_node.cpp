@@ -893,6 +893,8 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
     publisher_config_.publish_camera &= ~CAMERA_COLOR;
   }
   PublishStaticTransforms();
+  laser_scan_max_height_ = config.laser_scan_max_height;
+  laser_scan_min_height_ = config.laser_scan_min_height;
 }
 
 void TangoRosNode::RunRosSpin() {

@@ -96,6 +96,7 @@ struct PublisherConfiguration {
   std::string color_image_topic = "tango/camera/color_1/image_raw";
   // Topic name for the color rectified image publisher.
   std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
+
   // Param name which indicates if we are creating a new map.
   std::string create_new_map = "tango/create_new_map";
   // Param name for the localization mode.
@@ -204,9 +205,8 @@ class TangoRosNode {
 
   ros::Publisher laser_scan_publisher_;
   sensor_msgs::LaserScan laser_scan_;
-  // TODO: make these ros params.
-  double laser_scan_min_height_ = -1.0; // meter
-  double laser_scan_max_height_ = 1.0; // meter
+  double laser_scan_max_height_ = 1.0;
+  double laser_scan_min_height_ = -1.0;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
