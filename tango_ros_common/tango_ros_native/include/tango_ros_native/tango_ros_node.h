@@ -73,24 +73,24 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
-  // Topic name for the point cloud publisher.
+// Topic name for the point cloud publisher.
 const std::string point_cloud_topic = "tango/point_cloud";
-  // Topic name for the laser scan publisher.
+// Topic name for the laser scan publisher.
 const std::string laser_scan_topic = "tango/laser_scan";
-  // Topic name for the fisheye raw image publisher.
+// Topic name for the fisheye raw image publisher.
 const std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
-  // Topic name for the fisheye rectified image publisher.
+// Topic name for the fisheye rectified image publisher.
 const std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
-  // Topic name for the color raw image publisher.
+// Topic name for the color raw image publisher.
 const std::string color_image_topic = "tango/camera/color_1/image_raw";
-  // Topic name for the color rectified image publisher.
+// Topic name for the color rectified image publisher.
 const std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
 
-  // Param name for the drift correction parameter.
+// Param name for the drift correction parameter.
 const std::string localization_mode_param = "tango/localization_mode";
-  // Param name for the dataset base folder.
+// Param name for the dataset base folder.
 const std::string datasets_path = "tango/dataset_datasets_path";
-  // Param name for the dataset UUID.
+// Param name for the dataset UUID.
 const std::string dataset_uuid = "tango/dataset_uuid";
 
 // Node collecting tango data and publishing it on ros topics.
@@ -177,9 +177,8 @@ class TangoRosNode {
 
   ros::Publisher laser_scan_publisher_;
   sensor_msgs::LaserScan laser_scan_;
-  // TODO: make these ros params.
-  double laser_scan_min_height_ = -1.0; // meter
-  double laser_scan_max_height_ = 1.0; // meter
+  double laser_scan_max_height_ = 1.0;
+  double laser_scan_min_height_ = -1.0;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
