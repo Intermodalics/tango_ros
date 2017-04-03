@@ -115,10 +115,28 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 key == getString(R.string.pref_localization_map_uuid_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
-                Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart), Snackbar.LENGTH_INDEFINITE);
-                View snackBarView = snackbar.getView();
-                snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
-                snackbar.show();
+                if (key == getString(R.string.pref_master_is_local_key) ||
+                        key == getString(R.string.pref_master_uri_key)) {
+                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart_app), Snackbar.LENGTH_INDEFINITE);
+                    View snackBarView = snackbar.getView();
+                    snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
+                    snackbar.show();
+                }
+                if (key == getString(R.string.pref_create_new_map_key) ||
+                        key == getString(R.string.pref_localization_mode_key) ||
+                        key == getString(R.string.pref_localization_map_uuid_key)) {
+                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart_tango), Snackbar.LENGTH_INDEFINITE);
+                    snackbar.setAction(getString(R.string.snackbar_action_text_restart_tango), new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            Log.w(TAG, "RESTART NOW clicked");
+                            restartTango();
+                        }
+                    });
+                    View snackBarView = snackbar.getView();
+                    snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark));
+                    snackbar.show();
+                }
             }
         }
         updateMapChooserPreferenceStatus();
@@ -232,5 +250,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
     public void startAboutActivity() {
         Intent intent = new Intent(this, AboutActivity.class);
         startActivity(intent);
+    }
+
+    private void restartTango() {
+        Intent intent = new Intent(RunningActivity.RESTART_TANGO_ALERT);
+        this.sendBroadcast(intent);
+        onBackPressed();
     }
 }

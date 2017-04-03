@@ -6,8 +6,9 @@
     <string name="welcome_text_first_run">Welcome to Tango Ros Streamer! Please define your settings before starting.</string>
     <string name="snackbar_text_first_run">Click on DONE once your settings are set.</string>
     <string name="snackbar_action_text_first_run">Done</string>
-
-    <string name="snackbar_text_restart">You will need to restart the app to apply these new settings.</string>
+    <string name="snackbar_text_restart_app">You will need to restart the app to apply these new settings</string>
+    <string name="snackbar_text_restart_tango">You will need to restart Tango to apply these new settings</string>
+    <string name="snackbar_action_text_restart_tango">RESTART NOW</string>
 
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">

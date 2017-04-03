@@ -18,7 +18,10 @@ package eu.intermodalics.tango_ros_streamer;
 
 import android.app.DialogFragment;
 import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -83,6 +86,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         public static final int FIRST_RUN = 1;
         public static final int STANDARD_RUN = 2;
     }
+    public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
     enum RosStatus {
         MASTER_NOT_CONNECTED,
@@ -112,6 +116,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mCreateNewMap = false;
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
+    private BroadcastReceiver mRestartTangoAlertReceiver;
 
     // UI objects.
     private DrawerLayout mDrawerLayout;
@@ -348,6 +353,21 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mRestartTangoAlertReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.DISCONNECT);
+                mParameterNode.uploadPreferencesToParameterServer();
+                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+                if (mCreateNewMap) {
+                    mSaveButton.setVisibility(View.VISIBLE);
+                } else {
+                    mSaveButton.setVisibility(View.INVISIBLE);
+                }
+                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT);
+            }
+        };
+        this.registerReceiver(this.mRestartTangoAlertReceiver, new IntentFilter(RESTART_TANGO_ALERT));
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
@@ -421,6 +441,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     protected void onDestroy() {
         super.onDestroy();
         this.nodeMainExecutorService.forceShutdown();
+        this.unregisterReceiver(mRestartTangoAlertReceiver);
     }
 
     @Override
