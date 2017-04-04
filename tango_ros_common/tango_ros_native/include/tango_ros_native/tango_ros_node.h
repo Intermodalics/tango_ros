@@ -53,12 +53,17 @@ const float LASER_SCAN_SCAN_TIME= 0.3333;
 const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
-const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
-// Camera bitfield values.
-const uint32_t CAMERA_NONE = 0;
-const uint32_t CAMERA_FISHEYE = (1 << 1);
-const uint32_t CAMERA_COLOR = (1 << 2);
+const std::string POINT_CLOUD_TOPIC_NAME = "tango/point_cloud";
+const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
+const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
+const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
+const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
+const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
+const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
+const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
+const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
+const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
@@ -79,41 +84,10 @@ enum LocalizationStatus {
   LOCALIZATION_LOST
 };
 
-struct PublisherConfiguration {
-  // True if pose needs to be published.
-  std::atomic_bool publish_device_pose{false};
-  // True if point cloud needs to be published.
-  std::atomic_bool publish_point_cloud{false};
-  // True if laser scan needs to be published.
-  std::atomic_bool publish_laser_scan{false};
-  // Flag corresponding to which cameras need to be published.
-  std::atomic<uint32_t> publish_camera{CAMERA_NONE};
-
-  // Topic name for the point cloud publisher.
-  std::string point_cloud_topic = "tango/point_cloud";
-  // Topic name for the laser scan publisher.
-  std::string laser_scan_topic = "tango/laser_scan";
-  // Topic name for the fisheye raw image publisher.
-  std::string fisheye_image_topic = "tango/camera/fisheye_1/image_raw";
-  // Topic name for the fisheye rectified image publisher.
-  std::string fisheye_rectified_image_topic = "tango/camera/fisheye_1/image_rect";
-  // Topic name for the color raw image publisher.
-  std::string color_image_topic = "tango/camera/color_1/image_raw";
-  // Topic name for the color rectified image publisher.
-  std::string color_rectified_image_topic = "tango/camera/color_1/image_rect";
-  // Param name for the drift correction parameter.
-  std::string localization_mode_param = "tango/localization_mode";
-  // Param name for the dataset base folder.
-  std::string datasets_path = "tango/dataset_datasets_path";
-  // Param name for the dataset UUID.
-  std::string dataset_uuid = "tango/dataset_uuid";
-};
-
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode();
-  TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
@@ -159,7 +133,6 @@ class TangoRosNode {
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
 
-  PublisherConfiguration publisher_config_;
   std::thread publish_device_pose_thread_;
   std::thread publish_pointcloud_thread_;
   std::thread publish_laserscan_thread_;
@@ -199,9 +172,8 @@ class TangoRosNode {
 
   ros::Publisher laser_scan_publisher_;
   sensor_msgs::LaserScan laser_scan_;
-  // TODO: make these ros params.
-  double laser_scan_min_height_ = -1.0; // meter
-  double laser_scan_max_height_ = 1.0; // meter
+  double laser_scan_max_height_ = 1.0;
+  double laser_scan_min_height_ = -1.0;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 

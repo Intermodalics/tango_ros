@@ -42,6 +42,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.address.InetAddressFactory;
+import org.ros.android.NodeMainExecutorService;
+import org.ros.android.NodeMainExecutorServiceListener;
 import org.ros.exception.RosRuntimeException;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
@@ -89,7 +91,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Logger mLogger;
 
     // UI objects.
-    private DrawerLayout mDrawerLayout;
     private TextView mUriTextView;
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -198,8 +199,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     private void setupUI() {
         setContentView(R.layout.running_activity);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mUriTextView = (TextView) findViewById(R.id.master_uri);
@@ -264,13 +263,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
                 return true;
-            case R.id.drawer:
-                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
-                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
-                } else {
-                    mDrawerLayout.openDrawer(Gravity.RIGHT);
-                }
-                return true;
             case R.id.share:
                 mLogger.saveLogToFile();
                 Intent shareFileIntent = new Intent(Intent.ACTION_SEND);
@@ -283,15 +275,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void unbindFromTango() {
         if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             TangoInitializationHelper.unbindTangoService(this, mTangoServiceConnection);
             updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
         }
-        mLogger.saveLogToFile();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         this.nodeMainExecutorService.forceShutdown();
     }
 
@@ -335,19 +329,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.network_error);
             return;
         }
-        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
-        String[] dynamicParams = {
-                getString(R.string.publish_device_pose_key),
-                getString(R.string.publish_point_cloud_key),
-                getString(R.string.publish_laser_scan_key),
-                getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key)};
         // Tango configuration parameters are non-runtime settings for now.
         // The reason is that changing a Tango configuration parameter requires to disconnect and
         // reconnect to the Tango service at runtime.
         String[] tangoConfigurationParameters = {
                 getString(R.string.pref_localization_mode_key)};
-        mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
+        mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // Create node publishing IMU data.
@@ -398,6 +385,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
      * This function initializes the tango ros node with RosJava interface.
      */
     private void initAndStartRosJavaNode() {
+        this.nodeMainExecutorService.addListener(new NodeMainExecutorServiceListener() {
+            @Override
+            public void onShutdown(NodeMainExecutorService nodeMainExecutorService) {
+                unbindFromTango();
+                mLogger.saveLogToFile();
+                // This ensures to kill the process started by the app.
+                android.os.Process.killProcess(android.os.Process.myPid());
+            }
+        });
         if (mRunLocalMaster) {
             this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
             mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
