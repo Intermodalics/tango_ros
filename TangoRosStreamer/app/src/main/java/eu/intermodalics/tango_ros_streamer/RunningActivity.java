@@ -114,7 +114,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private HashMap<String, String> mUuidsNamesHashMap;
 
     // UI objects.
-    private DrawerLayout mDrawerLayout;
     private TextView mUriTextView;
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -231,8 +230,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     private void setupUI() {
         setContentView(R.layout.running_activity);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mUriTextView = (TextView) findViewById(R.id.master_uri);
@@ -303,6 +300,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
 
         displayToastMessage(R.string.tango_connect_success);
+        if (mUuidsNamesHashMap == null) {
+            saveUuidsNamestoHashMap();
+        }
     }
 
     @Override
@@ -383,19 +383,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                if (mUuidsNamesHashMap == null) {
-                    saveUuidsNamestoHashMap();
-                }
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
                 startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
-                return true;
-            case R.id.drawer:
-                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
-                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
-                } else {
-                    mDrawerLayout.openDrawer(Gravity.RIGHT);
-                }
                 return true;
             case R.id.share:
                 mLogger.saveLogToFile();
@@ -467,21 +457,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.network_error);
             return;
         }
-        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
-        String[] dynamicParams = {
-                getString(R.string.publish_device_pose_key),
-                getString(R.string.publish_point_cloud_key),
-                getString(R.string.publish_laser_scan_key),
-                getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key)};
-        // Tango configuration parameters are non-runtime settings for now.
-        // The reason is that changing a Tango configuration parameter requires to disconnect and
-        // reconnect to the Tango service at runtime.
         HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
         tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_mode_key), "int_as_string");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
-        mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
+        mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // ServiceClient node which is responsible for calling the "save map" service.

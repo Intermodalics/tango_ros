@@ -10,9 +10,4 @@
     android:title="Settings"
     android:icon="@drawable/ic_settings_white_24dp"
     app:showAsAction="always"/>
-
-<item android:id="@+id/drawer"
-    android:title="Drawer"
-    android:icon="@drawable/ic_menu_white_24dp"
-    app:showAsAction="always"/>
 </menu>
