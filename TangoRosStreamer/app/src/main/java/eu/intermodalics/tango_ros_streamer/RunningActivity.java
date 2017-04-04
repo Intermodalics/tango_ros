@@ -91,7 +91,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Logger mLogger;
 
     // UI objects.
-    private DrawerLayout mDrawerLayout;
     private TextView mUriTextView;
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -200,8 +199,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     private void setupUI() {
         setContentView(R.layout.running_activity);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        getFragmentManager().beginTransaction().replace(R.id.preferencesFrame, new PrefsFragment()).commit();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mUriTextView = (TextView) findViewById(R.id.master_uri);
@@ -265,13 +262,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             case R.id.settings:
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
-                return true;
-            case R.id.drawer:
-                if (mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
-                    mDrawerLayout.closeDrawer(Gravity.RIGHT);
-                } else {
-                    mDrawerLayout.openDrawer(Gravity.RIGHT);
-                }
                 return true;
             case R.id.share:
                 mLogger.saveLogToFile();
@@ -339,19 +329,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.network_error);
             return;
         }
-        // Create parameter synchronization node to be up-to-date with Dynamic Reconfigure.
-        String[] dynamicParams = {
-                getString(R.string.publish_device_pose_key),
-                getString(R.string.publish_point_cloud_key),
-                getString(R.string.publish_laser_scan_key),
-                getString(R.string.publish_color_camera_key),
-                getString(R.string.publish_fisheye_camera_key)};
         // Tango configuration parameters are non-runtime settings for now.
         // The reason is that changing a Tango configuration parameter requires to disconnect and
         // reconnect to the Tango service at runtime.
         String[] tangoConfigurationParameters = {
                 getString(R.string.pref_localization_mode_key)};
-        mParameterNode = new ParameterNode(this, dynamicParams, tangoConfigurationParameters);
+        mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // Create node publishing IMU data.
