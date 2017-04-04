@@ -91,7 +91,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Logger mLogger;
 
     // UI objects.
-    private DrawerLayout mDrawerLayout;
     private TextView mUriTextView;
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -200,7 +199,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
 
     private void setupUI() {
         setContentView(R.layout.running_activity);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mUriTextView = (TextView) findViewById(R.id.master_uri);
