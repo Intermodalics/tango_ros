@@ -350,15 +350,6 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
-  if (localization_mode_ != (int) LocalizationMode::ODOMETRY) {
-    // Initialize start_of_service_T_area_description as identity.
-    tf::StampedTransform start_of_service_T_area_description =
-        tf::StampedTransform(tf::Transform(tf::Quaternion(0, 0, 0, 1)),
-                             ros::Time::now(),
-                             toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE),
-                             toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION));
-    tf::transformStampedTFToMsg(start_of_service_T_area_description, start_of_service_T_area_description_);
-  }
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -623,14 +614,8 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         start_of_service_T_device_.child_frame_id =
             toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
       } else if (localization_status_ == LocalizationStatus::LOCALIZING) {
-        // We are not localized yet, start_of_service_T_area_description is
-        // the identity.
-        toTransformStamped(*pose, time_offset_, &area_description_T_device_);
-        area_description_T_device_.header.frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
-        area_description_T_device_.child_frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-        start_of_service_T_area_description_.header.stamp = ros::Time::now();
+        // We are not localized yet.
+        LOG(INFO) << "Not localized yet, please walk around.";
       } else if (localization_status_ == LocalizationStatus::LOCALIZATION_LOST) {
         LOG(WARNING) << "Recovering tracking...";
         // Localization was lost, use old start_of_service_T_area_description
