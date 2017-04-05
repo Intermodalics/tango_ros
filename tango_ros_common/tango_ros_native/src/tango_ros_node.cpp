@@ -604,6 +604,7 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   // Create publishing threads.
   StartPublishing();
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
+  tango_data_available_ = true;
   return success;
 }
 
@@ -770,29 +771,46 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (publish_device_pose_thread_.joinable()) {
+      if (!tango_data_available_) {
+        std::unique_lock<std::mutex> lock(pose_available_mutex_);
+        pose_available_.notify_all();
+        pose_available_mutex_.unlock();
+      }
       publish_device_pose_thread_.join();
     }
     if (publish_pointcloud_thread_.joinable()) {
-      if (point_cloud_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ ||
+          point_cloud_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
         point_cloud_available_.notify_all();
+        point_cloud_available_mutex_.unlock();
       }
       publish_pointcloud_thread_.join();
     }
     if (publish_laserscan_thread_.joinable()) {
-      if (laser_scan_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ ||
+          laser_scan_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
         laser_scan_available_.notify_all();
+        laser_scan_available_mutex_.unlock();
       }
       publish_laserscan_thread_.join();
     }
     if (publish_fisheye_image_thread_.joinable()) {
-      if (fisheye_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_
+          || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
         fisheye_image_available_.notify_all();
+        fisheye_image_available_mutex_.unlock();
       }
       publish_fisheye_image_thread_.join();
     }
     if (publish_color_image_thread_.joinable()) {
-      if (color_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_
+          || color_camera_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(color_image_available_mutex_);
         color_image_available_.notify_all();
+        color_image_available_mutex_.unlock();
       }
       publish_color_image_thread_.join();
     }
@@ -1008,8 +1026,10 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
     return true;
   }
 
-  res.message =  "Map successfully saved with the following name: " + map_name;
+  std::string map_uuid_string = static_cast<std::string>(map_uuid);
+  res.message =  "Map " + map_uuid_string + " successfully saved with the following name: " + map_name;
   res.success = true;
+  tango_data_available_ = false;
   return true;
 }
 

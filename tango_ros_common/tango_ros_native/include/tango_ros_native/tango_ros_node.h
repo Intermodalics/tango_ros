@@ -201,6 +201,7 @@ class TangoRosNode {
 
   ros::Publisher tango_status_publisher_;
   TangoStatus tango_status_;
+  bool tango_data_available_ = true;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
