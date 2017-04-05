@@ -29,7 +29,6 @@ import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -52,6 +51,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
 
     private SharedPreferences mSharedPref;
     private SettingsPreferenceFragment mSettingsPreferenceFragment;
+    private HashMap<String, String> mUuidsNamesMap;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -121,7 +121,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 snackbar.show();
             }
         }
-        updateMapChooserPreferenceStatus();
+        updateMapChooserPreference(mUuidsNamesMap);
     }
 
     @Override
@@ -168,21 +168,26 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         });
 
         Intent intent = getIntent();
-        HashMap<String, String> uuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
-        MapChooserPreference mapChooserPreference =
-                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
-        mapChooserPreference.setMapList(uuidsNamesMap);
-        updateMapChooserPreferenceStatus();
-
+        HashMap<String, String> mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
+        updateMapChooserPreference(mUuidsNamesMap);
         mSettingsPreferenceFragment.setPreferencesSummury();
     }
 
-    private void updateMapChooserPreferenceStatus() {
+    private void updateMapChooserPreference(HashMap<String, String> uuidsNamesMap) {
+        MapChooserPreference mapChooserPreference =
+                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
+
         SwitchPreference createNewMapPref = (SwitchPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_create_new_map_key));
         boolean createNewMap = createNewMapPref.isChecked();
         ListPreference localizationModePref = (ListPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_mode_key));
         String localizationMode = localizationModePref.getValue();
-        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key)).setEnabled(!createNewMap && localizationMode.equals("3"));
+        mapChooserPreference.setEnabled(!createNewMap && localizationMode.equals("3"));
+
+        if (uuidsNamesMap == null || uuidsNamesMap.isEmpty()) {
+            mapChooserPreference.setEnabled(false);
+        } else {
+            mapChooserPreference.setMapList(uuidsNamesMap);
+        }
     }
 
     /**

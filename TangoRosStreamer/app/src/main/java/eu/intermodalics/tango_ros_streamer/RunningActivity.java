@@ -300,9 +300,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         }
 
         displayToastMessage(R.string.tango_connect_success);
-        if (mUuidsNamesHashMap == null) {
-            saveUuidsNamestoHashMap();
-        }
+        saveUuidsNamestoHashMap();
     }
 
     @Override
