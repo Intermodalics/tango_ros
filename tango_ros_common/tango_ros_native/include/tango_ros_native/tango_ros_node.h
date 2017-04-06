@@ -154,8 +154,8 @@ class TangoRosNode {
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   int localization_mode_;
-  LocalizationStatus localization_status_ = LOCALIZING;
-  bool start_of_service_T_area_description_initialized_ = false;
+  LocalizationStatus localization_status_;
+  bool start_of_service_T_area_description_initialized_;
 
 
   tf::TransformBroadcaster tf_broadcaster_;

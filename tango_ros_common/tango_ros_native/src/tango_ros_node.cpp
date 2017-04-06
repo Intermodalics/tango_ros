@@ -496,6 +496,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
+  localization_status_ = LocalizationStatus::LOCALIZING;
+  start_of_service_T_area_description_initialized_ = false;
 
   const uint32_t num_frame_pairs_to_listen = 2;
   TangoCoordinateFramePair pairs[num_frame_pairs_to_listen] = {
