@@ -21,7 +21,9 @@
 #include <thread>
 #include <time.h>
 
+#include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
 #include <tango_client_api/tango_client_api.h>
+#include <tango_support_api/tango_support_api.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -37,6 +39,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include <visualization_msgs/Marker.h>
 
 #include "tango_ros_native/PublisherConfig.h"
 
@@ -59,6 +62,7 @@ const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
+const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
 const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
@@ -76,6 +80,14 @@ enum LocalizationMode {
   ONLINE_SLAM = 2,
   // Map required. Internally runs Tango localization on ADF (Area Description File).
   LOCALIZATION = 3
+};
+
+// GridIndex makes indices into a value-struct instead of just an
+// array.
+struct GridIndex {
+  Tango3DR_GridIndex indices;
+
+  bool operator==(const GridIndex& other) const;
 };
 
 // Node collecting tango data and publishing it on ros topics.
@@ -106,6 +118,9 @@ class TangoRosNode {
   // Sets the tango config to be able to collect all necessary data from tango.
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
+  // Now that Tango is configured correctly, we also need to configure
+  // 3D Reconstruction the way we want.
+  Tango3DR_Status TangoSetup3DRConfig();
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
   TangoErrorType TangoConnect();
@@ -117,6 +132,7 @@ class TangoRosNode {
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
+  void PublishMesh();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
@@ -132,6 +148,7 @@ class TangoRosNode {
   std::thread publish_laserscan_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
+  std::thread publish_mesh_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
 
@@ -185,6 +202,41 @@ class TangoRosNode {
   cv::Mat color_image_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
+
+
+
+
+  // Context for a 3D Reconstruction. Maintains the state of a single
+  // mesh being reconstructed.
+  Tango3DR_Context t3dr_context_;
+  // Constant camera intrinsics for the color camera.
+  Tango3DR_CameraCalibration t3dr_intrinsics_;
+  // Updated indices from the 3D Reconstruction library. The grids for
+  // each of these needs to be re-extracted.
+  // This data is protected by binder_mutex_.
+  std::vector<GridIndex> updated_indices_binder_thread_;
+  // Updated indices from the 3D Reconstruction library. The grids for
+  // each of these nedes to be re-extracted.
+  //
+  // This data is not protected by a mutex, it is only accessed from the GL
+  // thread.
+  std::vector<GridIndex> updated_indices_gl_thread_;
+  // The point cloud of the most recent depth received.  Stored
+  // as float tuples (X,Y,Z,C).
+  TangoPointCloud* front_cloud_;
+  // Point cloud manager
+  TangoSupportPointCloudManager* point_cloud_manager_;
+  // Set if there depth points are available.
+  bool point_cloud_available_depth_;
+  // Mutex for protecting all Tango data. Tango data is shared between render
+  // thread and TangoService callback binder thread.
+  std::mutex binder_mutex_;
+  // A matrix for open_gl_T_depth_camera of the most recent depth
+  // received.
+  //
+  // Only meaningful if point_cloud_available_ is true.
+  Tango3DR_Pose t3dr_depth_pose_;
+  ros::Publisher mesh_publisher_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
