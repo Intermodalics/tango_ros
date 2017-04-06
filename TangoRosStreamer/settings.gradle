@@ -1,2 +1,1 @@
-include ':nodelet_manager'
-include ':app'
+include ':app', ':nodelet_manager', ':tango_ros_common'

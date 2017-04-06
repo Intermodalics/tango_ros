@@ -20,29 +20,15 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import eu.intermodalics.tango_ros_streamer.common.NodeNamespaceHelper;
+import eu.intermodalics.tangoroscommon.NodeNamespaceHelper;
 
 import org.apache.commons.logging.Log;
-import org.ros.exception.RemoteException;
-import org.ros.exception.ServiceNotFoundException;
-import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
-import org.ros.node.service.ServiceClient;
-import org.ros.node.service.ServiceResponseListener;
-import org.ros.node.topic.Subscriber;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-
-import dynamic_reconfigure.BoolParameter;
-import dynamic_reconfigure.Config;
-import dynamic_reconfigure.Reconfigure;
-import dynamic_reconfigure.ReconfigureRequest;
-import dynamic_reconfigure.ReconfigureResponse;
 
 /**
  * RosJava node that handles interactions with the ros parameter server.
