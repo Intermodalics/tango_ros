@@ -20,6 +20,8 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import eu.intermodalics.tango_ros_streamer.common.NodeNamespaceHelper;
+
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -41,7 +43,6 @@ import dynamic_reconfigure.Config;
 import dynamic_reconfigure.Reconfigure;
 import dynamic_reconfigure.ReconfigureRequest;
 import dynamic_reconfigure.ReconfigureResponse;
-import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 /**
  * RosJava node that handles interactions with Dynamic Reconfigure.
@@ -89,7 +90,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         mSharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         // Listen to updates of the dynamic reconfigure server via the update parameters topic.
-        Subscriber<Config> subscriber = mConnectedNode.newSubscriber(BuildTangoRosNodeNamespaceName(RECONFIGURE_TOPIC_NAME), Config._TYPE);
+        Subscriber<Config> subscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(RECONFIGURE_TOPIC_NAME), Config._TYPE);
         subscriber.addMessageListener(new MessageListener<Config>() {
             @Override
             public void onNewMessage(Config config) {
@@ -109,15 +110,15 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
                 Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
                 String stringValue = mSharedPreferences.getString(paramName, "");
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
             if (mParamNames.get(paramName) == "string") {
                 String stringValue = mSharedPreferences.getString(paramName, "");
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), stringValue);
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
             }
         }
     }
@@ -177,7 +178,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         srv_req.setConfig(config);
         try {
             ServiceClient<ReconfigureRequest, ReconfigureResponse> serviceClient =
-                    mConnectedNode.newServiceClient(BuildTangoRosNodeNamespaceName(RECONFIGURE_SRV_NAME),
+                    mConnectedNode.newServiceClient(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(RECONFIGURE_SRV_NAME),
                             Reconfigure._TYPE);
 
             serviceClient.call(srv_req, new ServiceResponseListener<ReconfigureResponse>() {
@@ -198,9 +199,5 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain, SharedP
         } catch (Exception e) {
             mLog.error("Error while calling Dynamic Reconfigure Service: " + e.getMessage());
         }
-    }
-
-    private String BuildTangoRosNodeNamespaceName(String paramName) {
-        return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }

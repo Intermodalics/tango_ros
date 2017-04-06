@@ -1,3 +1,2 @@
-include ':tango_ros_node'
+include ':nodelet_manager'
 include ':app'
-

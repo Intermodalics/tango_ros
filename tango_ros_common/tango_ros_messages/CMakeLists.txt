@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   DIRECTORY srv
   FILES
+  GetMapName.srv
+  GetMapUuids.srv
   SaveMap.srv
   TangoConnect.srv
 )
@@ -31,6 +33,12 @@ include_directories(
 # Copy generated header files by dynamic reconfigure, srv,... into local include folder.
 # Otherwise these header files can not be found when building for Android.
 set(file_names_to_copy
+  GetMapName
+  GetMapNameRequest
+  GetMapNameResponse
+  GetMapUuids
+  GetMapUuidsRequest
+  GetMapUuidsResponse
   SaveMap
   SaveMapRequest
   SaveMapResponse

@@ -30,11 +30,14 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
+#include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tango_ros_messages/GetMapName.h>
+#include <tango_ros_messages/GetMapUuids.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -122,11 +125,13 @@ struct PublisherConfiguration {
 };
 
 // Node collecting tango data and publishing it on ros topics.
-class TangoRosNode {
+class TangoRosNode : public ::nodelet::Nodelet {
  public:
   TangoRosNode();
   TangoRosNode(const PublisherConfiguration& publisher_config);
   ~TangoRosNode();
+  // Initialization function called when plugin is loaded.
+  void onInit();
   // Gets the full list of map Uuids (Universally Unique IDentifier)
   // available on the device.
   // @return a list as a string: uuids are comma-separated.
@@ -181,9 +186,14 @@ class TangoRosNode {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  bool GetMapName(const tango_ros_messages::GetMapName::Request& req,
+                  tango_ros_messages::GetMapName::Response &res);
+  bool GetMapUuids(const tango_ros_messages::GetMapUuids::Request &req,
+                   tango_ros_messages::GetMapUuids::Response &res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
+  bool SaveMap(tango_ros_messages::SaveMap::Request &req,
+               tango_ros_messages::SaveMap::Response &res);
   bool TangoConnectServiceCallback(
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);
@@ -254,6 +264,8 @@ class TangoRosNode {
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
 
+  ros::ServiceServer get_map_name_service_;
+  ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
 };
