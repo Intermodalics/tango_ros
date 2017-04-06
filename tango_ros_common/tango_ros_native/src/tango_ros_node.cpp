@@ -616,10 +616,11 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
       } else if (localization_status_ == LocalizationStatus::LOCALIZING) {
         // We are not localized yet.
         LOG(INFO) << "Not localized yet, please walk around.";
-      } else if (localization_status_ == LocalizationStatus::LOCALIZATION_LOST) {
-        LOG(WARNING) << "Recovering tracking...";
+      } else if (localization_status_ == LocalizationStatus::LOCALIZATION_LOST
+          && start_of_service_T_area_description_initialized_) {
         // Localization was lost, use old start_of_service_T_area_description
         // to compute area_description_T_device.
+        LOG(WARNING) << "Recovering tracking...";
         geometry_msgs::TransformStamped start_of_service_T_device;
         toTransformStamped(*pose, time_offset_, &start_of_service_T_device);
         start_of_service_T_device.header.frame_id =
@@ -668,6 +669,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
             toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         start_of_service_T_area_description_.child_frame_id =
             toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
+        start_of_service_T_area_description_initialized_ = true;
       }
       localization_status_ = LocalizationStatus::LOCALIZED;
 
