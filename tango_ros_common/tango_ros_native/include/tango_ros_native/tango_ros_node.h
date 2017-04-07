@@ -227,6 +227,8 @@ class TangoRosNode {
   // thread.
   std::vector<GridIndex> updated_indices_publisher_thread_;
   std::vector<Tango3DR_Mesh*> dynamic_meshes_;
+  bool use_floor_plan_ = false;
+  visualization_msgs::Marker mesh_marker_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
