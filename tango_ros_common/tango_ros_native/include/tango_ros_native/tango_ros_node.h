@@ -203,40 +203,30 @@ class TangoRosNode {
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
 
-
-
-
+  ros::Publisher mesh_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_Context t3dr_context_;
+  TangoSupportPointCloudManager* point_cloud_manager_;
+  // The most recent point cloud received.
+  TangoPointCloud* last_point_cloud_;
+  bool point_cloud_available_for_td3r_;
+  // The pose the the most recent point cloud received.
+  // Only meaningful if point_cloud_available_for_td3r_ is true.
+  Tango3DR_Pose t3dr_depth_pose_;
   // Constant camera intrinsics for the color camera.
   Tango3DR_CameraCalibration t3dr_intrinsics_;
+  std::mutex mesh_available_mutex_;
   // Updated indices from the 3D Reconstruction library. The grids for
   // each of these needs to be re-extracted.
-  // This data is protected by binder_mutex_.
-  std::vector<GridIndex> updated_indices_binder_thread_;
+  // This data is protected by mesh_available_mutex_.
+  std::vector<GridIndex> updated_indices_callback_thread_;
   // Updated indices from the 3D Reconstruction library. The grids for
-  // each of these nedes to be re-extracted.
-  //
-  // This data is not protected by a mutex, it is only accessed from the GL
+  // each of these needs to be re-extracted.
+  // This data is not protected by a mutex, it is only accessed from the publisher
   // thread.
-  std::vector<GridIndex> updated_indices_gl_thread_;
-  // The point cloud of the most recent depth received.  Stored
-  // as float tuples (X,Y,Z,C).
-  TangoPointCloud* front_cloud_;
-  // Point cloud manager
-  TangoSupportPointCloudManager* point_cloud_manager_;
-  // Set if there depth points are available.
-  bool point_cloud_available_depth_;
-  // Mutex for protecting all Tango data. Tango data is shared between render
-  // thread and TangoService callback binder thread.
-  std::mutex binder_mutex_;
-  // A matrix for open_gl_T_depth_camera of the most recent depth
-  // received.
-  //
-  // Only meaningful if point_cloud_available_ is true.
-  Tango3DR_Pose t3dr_depth_pose_;
-  ros::Publisher mesh_publisher_;
+  std::vector<GridIndex> updated_indices_publisher_thread_;
+  std::vector<Tango3DR_Mesh*> dynamic_meshes_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
