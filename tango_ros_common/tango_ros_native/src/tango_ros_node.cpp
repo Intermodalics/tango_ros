@@ -797,10 +797,10 @@ void TangoRosNode::PublishColorImage() {
         // The Tango image encoding is not supported by ROS.
         // We need to convert it to RGB.
         cv::Mat color_image_rgb;
-        cv::cvtColor(color_image_, color_image_rgb, cv::COLOR_YUV420sp2BGRA);
+        cv::cvtColor(color_image_, color_image_rgb, cv::COLOR_YUV420sp2RGBA);
         cv_bridge::CvImage cv_bridge_color_image;
         cv_bridge_color_image.header = color_image_header_;
-        cv_bridge_color_image.encoding = sensor_msgs::image_encodings::BGRA8;
+        cv_bridge_color_image.encoding = sensor_msgs::image_encodings::RGBA8;
         cv_bridge_color_image.image = color_image_rgb;
         color_camera_info_.header = color_image_header_;
         color_camera_info_manager_->setCameraInfo(color_camera_info_);
