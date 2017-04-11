@@ -33,6 +33,7 @@ import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Subscriber;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import dynamic_reconfigure.BoolParameter;
@@ -52,14 +53,14 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
     private Log mLog;
-    private final String[] mParamNames;
+    private final HashMap<String, String> mParamNames;
 
     /**
      * Constructor of the ParameterNode class.
      * @param activity The activity running the node.
      * @param paramNames Names of the (non-dynamic) ROS parameters (without namespace).
      */
-    public ParameterNode(Activity activity, String[] paramNames) {
+    public ParameterNode(Activity activity, HashMap<String, String> paramNames) {
         mCreatorActivity = activity;
         mParamNames = paramNames;
     }
@@ -73,9 +74,19 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
         // Set ROS params according to preferences.
-        for (String paramName : mParamNames) {
-            String stringValue = mSharedPreferences.getString(paramName, "1");
-            connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+        for (String paramName : mParamNames.keySet()) {
+            if (mParamNames.get(paramName) == "boolean") {
+                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
+                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+            }
+            if (mParamNames.get(paramName) == "int_as_string") {
+                String stringValue = mSharedPreferences.getString(paramName, "");
+                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+            }
+            if (mParamNames.get(paramName) == "string") {
+                String stringValue = mSharedPreferences.getString(paramName, "");
+                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), stringValue);
+            }
         }
     }
 

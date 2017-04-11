@@ -35,6 +35,8 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tango_ros_messages/SaveMap.h>
+#include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
@@ -54,13 +56,16 @@ const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
+const std::string TANGO_STATUS_TOPIC = "tango/status";
 const std::string POINT_CLOUD_TOPIC_NAME = "tango/point_cloud";
 const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
+const std::string CREATE_NEW_MAP_PARAM_NAME = "tango/create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
+const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "/tango/localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
@@ -78,11 +83,28 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
+enum class TangoStatus {
+  UNKNOWN = 0,
+  SERVICE_NOT_BOUND,
+  SERVICE_NOT_CONNECTED,
+  SERVICE_CONNECTED,
+  VERSION_NOT_SUPPORTED,
+  SERVICE_RUNNING
+};
+
 // Node collecting tango data and publishing it on ros topics.
 class TangoRosNode {
  public:
   TangoRosNode();
   ~TangoRosNode();
+  // Gets the full list of map Uuids (Universally Unique IDentifier)
+  // available on the device.
+  // @return a list as a string: uuids are comma-separated.
+  std::string GetAvailableMapUuidsList();
+  // Gets the map name corresponding to a given map uuid.
+  std::string GetMapNameFromUuid(const std::string& map_uuid);
+
+
   // Sets the tango config and connects to the tango service.
   // It also publishes the necessary static transforms (device_T_camera_*).
   // @return returns success if it ended successfully.
@@ -107,8 +129,15 @@ class TangoRosNode {
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
   // Connects to the tango service and to the necessary callbacks.
-  // @return returns TANGO_SUCCESS if connecting to tango ended successfully.
+  // @return returns TANGO_SUCCESS if connecting to tango ended successfully
+  // or if service was already connected.
   TangoErrorType TangoConnect();
+  // Sets up config, connect to Tango service, starts publishing threads and
+  // publishes first static transforms.
+  TangoErrorType ConnectToTangoAndSetUpNode();
+  // Helper function to update and publish the Tango status. Publishes always
+  // for convenience, even if Tango status did not change.
+  void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
   // Publishes the available data (device pose, point cloud, laser scan, images).
@@ -122,7 +151,12 @@ class TangoRosNode {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
-
+  // Function called when the SaveMap service is called.
+  // Save the current map (ADF) to disc with the given name.
+  bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
+  bool TangoConnectServiceCallback(
+          const tango_ros_messages::TangoConnect::Request &request,
+          tango_ros_messages::TangoConnect::Response& response);
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -165,6 +199,10 @@ class TangoRosNode {
   double laser_scan_max_height_ = 1.0;
   double laser_scan_min_height_ = -1.0;
 
+  ros::Publisher tango_status_publisher_;
+  TangoStatus tango_status_;
+  bool tango_data_available_ = true;
+
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
   image_transport::CameraPublisher fisheye_camera_publisher_;
@@ -185,6 +223,9 @@ class TangoRosNode {
   cv::Mat color_image_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
+
+  ros::ServiceServer save_map_service_;
+  ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

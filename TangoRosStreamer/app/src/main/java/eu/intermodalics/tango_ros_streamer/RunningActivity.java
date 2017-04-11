@@ -16,6 +16,8 @@
 
 package eu.intermodalics.tango_ros_streamer;
 
+import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -35,6 +37,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.ImageView;
@@ -45,37 +48,53 @@ import org.ros.address.InetAddressFactory;
 import org.ros.android.NodeMainExecutorService;
 import org.ros.android.NodeMainExecutorServiceListener;
 import org.ros.exception.RosRuntimeException;
+import org.ros.node.ConnectedNode;
+import org.ros.node.DefaultNodeListener;
 import org.ros.node.NodeConfiguration;
+import org.ros.node.NodeListener;
 import org.ros.node.NodeMainExecutor;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
 import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
 import eu.intermodalics.tango_ros_node.TangoRosNode;
 
-public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener {
+import tango_ros_messages.TangoConnectRequest;
+import tango_ros_messages.TangoConnectResponse;
+
+public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener,
+ SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
-    private static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
+
+    private static final String REQUEST_TANGO_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
+    public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
+    public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
     private static final String EXTRA_VALUE_DATASET = "DATASET_PERMISSION";
-    private static final String REQUEST_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
     private static final int REQUEST_CODE_TANGO_PERMISSION = 111;
 
     public static class startSettingsActivityRequest {
         public static final int FIRST_RUN = 1;
         public static final int STANDARD_RUN = 2;
     }
+
     enum RosStatus {
         MASTER_NOT_CONNECTED,
         NODE_RUNNING
     }
 
+    // Symmetric implementation to tango_ros_node.h.
     enum TangoStatus {
+        UNKNOWN,
         SERVICE_NOT_BOUND,
         SERVICE_NOT_CONNECTED,
+        SERVICE_CONNECTED,
         VERSION_NOT_SUPPORTED,
         SERVICE_RUNNING,
     }
@@ -85,10 +104,14 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
+    private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
-    private TangoStatus mTangoStatus = TangoStatus.SERVICE_NOT_CONNECTED;
+    private TangoStatus mTangoStatus = TangoStatus.UNKNOWN;
     private Logger mLogger;
+    private boolean mCreateNewMap = false;
+    private boolean mMapSaved = false;
+    private HashMap<String, String> mUuidsNamesHashMap;
 
     // UI objects.
     private TextView mUriTextView;
@@ -97,6 +120,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     private Switch mlogSwitch;
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
+    private Button mSaveButton;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -175,7 +199,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (status == TangoStatus.SERVICE_RUNNING) {
+                if (status == TangoStatus.SERVICE_RUNNING || status == TangoStatus.SERVICE_CONNECTED) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                 } else {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
@@ -197,6 +221,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
     }
 
+    private void showSaveMapDialog() {
+        FragmentManager manager = getFragmentManager();
+        SaveMapDialog saveMapDialog = new SaveMapDialog();
+        saveMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
+        saveMapDialog.show(manager, "MapNameDialog");
+    }
+
     private void setupUI() {
         setContentView(R.layout.running_activity);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -215,6 +246,101 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         });
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
+        mSaveButton = (Button) findViewById(R.id.save_map_button);
+        mSaveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showSaveMapDialog();
+            }
+        });
+        mSaveButton.setEnabled(!mMapSaved);
+        if (mCreateNewMap) {
+            mSaveButton.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void onClickOkSaveMapDialog(final String mapName) {
+        if (mapName == null || mapName.isEmpty()) {
+            Log.e(TAG, "Map name is null or empty, unable to save the map");
+            displayToastMessage(R.string.map_name_error);
+            return;
+        }
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                mTangoServiceClientNode.callSaveMapService(mapName);
+                return null;
+            }
+        }.execute();
+    }
+
+    @Override
+    public void onSaveMapServiceCallFinish(boolean success, String message) {
+        if (success) {
+            mMapSaved = true;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mSaveButton.setEnabled(!mMapSaved);
+                }
+            });
+            displayToastMessage(R.string.save_map_success);
+        } else {
+            Log.e(TAG, "Error while saving map: " + message);
+            displayToastMessage(R.string.save_map_error);
+        }
+    }
+
+    @Override
+    public void onTangoConnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error connecting to Tango: " + response + ", message: " + message);
+            displayToastMessage(R.string.tango_connect_error);
+            return;
+        }
+
+        displayToastMessage(R.string.tango_connect_success);
+        saveUuidsNamestoHashMap();
+    }
+
+    @Override
+    public void onTangoDisconnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error disconnecting from Tango: " + response + ", message: " + message);
+            // Do not switch Tango lights in this case because Tango disconnect can never fail.
+            // Failure occured due to something else, so Tango is still connected.
+            displayToastMessage(R.string.tango_disconnect_error);
+            return;
+        }
+
+        displayToastMessage(R.string.tango_disconnect_success);
+    }
+
+    @Override
+    public void onTangoStatus(int status) {
+        if (status >= TangoStatus.values().length) {
+            Log.e(TAG, "Invalid Tango status " + status);
+            return;
+        }
+        switchTangoLight(TangoStatus.values()[status]);
+    }
+
+    private void saveUuidsNamestoHashMap() {
+        String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
+        StringTokenizer token = new StringTokenizer(mapUuids, ",");
+        mUuidsNamesHashMap = new HashMap<String, String>();
+        while (token.hasMoreTokens()) {
+            String uuid = token.nextToken();
+            String name = mTangoRosNode.getMapNameFromUuid(uuid);
+            mUuidsNamesHashMap.put(uuid, name);
+        }
+    }
+
+    private void getTangoPermission(String permissionType) {
+        Intent intent = new Intent();
+        intent.setAction(REQUEST_TANGO_PERMISSION_ACTION);
+        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, permissionType);
+        startActivityForResult(intent, REQUEST_CODE_TANGO_PERMISSION);
     }
 
     @Override
@@ -224,19 +350,14 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                 getResources().getString(R.string.pref_master_uri_default));
+        mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
         String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                 getString(R.string.pref_log_file_default));
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
 
-        getPermission(EXTRA_VALUE_DATASET);
-    }
-
-    private void getPermission(String permissionType) {
-        Intent intent = new Intent();
-        intent.setAction(REQUEST_PERMISSION_ACTION);
-        intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, permissionType);
-        startActivityForResult(intent, REQUEST_CODE_TANGO_PERMISSION);
+        getTangoPermission(EXTRA_VALUE_ADF);
+        getTangoPermission(EXTRA_VALUE_DATASET);
     }
 
     @Override
@@ -261,6 +382,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         switch (item.getItemId()) {
             case R.id.settings:
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
+                settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
                 startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
                 return true;
             case R.id.share:
@@ -301,6 +423,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
+                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+                if (mCreateNewMap) {
+                    mSaveButton.setVisibility(View.VISIBLE);
+                }
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
@@ -329,14 +455,17 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.network_error);
             return;
         }
-        // Tango configuration parameters are non-runtime settings for now.
-        // The reason is that changing a Tango configuration parameter requires to disconnect and
-        // reconnect to the Tango service at runtime.
-        String[] tangoConfigurationParameters = {
-                getString(R.string.pref_localization_mode_key)};
+        HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
+        tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
+        tangoConfigurationParameters.put(getString(R.string.pref_localization_mode_key), "int_as_string");
+        tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+        // ServiceClient node which is responsible for calling the "save map" service.
+        mTangoServiceClientNode = new TangoServiceClientNode(this);
+        nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);
         // Create node publishing IMU data.
         mImuNode = new ImuNode(this);
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
@@ -351,7 +480,23 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             mTangoRosNode.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
-                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration);
+                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration, new ArrayList<NodeListener>(){{
+                    add(new DefaultNodeListener() {
+                        @Override
+                        public void onStart(ConnectedNode connectedNode) {
+                            int count = 0;
+                            while (count < 50 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                                try {
+                                    count++;
+                                    Log.e(TAG, "Trying to connect to Tango, attempt " + count);
+                                    Thread.sleep(200);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                }});
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
                 updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);

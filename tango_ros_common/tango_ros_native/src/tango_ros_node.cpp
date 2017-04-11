@@ -13,7 +13,9 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_node.h"
 
+#include <iostream>
 #include <cmath>
+#include <ctime>
 
 #include <glog/logging.h>
 
@@ -23,6 +25,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <std_msgs/Int8.h>
 
 namespace {
 // This function routes onPoseAvailable callback to the application object for
@@ -310,12 +313,30 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
+std::string getCurrentDateAndTime() {
+  std::time_t currentTime;
+  struct tm* currentDateTime;
+  std::time(&currentTime);
+  currentDateTime = std::localtime(&currentTime);
+  int day = currentDateTime->tm_mday;
+  int month = currentDateTime->tm_mon + 1;
+  int year = currentDateTime->tm_year + 1900;
+  int hour = currentDateTime->tm_hour;
+  int min = currentDateTime->tm_min;
+  int sec = currentDateTime->tm_sec;
+  std::ostringstream oss;
+  oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
+  return oss.str();
+}
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : run_threads_(false) {
+TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
   const  uint32_t queue_size = 1;
   const bool latching = true;
+  tango_status_publisher_ =
+      node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC,
+                                             queue_size, latching);
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
           POINT_CLOUD_TOPIC_NAME, queue_size, latching);
@@ -340,28 +361,24 @@ TangoRosNode::TangoRosNode() : run_threads_(false) {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
+
+  save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
+      tango_ros_messages::SaveMap::Response>("/tango/save_map",
+                                             boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
+
+  tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
+          tango_ros_messages::TangoConnect::Response>(
+              "/tango/connect", boost::bind(
+                  &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
+
+  tango_status_ = TangoStatus::UNKNOWN;
 }
 
 TangoRosNode::~TangoRosNode() {
-  StopPublishing();
-  if (tango_config_ != nullptr) {
-    TangoConfig_free(tango_config_);
-  }
+  TangoDisconnect();
 }
 
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
-  TangoErrorType result = TangoSetupConfig();
-  if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << "Error while setting up Tango config.";
-      return result;
-  }
-  result = TangoConnect();
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while connecting to Tango Service.";
-    return result;
-  }
-
-  PublishStaticTransforms();
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
@@ -399,7 +416,6 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   color_camera_info_manager_->setCameraName("color_1");
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
-
   return TANGO_SUCCESS;
 }
 
@@ -420,49 +436,70 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
         << config_enable_motion_tracking << " error: " << result;
     return result;
   }
-
-  bool enable_drift_correction = false;
-  int localization_mode;
-  node_handle_.param(LOCALIZATION_MODE_PARAM_NAME, localization_mode, (int) LocalizationMode::ODOMETRY);
-  if (localization_mode == LocalizationMode::ONLINE_SLAM) {
-    enable_drift_correction = true;
-  }
-  const char* config_enable_drift_correction = "config_enable_drift_correction";
-  result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
-  if(result != TANGO_SUCCESS) {
+  bool create_new_map;
+  node_handle_.param(CREATE_NEW_MAP_PARAM_NAME, create_new_map, false);
+  const char* config_enable_learning_mode = "config_enable_learning_mode";
+  result = TangoConfig_setBool(tango_config_, config_enable_learning_mode, create_new_map);
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
-        << config_enable_drift_correction << " error: " << result;
+        << config_enable_learning_mode << " error: " << result;
     return result;
+  }
+  if (!create_new_map) {
+    bool enable_drift_correction = false;
+    int localization_mode;
+    node_handle_.param(LOCALIZATION_MODE_PARAM_NAME, localization_mode,
+                       (int)LocalizationMode::ONLINE_SLAM);
+    if (localization_mode == LocalizationMode::ONLINE_SLAM) {
+      enable_drift_correction = true;
+    }
+    const char* config_enable_drift_correction = "config_enable_drift_correction";
+    result = TangoConfig_setBool(tango_config_, config_enable_drift_correction, enable_drift_correction);
+    if (result != TANGO_SUCCESS) {
+      LOG(ERROR) << function_name << ", TangoConfig_setBool "
+          << config_enable_drift_correction << " error: " << result;
+      return result;
+    }
+    if (localization_mode == LocalizationMode::LOCALIZATION) {
+      std::string map_uuid_to_load = "";
+      node_handle_.param<std::string>(LOCALIZATION_MAP_UUID_PARAM_NAME, map_uuid_to_load, "");
+      const char* config_load_area_description_UUID = "config_load_area_description_UUID";
+      result = TangoConfig_setString(tango_config_, config_load_area_description_UUID, map_uuid_to_load.c_str());
+      if (result != TANGO_SUCCESS) {
+        LOG(ERROR) << function_name << ", TangoConfig_setString "
+            << config_load_area_description_UUID << " error: " << result;
+        return result;
+      }
+    }
   }
   const char* config_enable_auto_recovery = "config_enable_auto_recovery";
   result = TangoConfig_setBool(tango_config_, config_enable_auto_recovery, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_auto_recovery << " error: " << result;
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
   result = TangoConfig_setBool(tango_config_, config_enable_depth, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_depth << " error: " << result;
     return result;
   }
   const char* config_depth_mode = "config_depth_mode";
   result = TangoConfig_setInt32(tango_config_, config_depth_mode, TANGO_POINTCLOUD_XYZC);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setInt "
         << config_depth_mode << " error: " << result;
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
   result = TangoConfig_setBool(tango_config_, config_enable_color_camera, true);
-  if(result != TANGO_SUCCESS) {
+  if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_color_camera << " error: " << result;
     return result;
   }
-
   std::string datasets_path;
   node_handle_.param(DATASET_PATH_PARAM_NAME, datasets_path, DATASETS_PATH);
   const char* config_datasets_path = "config_datasets_path";
@@ -530,10 +567,56 @@ TangoErrorType TangoRosNode::TangoConnect() {
   return TANGO_SUCCESS;
 }
 
+void TangoRosNode::UpdateAndPublishTangoStatus(const TangoStatus& status) {
+  tango_status_ = status;
+  std_msgs::Int8 tango_status_msg;
+  tango_status_msg.data = static_cast<int>(tango_status_);
+  tango_status_publisher_.publish(tango_status_msg);
+}
+
+TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
+  if (tango_status_ == TangoStatus::SERVICE_CONNECTED) {
+    // Connecting twice to Tango results in TANGO_ERROR. Early return to avoid
+    // this.
+    LOG(WARNING) << "Already connected to Tango service.";
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
+    return TANGO_SUCCESS;
+  }
+
+  TangoErrorType success;
+  // Setup config.
+  success = TangoSetupConfig();
+  // Early return if config setup failed.
+  if (success != TANGO_SUCCESS) {
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
+    return success;
+  }
+  // Connect to Tango.
+  success = TangoConnect();
+  // Early return if Tango connect call failed.
+  if (success != TANGO_SUCCESS) {
+    UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
+    return success;
+  }
+  // Publish static transforms.
+  PublishStaticTransforms();
+  OnTangoServiceConnected();
+  // Create publishing threads.
+  StartPublishing();
+  UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
+  tango_data_available_ = true;
+  return success;
+}
+
+
 void TangoRosNode::TangoDisconnect() {
-  TangoConfig_free(tango_config_);
-  tango_config_ = nullptr;
+  StopPublishing();
+  if (tango_config_ != nullptr) {
+      TangoConfig_free(tango_config_);
+      tango_config_ = nullptr;
+  }
   TangoService_disconnect();
+  UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
 }
 
 void TangoRosNode::PublishStaticTransforms() {
@@ -687,15 +770,50 @@ void TangoRosNode::StartPublishing() {
 void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
-    publish_device_pose_thread_.join();
-    if (point_cloud_publisher_.getNumSubscribers() > 0)
+    if (publish_device_pose_thread_.joinable()) {
+      if (!tango_data_available_) {
+        std::unique_lock<std::mutex> lock(pose_available_mutex_);
+        pose_available_.notify_all();
+        pose_available_mutex_.unlock();
+      }
+      publish_device_pose_thread_.join();
+    }
+    if (publish_pointcloud_thread_.joinable()) {
+      if (!tango_data_available_ ||
+          point_cloud_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
+        point_cloud_available_.notify_all();
+        point_cloud_available_mutex_.unlock();
+      }
       publish_pointcloud_thread_.join();
-    if (laser_scan_publisher_.getNumSubscribers() > 0)
+    }
+    if (publish_laserscan_thread_.joinable()) {
+      if (!tango_data_available_ ||
+          laser_scan_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
+        laser_scan_available_.notify_all();
+        laser_scan_available_mutex_.unlock();
+      }
       publish_laserscan_thread_.join();
-    if (fisheye_camera_publisher_.getNumSubscribers() > 0)
+    }
+    if (publish_fisheye_image_thread_.joinable()) {
+      if (!tango_data_available_
+          || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
+        fisheye_image_available_.notify_all();
+        fisheye_image_available_mutex_.unlock();
+      }
       publish_fisheye_image_thread_.join();
-    if (color_camera_publisher_.getNumSubscribers() > 0)
+    }
+    if (publish_color_image_thread_.joinable()) {
+      if (!tango_data_available_
+          || color_camera_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(color_image_available_mutex_);
+        color_image_available_.notify_all();
+        color_image_available_mutex_.unlock();
+      }
       publish_color_image_thread_.join();
+    }
     ros_spin_thread_.join();
   }
 }
@@ -837,5 +955,116 @@ void TangoRosNode::RunRosSpin() {
     ros::spinOnce();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+}
+
+bool TangoRosNode::TangoConnectServiceCallback(
+        const tango_ros_messages::TangoConnect::Request& request,
+        tango_ros_messages::TangoConnect::Response& response) {
+    switch (request.request) {
+        case tango_ros_messages::TangoConnect::Request::CONNECT:
+            response.response = ConnectToTangoAndSetUpNode();
+            break;
+        case tango_ros_messages::TangoConnect::Request::DISCONNECT:
+            // Disconnect from Tango Service.
+            TangoDisconnect();
+            response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
+            break;
+        default:
+            LOG(ERROR) << "Did not understand request " << request.request
+                       << ", valid requests are (CONNECT: "
+                       << tango_ros_messages::TangoConnect::Request::CONNECT
+                       << ", DISCONNECT: "
+                       << tango_ros_messages::TangoConnect::Request::DISCONNECT
+                       << ")";
+            return false;
+    }
+
+    return true;
+}
+
+bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
+                           tango_ros_messages::SaveMap::Response &res) {
+  TangoErrorType result;
+  TangoUUID map_uuid;
+  result = TangoService_saveAreaDescription(&map_uuid);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving area description, error: " << result;
+    res.message =  "Could not save the map. Did you turn on create_new_map? "
+        "Did you allow the app to use area learning?";
+    res.success = false;
+    return true;
+  }
+  TangoAreaDescriptionMetadata metadata;
+  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    res.message =  "Could not access map metadata";
+    res.success = false;
+    return true;
+  }
+  // Prepend name with date and time.
+  std::string map_name = getCurrentDateAndTime() + " " + req.map_name;
+  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
+    res.message =  "Could not set the name of the map";
+    res.success = false;
+    return true;
+  }
+  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
+    res.message =  "Could not save map metadata";
+    res.success = false;
+    return true;
+  }
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+    res.message =  "Could not free map metadata";
+    res.success = false;
+    return true;
+  }
+
+  std::string map_uuid_string = static_cast<std::string>(map_uuid);
+  res.message =  "Map " + map_uuid_string + " successfully saved with the following name: " + map_name;
+  res.success = true;
+  tango_data_available_ = false;
+  return true;
+}
+
+std::string TangoRosNode::GetAvailableMapUuidsList() {
+  char* uuid_list;
+  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
+  if (result != TANGO_SUCCESS) {
+    LOG(INFO) << "Error while retrieving all available map UUIDs, error: " << result;
+  }
+  if (uuid_list != NULL && uuid_list[0] != '\0') {
+    LOG(INFO) << "UUID list: " << uuid_list;
+  } else {
+    LOG(ERROR) << "No area description file available.";
+  }
+  return std::string(uuid_list);
+}
+
+std::string TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid) {
+  size_t size = 0;
+  char* value;
+  TangoAreaDescriptionMetadata metadata;
+  TangoErrorType result = TangoService_getAreaDescriptionMetadata(map_uuid.c_str(), &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+  }
+  result = TangoAreaDescriptionMetadata_get(metadata, "name", &size, &value);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to get area description metadata, error: " << result;
+  }
+  std::string map_name = std::string(value);
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+  }
+  LOG(INFO) << "Successfully retrieved map name: " << map_name << " from uuid " << map_uuid;
+  return map_name;
 }
 } // namespace tango_ros_native
