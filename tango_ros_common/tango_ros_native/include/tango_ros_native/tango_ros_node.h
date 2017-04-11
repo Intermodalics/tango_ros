@@ -156,14 +156,18 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  // ROS service callback to get the user readable name from a given UUID.
   bool GetMapName(const tango_ros_messages::GetMapName::Request& req,
                   tango_ros_messages::GetMapName::Response &res);
+  // ROS service callback to get a list of available ADF UUIDs and corresponding
+  // user readable map names.
   bool GetMapUuids(const tango_ros_messages::GetMapUuids::Request &req,
                    tango_ros_messages::GetMapUuids::Response &res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMap(tango_ros_messages::SaveMap::Request &req,
                tango_ros_messages::SaveMap::Response &res);
+  // ROS service callback to connect or disconnect from Tango Service.
   bool TangoConnectServiceCallback(
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);

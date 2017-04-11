@@ -91,7 +91,13 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         });
     }
 
-    public boolean wrapCallROSService(String serviceName, Callable<Boolean> callable) {
+    /**
+     * Wrapper function for ROS service call to avoid code duplication in try catch block.
+     * @param serviceName Name of the ROS service to be called. Used for error logging.
+     * @param callable Callable object on which function 'call' is defined.
+     * @return true if calling the service was successful.
+     */
+    private boolean wrapCallROSService(String serviceName, Callable<Boolean> callable) {
         if (mConnectedNode == null) {
             // Using system logger since node logger is not ready yet.
             System.out.println("Client node not ready: " + serviceName);
@@ -111,7 +117,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return true;
     }
 
-    public Boolean tangoConnect(final byte connectRequest) throws ServiceNotFoundException {
+    private Boolean tangoConnect(final byte connectRequest) throws ServiceNotFoundException {
         ServiceClient<TangoConnectRequest, TangoConnectResponse> tangoConnectService =
                 mConnectedNode.newServiceClient(TANGO_CONNECT_SRV_NAME, TangoConnect._TYPE);
 
@@ -138,7 +144,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return true;
     }
 
-    public Boolean saveMap(String mapName) throws ServiceNotFoundException {
+    private Boolean saveMap(String mapName) throws ServiceNotFoundException {
         ServiceClient<SaveMapRequest, SaveMapResponse> saveMapService =
                 mConnectedNode.newServiceClient(SAVE_MAP_SRV_NAME, SaveMap._TYPE);
 
@@ -158,9 +164,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return true;
     }
 
-    public Boolean getMapUuids() throws ServiceNotFoundException {
+    private Boolean getMapUuids() throws ServiceNotFoundException {
         ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> saveMapService =
-                mConnectedNode.newServiceClient(SAVE_MAP_SRV_NAME, SaveMap._TYPE);
+                mConnectedNode.newServiceClient(GET_MAP_UUIDS_SRV_NAME, SaveMap._TYPE);
 
         GetMapUuidsRequest request = mConnectedNode.getServiceRequestMessageFactory().newFromType(GetMapUuids._TYPE);
         saveMapService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
