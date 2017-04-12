@@ -39,7 +39,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include "tango_ros_native/PublisherConfig.h"
 
@@ -230,10 +230,10 @@ class TangoRosNode {
   // each of these needs to be re-extracted.
   // This data is not protected by a mutex, it is only accessed from the publisher
   // thread.
-  //std::vector<GridIndex> updated_indices_publisher_thread_;
-  std::vector<Tango3DR_Mesh*> dynamic_meshes_;
+  std::vector<GridIndex> updated_indices_;
+  //std::vector<Tango3DR_Mesh*> dynamic_meshes_;
   bool use_floor_plan_ = false;
-  visualization_msgs::Marker mesh_marker_;
+  visualization_msgs::MarkerArray mesh_marker_array_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_
