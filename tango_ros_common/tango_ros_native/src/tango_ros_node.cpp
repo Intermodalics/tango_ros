@@ -355,6 +355,10 @@ TangoRosNode::~TangoRosNode() {
     TangoSupport_freePointCloudManager(point_cloud_manager_);
     point_cloud_manager_ = nullptr;
   }
+  if (image_buffer_manager_ != nullptr) {
+    TangoSupport_freeImageBufferManager(image_buffer_manager_);
+    image_buffer_manager_ = nullptr;
+  }
   if (t3dr_context_ != nullptr) {
     Tango3DR_clear(t3dr_context_);
     Tango3DR_destroy(t3dr_context_);
@@ -757,7 +761,6 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
               std::end(start_of_service_T_camera_depth.orientation),
               std::begin(t3dr_depth_pose_.orientation));
     TangoSupport_updatePointCloud(point_cloud_manager_, point_cloud);
-    point_cloud_available_for_td3r_ = true;
   }
 }
 
@@ -784,17 +787,21 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_available_.notify_all();
     color_image_available_mutex_.unlock();
   }
+
   if (camera_id == TangoCameraId::TANGO_CAMERA_COLOR) {
-    std::lock_guard<std::mutex> lock(mesh_available_mutex_);
-    if (!point_cloud_available_for_td3r_) {
-       return;
+    if (image_buffer_manager_ == nullptr) {
+      TangoErrorType result = TangoSupport_createImageBufferManager(buffer->format, buffer->width,
+                                                                    buffer->height, &image_buffer_manager_);
+      if (result != TANGO_SUCCESS) {
+        LOG(ERROR) << "Failed to create image buffer manager.";
+      }
     }
+
     TangoCoordinateFramePair pair;
     pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
     TangoPoseData start_of_service_T_camera_color;
     TangoService_getPoseAtTime(buffer->timestamp, pair, &start_of_service_T_camera_color);
-    Tango3DR_Pose t3dr_image_pose;
     if (start_of_service_T_camera_color.status_code != TANGO_POSE_VALID) {
       LOG(WARNING) << "Could not find a valid pose at time "
           << buffer->timestamp << " for the color camera.";
@@ -802,40 +809,11 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     }
     std::copy(std::begin(start_of_service_T_camera_color.translation),
               std::end(start_of_service_T_camera_color.translation),
-              std::begin(t3dr_image_pose.translation));
+              std::begin(t3dr_image_pose_.translation));
     std::copy(std::begin(start_of_service_T_camera_color.orientation),
               std::end(start_of_service_T_camera_color.orientation),
-              std::begin(t3dr_image_pose.orientation));
-
-    Tango3DR_ImageBuffer t3dr_image;
-    t3dr_image.width = buffer->width;
-    t3dr_image.height = buffer->height;
-    t3dr_image.stride = buffer->stride;
-    t3dr_image.timestamp = buffer->timestamp;
-    t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(buffer->format);
-    t3dr_image.data = buffer->data;
-
-    Tango3DR_PointCloud t3dr_depth;
-    TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
-    t3dr_depth.timestamp = last_point_cloud_->timestamp;
-    t3dr_depth.num_points = last_point_cloud_->num_points;
-    t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud_->points);
-
-    Tango3DR_GridIndexArray* t3dr_updated;
-    Tango3DR_Status result =
-        Tango3DR_update(t3dr_context_, &t3dr_depth, &t3dr_depth_pose_, &t3dr_image,
-                        &t3dr_image_pose, &t3dr_updated);
-    if (result != TANGO_3DR_SUCCESS) {
-      LOG(ERROR) << "Tango3DR_update failed with error code " << result;
-      return;
-    }
-
-    updated_indices_callback_thread_.resize(t3dr_updated->num_indices);
-    std::copy(&t3dr_updated->indices[0][0],
-              &t3dr_updated->indices[t3dr_updated->num_indices][0],
-              reinterpret_cast<uint32_t*>(updated_indices_callback_thread_.data()));
-    Tango3DR_GridIndexArray_destroy(t3dr_updated);
-    point_cloud_available_for_td3r_ = false;
+              std::begin(t3dr_image_pose_.orientation));
+    TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
   }
 }
 
@@ -993,25 +971,56 @@ void TangoRosNode::PublishMesh() {
       break;
     }
     {
-      {
+      if (image_buffer_manager_ == nullptr || point_cloud_manager_ == nullptr) continue;
+      TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_image_buffer_);
+      Tango3DR_ImageBuffer t3dr_image;
+      t3dr_image.width = last_image_buffer_->width;
+      t3dr_image.height = last_image_buffer_->height;
+      t3dr_image.stride = last_image_buffer_->stride;
+      t3dr_image.timestamp = last_image_buffer_->timestamp;
+      t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_image_buffer_->format);
+      t3dr_image.data = last_image_buffer_->data;
+
+      Tango3DR_PointCloud t3dr_depth;
+      TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
+      t3dr_depth.timestamp = last_point_cloud_->timestamp;
+      t3dr_depth.num_points = last_point_cloud_->num_points;
+      t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud_->points);
+
+      Tango3DR_GridIndexArray* t3dr_updated;
+      Tango3DR_Status result =
+          Tango3DR_update(t3dr_context_, &t3dr_depth, &t3dr_depth_pose_, &t3dr_image,
+                          &t3dr_image_pose_, &t3dr_updated);
+      if (result != TANGO_3DR_SUCCESS) {
+        LOG(ERROR) << "Tango3DR_update failed with error code " << result;
+        return;
+      }
+
+      //updated_indices_callback_thread_.resize(t3dr_updated->num_indices);
+      /*std::copy(&t3dr_updated->indices[0][0],
+                &t3dr_updated->indices[t3dr_updated->num_indices][0],
+                reinterpret_cast<uint32_t*>(updated_indices_callback_thread_.data()));*/
+
+      /*{
         std::lock_guard<std::mutex> lock(mesh_available_mutex_);
         swap(updated_indices_callback_thread_, updated_indices_publisher_thread_);
         updated_indices_callback_thread_.clear();
-      }
+      }*/
 
       size_t previous_last_mesh_index = dynamic_meshes_.size();
-      for (size_t i = 0; i < updated_indices_publisher_thread_.size(); ++i) {
-        auto updated_index = updated_indices_publisher_thread_[i];
-        // Extract mesh for all updated indices.
+      // Extract mesh for all updated indices.
+      for (size_t i = 0; i < t3dr_updated->num_indices; ++i) {
         Tango3DR_Mesh* tango_mesh;
         if(Tango3DR_extractMeshSegment(
-            t3dr_context_, updated_index.indices, &tango_mesh) != TANGO_3DR_SUCCESS) {
+            t3dr_context_, t3dr_updated->indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
           LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
         }
         if (tango_mesh != nullptr) {
           dynamic_meshes_.push_back(tango_mesh);
         }
       }
+      Tango3DR_GridIndexArray_destroy(t3dr_updated); // this is crashing!, need to copy?
+      // Are tango support managers thread safe?
 
       mesh_marker_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
       mesh_marker_.header.stamp = ros::Time::now();

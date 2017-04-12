@@ -214,18 +214,23 @@ class TangoRosNode {
   // The pose the the most recent point cloud received.
   // Only meaningful if point_cloud_available_for_td3r_ is true.
   Tango3DR_Pose t3dr_depth_pose_;
+
+  TangoSupportImageBufferManager* image_buffer_manager_;
+  TangoImageBuffer* last_image_buffer_;
+  Tango3DR_Pose t3dr_image_pose_;
+
   // Constant camera intrinsics for the color camera.
   Tango3DR_CameraCalibration t3dr_intrinsics_;
   std::mutex mesh_available_mutex_;
   // Updated indices from the 3D Reconstruction library. The grids for
   // each of these needs to be re-extracted.
   // This data is protected by mesh_available_mutex_.
-  std::vector<GridIndex> updated_indices_callback_thread_;
+  //std::vector<GridIndex> updated_indices_callback_thread_;
   // Updated indices from the 3D Reconstruction library. The grids for
   // each of these needs to be re-extracted.
   // This data is not protected by a mutex, it is only accessed from the publisher
   // thread.
-  std::vector<GridIndex> updated_indices_publisher_thread_;
+  //std::vector<GridIndex> updated_indices_publisher_thread_;
   std::vector<Tango3DR_Mesh*> dynamic_meshes_;
   bool use_floor_plan_ = false;
   visualization_msgs::Marker mesh_marker_;
