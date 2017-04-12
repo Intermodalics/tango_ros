@@ -52,6 +52,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
 
     private SharedPreferences mSharedPref;
     private SettingsPreferenceFragment mSettingsPreferenceFragment;
+    private HashMap<String, String> mUuidsNamesMap;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -139,7 +140,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 }
             }
         }
-        updateMapChooserPreferenceStatus();
+        updateMapChooserPreference();
     }
 
     @Override
@@ -186,21 +187,26 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         });
 
         Intent intent = getIntent();
-        HashMap<String, String> uuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
-        MapChooserPreference mapChooserPreference =
-                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
-        mapChooserPreference.setMapList(uuidsNamesMap);
-        updateMapChooserPreferenceStatus();
-
+        mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
+        updateMapChooserPreference();
         mSettingsPreferenceFragment.setPreferencesSummury();
     }
 
-    private void updateMapChooserPreferenceStatus() {
+    private void updateMapChooserPreference() {
+        MapChooserPreference mapChooserPreference =
+                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
+
         SwitchPreference createNewMapPref = (SwitchPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_create_new_map_key));
         boolean createNewMap = createNewMapPref.isChecked();
         ListPreference localizationModePref = (ListPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_mode_key));
         String localizationMode = localizationModePref.getValue();
-        mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key)).setEnabled(!createNewMap && localizationMode.equals("3"));
+        mapChooserPreference.setEnabled(!createNewMap && localizationMode.equals("3"));
+
+        if (mUuidsNamesMap == null || mUuidsNamesMap.isEmpty()) {
+            mapChooserPreference.setEnabled(false);
+        } else {
+            mapChooserPreference.setMapList(mUuidsNamesMap);
+        }
     }
 
     /**

@@ -23,7 +23,6 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 
 
 public class MapChooserPreference extends ListPreference {
@@ -39,13 +38,15 @@ public class MapChooserPreference extends ListPreference {
     }
 
     public void setMapList(Map<String, String> uuidNameMap) {
-        ArrayList<String> uuids = new ArrayList<String>();
-        ArrayList<String> names = new ArrayList<String>();
-        for (String uuid : uuidNameMap.keySet()) {
-            uuids.add(uuid);
-            names.add(uuidNameMap.get(uuid));
+        if (uuidNameMap != null) {
+            ArrayList<String> uuids = new ArrayList<String>();
+            ArrayList<String> names = new ArrayList<String>();
+            for (String uuid : uuidNameMap.keySet()) {
+                uuids.add(uuid);
+                names.add(uuidNameMap.get(uuid));
+            }
+            setEntries(names.toArray(new CharSequence[names.size()]));
+            setEntryValues(uuids.toArray(new CharSequence[uuids.size()]));
         }
-        setEntries(names.toArray(new CharSequence[names.size()]));
-        setEntryValues(uuids.toArray(new CharSequence[uuids.size()]));
     }
 }
