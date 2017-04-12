@@ -73,6 +73,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
+        uploadPreferencesToParameterServer();
+    }
+
+    // Set ROS params according to preferences.
+    public void uploadPreferencesToParameterServer() {
         // Set ROS params according to preferences.
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
