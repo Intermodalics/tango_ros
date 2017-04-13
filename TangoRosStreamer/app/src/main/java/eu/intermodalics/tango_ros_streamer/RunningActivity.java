@@ -261,6 +261,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mSaveButton.setEnabled(!mMapSaved);
         if (mCreateNewMap) {
             mSaveButton.setVisibility(View.VISIBLE);
+        } else {
+            mSaveButton.setVisibility(View.GONE);
         }
     }
 
@@ -360,7 +362,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 if (mCreateNewMap) {
                     mSaveButton.setVisibility(View.VISIBLE);
                 } else {
-                    mSaveButton.setVisibility(View.INVISIBLE);
+                    mSaveButton.setVisibility(View.GONE);
                 }
                 mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT);
             }
@@ -447,6 +449,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
                 if (mCreateNewMap) {
                     mSaveButton.setVisibility(View.VISIBLE);
+                } else {
+                    mSaveButton.setVisibility(View.GONE);
                 }
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
