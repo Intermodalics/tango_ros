@@ -61,8 +61,8 @@ import eu.intermodalics.nodelet_manager.NodeletManager;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoServiceConnection;
 
-import eu.intermodalics.tangoroscommon.Logger;
-import eu.intermodalics.tangoroscommon.TangoServiceClientNode;
+import eu.intermodalics.tango_ros_common.Logger;
+import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
