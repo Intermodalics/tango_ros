@@ -37,5 +37,5 @@ dependencies {
     compile 'org.ros.rosjava_messages:tango_ros_messages:[0.0,)'
     compile 'com.android.support:support-v4:25.2.0'
     compile 'com.android.support:design:25.2.0'
-    compile project(':tango_ros_node')
+    compile project(':nodelet_manager')
 }

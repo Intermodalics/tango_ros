@@ -26,7 +26,7 @@
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
-    <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="ros_init_error">Unable to initialize ROS node. Do you have a roscore running?</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>

@@ -20,6 +20,8 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import eu.intermodalics.tango_ros_streamer.common.NodeNamespaceHelper;
+
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -41,7 +43,6 @@ import dynamic_reconfigure.Config;
 import dynamic_reconfigure.Reconfigure;
 import dynamic_reconfigure.ReconfigureRequest;
 import dynamic_reconfigure.ReconfigureResponse;
-import eu.intermodalics.tango_ros_node.TangoRosNode;
 
 /**
  * RosJava node that handles interactions with the ros parameter server.
@@ -77,20 +78,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
                 Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
                 String stringValue = mSharedPreferences.getString(paramName, "");
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
             if (mParamNames.get(paramName) == "string") {
                 String stringValue = mSharedPreferences.getString(paramName, "");
-                connectedNode.getParameterTree().set(BuildTangoRosNodeNamespaceName(paramName), stringValue);
+                connectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
             }
         }
-    }
-
-    private String BuildTangoRosNodeNamespaceName(String paramName) {
-        return "/" + TangoRosNode.NODE_NAME + "/" + paramName;
     }
 }

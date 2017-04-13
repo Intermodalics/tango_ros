@@ -21,13 +21,31 @@
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <std_msgs/Int8.h>
 
+PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
+
 namespace {
+std::vector<std::string> splitCommaSeparatedString(const std::string& comma_separated_string) {
+  std::vector<std::string> output;
+  std::stringstream ss(comma_separated_string);
+
+      std::string string_element;
+      while (ss >> string_element) {
+          output.push_back(string_element);
+
+          if (ss.peek() == ',')
+              ss.ignore();
+      }
+
+   return output;
+}
+
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode
@@ -331,7 +349,10 @@ std::string getCurrentDateAndTime() {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
+TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {}
+
+void TangoRosNode::onInit() {
+  node_handle_ = getMTPrivateNodeHandle();
   const  uint32_t queue_size = 1;
   const bool latching = true;
   tango_status_publisher_ =
@@ -361,6 +382,14 @@ TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
+
+  get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
+      tango_ros_messages::GetMapName::Response>("/tango/get_map_name",
+                                             boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
+
+  get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
+      tango_ros_messages::GetMapUuids::Response>("/tango/get_map_uuids",
+                                             boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>("/tango/save_map",
@@ -980,6 +1009,22 @@ bool TangoRosNode::TangoConnectServiceCallback(
     }
 
     return true;
+}
+
+bool TangoRosNode::GetMapName(
+    const tango_ros_messages::GetMapName::Request &req,
+    tango_ros_messages::GetMapName::Response &res) {
+  res.map_name = GetMapNameFromUuid(req.map_uuid);
+}
+
+bool TangoRosNode::GetMapUuids(
+    const tango_ros_messages::GetMapUuids::Request &req,
+    tango_ros_messages::GetMapUuids::Response &res) {
+  res.map_uuids = splitCommaSeparatedString(GetAvailableMapUuidsList());
+
+  for (const std::string uuid : res.map_uuids) {
+    res.map_names.push_back(GetMapNameFromUuid(uuid));
+  }
 }
 
 bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
