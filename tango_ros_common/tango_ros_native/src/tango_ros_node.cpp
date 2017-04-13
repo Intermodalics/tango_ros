@@ -1172,7 +1172,6 @@ void TangoRosNode::PublishMeshMarker() {
       std::unique_lock<std::mutex> lock(mesh_available_mutex_);
       mesh_available_.wait(lock);
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
-        LOG(INFO) << "PublishMeshMarker";
         // Get latest point cloud.
         TangoPointCloud* last_point_cloud;
         TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);

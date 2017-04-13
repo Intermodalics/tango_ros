@@ -65,7 +65,7 @@ const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
-const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh";
+const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh_marker";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
 const std::string CREATE_NEW_MAP_PARAM_NAME = "tango/create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
@@ -133,8 +133,7 @@ class TangoRosNode {
   // Sets the tango config to be able to collect all necessary data from tango.
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
-  // Now that Tango is configured correctly, we also need to configure
-  // 3D Reconstruction the way we want.
+  // Configure Tango 3D Reconstruction.
   Tango3DR_Status TangoSetup3DRConfig();
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully
