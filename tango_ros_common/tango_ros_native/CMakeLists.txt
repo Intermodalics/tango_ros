@@ -47,7 +47,6 @@ include_directories(
 
 add_library(tango_ros_native SHARED
   src/tango_ros_node.cpp
-  src/tango_ros_util.cpp
   )
 
 target_link_libraries(tango_ros_native

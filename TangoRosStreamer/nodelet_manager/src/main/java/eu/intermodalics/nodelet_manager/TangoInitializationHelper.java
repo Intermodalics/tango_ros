@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_node;
+package eu.intermodalics.nodelet_manager;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -122,19 +122,19 @@ public class TangoInitializationHelper {
         if (!(new File(basePath).exists())) {
             basePath = "/data/data/com.projecttango.tango/libfiles/";
         }
-        Log.i("TangoInitializationHelper", "basePath: " + basePath);
+        Log.i("TangoInitializationHelp", "basePath: " + basePath);
 
         try {
             System.load(basePath + "arm64-v8a/libtango_client_api.so");
             loadedSoId = ARCH_ARM64;
-            Log.i("TangoInitializationHelper", "Success! Using arm64-v8a/libtango_client_api.");
+            Log.i("TangoInitializationHelp", "Success! Using arm64-v8a/libtango_client_api.");
         } catch (UnsatisfiedLinkError e) {
         }
         if (loadedSoId < ARCH_DEFAULT) {
             try {
                 System.load(basePath + "armeabi-v7a/libtango_client_api.so");
                 loadedSoId = ARCH_ARM32;
-                Log.i("TangoInitializationHelper", "Success! Using armeabi-v7a/libtango_client_api.");
+                Log.i("TangoInitializationHelp", "Success! Using armeabi-v7a/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
             }
         }
@@ -142,7 +142,7 @@ public class TangoInitializationHelper {
             try {
                 System.load(basePath + "x86_64/libtango_client_api.so");
                 loadedSoId = ARCH_X86_64;
-                Log.i("TangoInitializationHelper", "Success! Using x86_64/libtango_client_api.");
+                Log.i("TangoInitializationHelp", "Success! Using x86_64/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
             }
         }
@@ -150,7 +150,7 @@ public class TangoInitializationHelper {
             try {
                 System.load(basePath + "x86/libtango_client_api.so");
                 loadedSoId = ARCH_X86;
-                Log.i("TangoInitializationHelper", "Success! Using x86/libtango_client_api.");
+                Log.i("TangoInitializationHelp", "Success! Using x86/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
             }
         }
@@ -158,7 +158,7 @@ public class TangoInitializationHelper {
             try {
                 System.load(basePath + "default/libtango_client_api.so");
                 loadedSoId = ARCH_DEFAULT;
-                Log.i("TangoInitializationHelper", "Success! Using default/libtango_client_api.");
+                Log.i("TangoInitializationHelp", "Success! Using default/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
             }
         }
@@ -166,7 +166,7 @@ public class TangoInitializationHelper {
             try {
                 System.loadLibrary("tango_client_api");
                 loadedSoId = ARCH_FALLBACK;
-                Log.i("TangoInitializationHelper", "Falling back to libtango_client_api.so symlink.");
+                Log.i("TangoInitializationHelp", "Falling back to libtango_client_api.so symlink.");
             } catch (UnsatisfiedLinkError e) {
             }
         }
@@ -174,18 +174,18 @@ public class TangoInitializationHelper {
     }
 
     /**
-     * {@link TangoInitializationHelper} depends on the same library as {@link TangoRosNode}.
+     * {@link TangoInitializationHelper} depends on the same library as {@link NodeletManager}.
      * This code is added to ensure that the native functions will be properly linked;
      * loading the same library twice has no side effects.
      */
     public static final int loadTangoRosNodeSharedLibrary() {
         int loadedSo = ARCH_ERROR;
         try {
-            System.loadLibrary(TangoRosNode.DEFAULT_LIB_NAME);
+            System.loadLibrary(NodeletManager.DEFAULT_LIB_NAME);
             loadedSo = ARCH_DEFAULT;
         } catch (Exception e) {
             Log.e(TangoInitializationHelper.class.getName(),
-                    "Error loading library " + TangoRosNode.DEFAULT_LIB_NAME, e);
+                    "Error loading library " + NodeletManager.DEFAULT_LIB_NAME, e);
         }
         return loadedSo;
     }

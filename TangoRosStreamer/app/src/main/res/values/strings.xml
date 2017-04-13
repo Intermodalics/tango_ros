@@ -26,7 +26,7 @@
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
-    <string name="ros_init_error">Unable to init ROS! Do you have a roscore running?</string>
+    <string name="ros_init_error">Unable to initialize ROS node. Do you have a roscore running?</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_service_error">Unable to connect to Tango Service</string>
@@ -34,10 +34,6 @@
     <string name="map_name_error">Please enter a valid name to save a map</string>
     <string name="save_map_error">Unable to save the map</string>
     <string name="save_map_success">Map saved successfully!</string>
-    <string name="tango_connect_success">Successfully connected to Tango.</string>
-    <string name="tango_connect_error">Failed to connect to Tango.</string>
-    <string name="tango_disconnect_success">Successfully disconnected from Tango.</string>
-    <string name="tango_disconnect_error">Failed to disconnect from Tango.</string>
 
     <!-- Strings related to running preferences -->
 

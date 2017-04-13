@@ -27,12 +27,10 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -57,16 +55,18 @@ import org.ros.node.NodeMainExecutor;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.StringTokenizer;
+import java.util.List;
 
-import eu.intermodalics.tango_ros_node.TangoInitializationHelper;
-import eu.intermodalics.tango_ros_node.TangoInitializationHelper.DefaultTangoServiceConnection;
-import eu.intermodalics.tango_ros_node.TangoRosNode;
+import eu.intermodalics.nodelet_manager.NodeletManager;
+import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
+import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoServiceConnection;
 
+import eu.intermodalics.tango_ros_common.Logger;
+import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
-public class RunningActivity extends AppCompatRosActivity implements TangoRosNode.CallbackListener,
+public class RunningActivity extends AppCompatRosActivity implements NodeletManager.CallbackListener,
  SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
@@ -100,7 +100,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     }
 
     private SharedPreferences mSharedPref;
-    private TangoRosNode mTangoRosNode;
+    private NodeletManager mNodeletManager;
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
@@ -156,15 +156,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     /**
      * Implements TangoRosNode.CallbackListener.
      */
-    public void onTangoRosErrorHook(int returnCode) {
-        if (returnCode == TangoRosNode.ROS_CONNECTION_ERROR) {
+    public void onNodeletManagerError(int returnCode) {
+        if (returnCode == NodeletManager.ROS_CONNECTION_ERROR) {
             updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.ros_init_error));
             displayToastMessage(R.string.ros_init_error);
-        } else if (returnCode < TangoRosNode.SUCCESS) {
-            updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
-            Log.e(TAG, getString(R.string.tango_service_error));
-            displayToastMessage(R.string.tango_service_error);
         }
     }
 
@@ -317,6 +313,16 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     }
 
     @Override
+    public void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames) {
+        mUuidsNamesHashMap = new HashMap<>();
+        if (mapUuids == null || mapNames == null) return;
+        assert(mapUuids.size() == mapNames.size());
+        for (int i = 0; i < mapUuids.size(); ++i) {
+            mUuidsNamesHashMap.put(mapUuids.get(i), mapNames.get(i));
+        }
+    }
+
+    @Override
     public void onTangoStatus(int status) {
         if (status >= TangoStatus.values().length) {
             Log.e(TAG, "Invalid Tango status " + status);
@@ -326,14 +332,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     }
 
     private void saveUuidsNamestoHashMap() {
-        String mapUuids = mTangoRosNode.getAvailableMapUuidsList();
-        StringTokenizer token = new StringTokenizer(mapUuids, ",");
-        mUuidsNamesHashMap = new HashMap<String, String>();
-        while (token.hasMoreTokens()) {
-            String uuid = token.nextToken();
-            String name = mTangoRosNode.getMapNameFromUuid(uuid);
-            mUuidsNamesHashMap.put(uuid, name);
-        }
+        mTangoServiceClientNode.callGetMapUuidsService();
     }
 
     private void getTangoPermission(String permissionType) {
@@ -471,16 +470,16 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
         nodeMainExecutor.execute(mImuNode, nodeConfiguration);
         // Create and start Tango ROS Node
-        nodeConfiguration.setNodeName(TangoRosNode.NODE_NAME);
+        nodeConfiguration.setNodeName(NodeletManager.NODE_NAME);
         if (TangoInitializationHelper.loadTangoSharedLibrary() !=
                 TangoInitializationHelper.ARCH_ERROR &&
                 TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
                         != TangoInitializationHelper.ARCH_ERROR) {
-            mTangoRosNode = new TangoRosNode();
-            mTangoRosNode.attachCallbackListener(this);
+            mNodeletManager = new NodeletManager();
+            mNodeletManager.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
-                nodeMainExecutor.execute(mTangoRosNode, nodeConfiguration, new ArrayList<NodeListener>(){{
+                nodeMainExecutor.execute(mNodeletManager, nodeConfiguration, new ArrayList<NodeListener>(){{
                     add(new DefaultNodeListener() {
                         @Override
                         public void onStart(ConnectedNode connectedNode) {
