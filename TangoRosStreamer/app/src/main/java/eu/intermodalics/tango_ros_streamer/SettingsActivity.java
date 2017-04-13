@@ -29,6 +29,7 @@ import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -121,7 +122,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 snackbar.show();
             }
         }
-        updateMapChooserPreference(mUuidsNamesMap);
+        updateMapChooserPreference();
     }
 
     @Override
@@ -168,12 +169,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         });
 
         Intent intent = getIntent();
-        HashMap<String, String> mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
-        updateMapChooserPreference(mUuidsNamesMap);
+        mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
+        updateMapChooserPreference();
         mSettingsPreferenceFragment.setPreferencesSummury();
     }
 
-    private void updateMapChooserPreference(HashMap<String, String> uuidsNamesMap) {
+    private void updateMapChooserPreference() {
         MapChooserPreference mapChooserPreference =
                 (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
 
@@ -183,10 +184,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         String localizationMode = localizationModePref.getValue();
         mapChooserPreference.setEnabled(!createNewMap && localizationMode.equals("3"));
 
-        if (uuidsNamesMap == null || uuidsNamesMap.isEmpty()) {
+        if (mUuidsNamesMap == null || mUuidsNamesMap.isEmpty()) {
             mapChooserPreference.setEnabled(false);
         } else {
-            mapChooserPreference.setMapList(uuidsNamesMap);
+            mapChooserPreference.setMapList(mUuidsNamesMap);
         }
     }
 
