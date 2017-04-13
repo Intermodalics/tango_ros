@@ -72,6 +72,7 @@ const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "/tango/localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
+const std::string USE_FLOOR_PLAN_PARAM_NAME = "tango/use_floor_plan";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Localization mode values.
@@ -155,13 +156,13 @@ class TangoRosNode {
   void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
-  // Publishes the available data (device pose, point cloud, laser scan, images).
+  // Publishes the available data (device pose, point cloud, images, ...).
   void PublishDevicePose();
   void PublishPointCloud();
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
-  void PublishMesh();
+  void PublishMeshMarker();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
@@ -182,7 +183,7 @@ class TangoRosNode {
   std::thread publish_laserscan_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
-  std::thread publish_mesh_thread_;
+  std::thread publish_mesh_marker_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
 
@@ -196,6 +197,9 @@ class TangoRosNode {
   std::condition_variable fisheye_image_available_;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
+  std::mutex mesh_available_mutex_;
+  std::condition_variable mesh_available_;
+  std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
 
@@ -241,30 +245,22 @@ class TangoRosNode {
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
 
-
-  ros::Publisher mesh_publisher_;
+  ros::Publisher mesh_marker_publisher_;
   visualization_msgs::MarkerArray mesh_marker_array_;
-  std::mutex mesh_available_mutex_;
-  std::condition_variable mesh_available_;
-  std::atomic_bool new_point_cloud_available_for_t3dr_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_Context t3dr_context_;
   TangoSupportPointCloudManager* point_cloud_manager_;
-  // The most recent point cloud received.
   TangoPointCloud* last_point_cloud_;
-  // The pose the the most recent point cloud received.
-  // Only meaningful if point_cloud_available_for_td3r_ is true.
-  Tango3DR_Pose t3dr_depth_pose_;
+  Tango3DR_Pose last_camera_depth_pose_;
   TangoSupportImageBufferManager* image_buffer_manager_;
-  TangoImageBuffer* last_image_buffer_;
-  Tango3DR_Pose t3dr_image_pose_;
-  // Constant camera intrinsics for the color camera.
-  Tango3DR_CameraCalibration t3dr_intrinsics_;
+  TangoImageBuffer* last_color_image_buffer_;
+  Tango3DR_Pose last_camera_color_pose_;
+  Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
+  bool use_floor_plan_ = false;
   // Updated indices from the 3D Reconstruction library. The grids for
   // each of these needs to be re-extracted.
   std::vector<GridIndex> updated_indices_;
-  bool use_floor_plan_ = false;
 
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;

@@ -260,6 +260,89 @@ void toCameraInfo(const TangoCameraIntrinsics& camera_intrinsics,
     LOG(ERROR) << "Unknown camera ID: " << camera_intrinsics.camera_id;
   }
 }
+// Converts TangoCameraIntrinsics to Tango3DR_CameraCalibration.
+// @param camera_intrinsics, TangoCameraIntrinsics to convert.
+// @param t3dr_camera_intrinsics, the output Tango3DR_CameraCalibration.
+void toTango3DR_CameraCalibration(
+    const TangoCameraIntrinsics& camera_intrinsics,
+    Tango3DR_CameraCalibration* t3dr_camera_intrinsics) {
+  t3dr_camera_intrinsics->calibration_type =
+          static_cast<Tango3DR_TangoCalibrationType>(camera_intrinsics.calibration_type);
+  t3dr_camera_intrinsics->width = camera_intrinsics.width;
+  t3dr_camera_intrinsics->height = camera_intrinsics.height;
+  t3dr_camera_intrinsics->fx = camera_intrinsics.fx;
+  t3dr_camera_intrinsics->fy = camera_intrinsics.fy;
+  t3dr_camera_intrinsics->cx = camera_intrinsics.cx;
+  t3dr_camera_intrinsics->cy = camera_intrinsics.cy;
+  std::copy(std::begin(camera_intrinsics.distortion),
+            std::end(camera_intrinsics.distortion),
+            std::begin(t3dr_camera_intrinsics->distortion));
+}
+void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_pose) {
+  std::copy(std::begin(tango_pose_data.translation),
+            std::end(tango_pose_data.translation),
+            std::begin(t3dr_pose->translation));
+  std::copy(std::begin(tango_pose_data.orientation),
+            std::end(tango_pose_data.orientation),
+            std::begin(t3dr_pose->orientation));
+}
+void toMeshMarker(const tango_ros_native::GridIndex& grid_index,
+                  Tango3DR_Mesh* tango_mesh,
+                  visualization_msgs::Marker* mesh_marker) {
+  mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  mesh_marker->header.stamp = ros::Time::now();
+  mesh_marker->ns = "tango";
+  mesh_marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
+  mesh_marker->action = visualization_msgs::Marker::ADD;
+  mesh_marker->pose.orientation.w = 1.0;
+  mesh_marker->scale.x = 1.0;
+  mesh_marker->scale.y = 1.0;
+  mesh_marker->scale.z = 1.0;
+  mesh_marker->color.r = 1.0;
+  mesh_marker->color.g = 1.0;
+  mesh_marker->color.b = 1.0;
+  mesh_marker->color.a = 1.0;
+  mesh_marker->lifetime = ros::Duration(0);
+  // Make unique id from mesh segment indices.
+  mesh_marker->id = grid_index.indices[0];
+  mesh_marker->id *= 37;
+  mesh_marker->id += grid_index.indices[1];
+  mesh_marker->id *= 37;
+  mesh_marker->id += grid_index.indices[2];
+  for (size_t j = 0; j < tango_mesh->max_num_faces; ++j) {
+    // Add the 3 points of the triangle face.
+    geometry_msgs::Point point;
+    point.x = tango_mesh->vertices[tango_mesh->faces[j][0]][0];
+    point.y = tango_mesh->vertices[tango_mesh->faces[j][0]][1];
+    point.z = tango_mesh->vertices[tango_mesh->faces[j][0]][2];
+    mesh_marker->points.push_back(point);
+    point.x = tango_mesh->vertices[tango_mesh->faces[j][1]][0];
+    point.y = tango_mesh->vertices[tango_mesh->faces[j][1]][1];
+    point.z = tango_mesh->vertices[tango_mesh->faces[j][1]][2];
+    mesh_marker->points.push_back(point);
+    point.x = tango_mesh->vertices[tango_mesh->faces[j][2]][0];
+    point.y = tango_mesh->vertices[tango_mesh->faces[j][2]][1];
+    point.z = tango_mesh->vertices[tango_mesh->faces[j][2]][2];
+    mesh_marker->points.push_back(point);
+    // Add the corresponding color.
+    std_msgs::ColorRGBA color;
+    color.r = tango_mesh->colors[tango_mesh->faces[j][0]][0] / 255.;
+    color.g = tango_mesh->colors[tango_mesh->faces[j][0]][1] / 255.;
+    color.b = tango_mesh->colors[tango_mesh->faces[j][0]][2] / 255.;
+    color.a = tango_mesh->colors[tango_mesh->faces[j][0]][3] / 255.;
+    mesh_marker->colors.push_back(color);
+    color.r = tango_mesh->colors[tango_mesh->faces[j][1]][0] / 255.;
+    color.g = tango_mesh->colors[tango_mesh->faces[j][1]][1] / 255.;
+    color.b = tango_mesh->colors[tango_mesh->faces[j][1]][2] / 255.;
+    color.a = tango_mesh->colors[tango_mesh->faces[j][1]][3] / 255.;
+    mesh_marker->colors.push_back(color);
+    color.r = tango_mesh->colors[tango_mesh->faces[j][2]][0] / 255.;
+    color.g = tango_mesh->colors[tango_mesh->faces[j][2]][1] / 255.;
+    color.b = tango_mesh->colors[tango_mesh->faces[j][2]][2] / 255.;
+    color.a = tango_mesh->colors[tango_mesh->faces[j][2]][3] / 255.;
+    mesh_marker->colors.push_back(color);
+  }
+}
 // Compute fisheye distorted coordinates from undistorted coordinates.
 // The distortion model used by the Tango fisheye camera is called FOV and is
 // described in 'Straight lines have to be straight' by Frederic Devernay and
@@ -362,7 +445,7 @@ TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {
     LOG(ERROR) << "Error while creating image transport publishers" << e.what();
   }
 
-  mesh_publisher_ =
+  mesh_marker_publisher_ =
       node_handle_.advertise<visualization_msgs::MarkerArray>(
           COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
@@ -421,17 +504,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
 
-  t3dr_intrinsics_.calibration_type =
-        static_cast<Tango3DR_TangoCalibrationType>(tango_camera_intrinsics.calibration_type);
-    t3dr_intrinsics_.width = tango_camera_intrinsics.width;
-    t3dr_intrinsics_.height = tango_camera_intrinsics.height;
-    t3dr_intrinsics_.fx = tango_camera_intrinsics.fx;
-    t3dr_intrinsics_.fy = tango_camera_intrinsics.fy;
-    t3dr_intrinsics_.cx = tango_camera_intrinsics.cx;
-    t3dr_intrinsics_.cy = tango_camera_intrinsics.cy;
-    std::copy(std::begin(tango_camera_intrinsics.distortion),
-              std::end(tango_camera_intrinsics.distortion),
-              std::begin(t3dr_intrinsics_.distortion));
+  toTango3DR_CameraCalibration(tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
   TangoSetup3DRConfig();
   return TANGO_SUCCESS;
 }
@@ -574,7 +647,8 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
     return result;
   }
   const char* use_floorplan = "use_floorplan";
-  result = Tango3DR_Config_setBool(t3dr_config, use_floorplan, false);
+  node_handle_.param(USE_FLOOR_PLAN_PARAM_NAME, use_floor_plan_, false);
+  result = Tango3DR_Config_setBool(t3dr_config, use_floorplan, use_floor_plan_);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
         << use_floorplan << " error: " << result;
@@ -585,10 +659,10 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
     LOG(ERROR) << function_name << ", Tango3DR_create error: Unable to create 3DR context.";
     return TANGO_3DR_ERROR;
   }
-  // Configure the color intrinsics to be used with updates to the mesh.
-  result = Tango3DR_setColorCalibration(t3dr_context_, &t3dr_intrinsics_);
+  // Configure the color camera intrinsics to be used with updates to the mesh.
+  result = Tango3DR_setColorCalibration(t3dr_context_, &t3dr_color_camera_intrinsics_);
   if (t3dr_context_ == nullptr) {
-    LOG(ERROR) << function_name << ", Tango3DR_create error: Unable to set color calibration.";
+    LOG(ERROR) << function_name << ", Unable to set color calibration.";
     return TANGO_3DR_ERROR;
   }
   return Tango3DR_Config_destroy(t3dr_config);
@@ -816,24 +890,21 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       laser_scan_available_mutex_.unlock();
     }
 
-    TangoCoordinateFramePair pair;
-    pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-    pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
-    TangoPoseData start_of_service_T_camera_depth;
-    TangoService_getPoseAtTime(point_cloud->timestamp, pair, &start_of_service_T_camera_depth);
-    if (start_of_service_T_camera_depth.status_code != TANGO_POSE_VALID) {
-      LOG(WARNING) << "Could not find a valid pose at time "
-          << point_cloud->timestamp << " for the depth camera.";
-      return;
+    if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+      TangoCoordinateFramePair pair;
+      pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
+      pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
+      TangoPoseData start_of_service_T_camera_depth;
+      TangoService_getPoseAtTime(point_cloud->timestamp, pair, &start_of_service_T_camera_depth);
+      if (start_of_service_T_camera_depth.status_code != TANGO_POSE_VALID) {
+        LOG(WARNING) << "Could not find a valid pose at time "
+            << point_cloud->timestamp << " for the depth camera.";
+        return;
+      }
+      toTango3DR_Pose(start_of_service_T_camera_depth, &last_camera_depth_pose_);
+      TangoSupport_updatePointCloud(point_cloud_manager_, point_cloud);
+      new_point_cloud_available_for_t3dr_ = true;
     }
-    std::copy(std::begin(start_of_service_T_camera_depth.translation),
-              std::end(start_of_service_T_camera_depth.translation),
-              std::begin(t3dr_depth_pose_.translation));
-    std::copy(std::begin(start_of_service_T_camera_depth.orientation),
-              std::end(start_of_service_T_camera_depth.orientation),
-              std::begin(t3dr_depth_pose_.orientation));
-    TangoSupport_updatePointCloud(point_cloud_manager_, point_cloud);
-    new_point_cloud_available_for_t3dr_ = true;
   }
 }
 
@@ -861,17 +932,18 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_available_mutex_.unlock();
   }
 
-  if (camera_id == TangoCameraId::TANGO_CAMERA_COLOR
-      && new_point_cloud_available_for_t3dr_ &&
+  if (mesh_marker_publisher_.getNumSubscribers() > 0 &&
+      camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
+      new_point_cloud_available_for_t3dr_ &&
       mesh_available_mutex_.try_lock()) {
     if (image_buffer_manager_ == nullptr) {
-      TangoErrorType result = TangoSupport_createImageBufferManager(buffer->format, buffer->width,
-                                                                    buffer->height, &image_buffer_manager_);
+      TangoErrorType result = TangoSupport_createImageBufferManager(
+          buffer->format, buffer->width, buffer->height, &image_buffer_manager_);
       if (result != TANGO_SUCCESS) {
         LOG(ERROR) << "Failed to create image buffer manager.";
+        return;
       }
     }
-
     TangoCoordinateFramePair pair;
     pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
     pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
@@ -882,12 +954,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
           << buffer->timestamp << " for the color camera.";
       return;
     }
-    std::copy(std::begin(start_of_service_T_camera_color.translation),
-              std::end(start_of_service_T_camera_color.translation),
-              std::begin(t3dr_image_pose_.translation));
-    std::copy(std::begin(start_of_service_T_camera_color.orientation),
-              std::end(start_of_service_T_camera_color.orientation),
-              std::begin(t3dr_image_pose_.orientation));
+    toTango3DR_Pose(start_of_service_T_camera_color, &last_camera_color_pose_);
     TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
     new_point_cloud_available_for_t3dr_ = false;
     mesh_available_.notify_all();
@@ -902,7 +969,7 @@ void TangoRosNode::StartPublishing() {
   publish_laserscan_thread_ = std::thread(&TangoRosNode::PublishLaserScan, this);
   publish_fisheye_image_thread_ = std::thread(&TangoRosNode::PublishFisheyeImage, this);
   publish_color_image_thread_ = std::thread(&TangoRosNode::PublishColorImage, this);
-  publish_mesh_thread_ = std::thread(&TangoRosNode::PublishMesh, this);
+  publish_mesh_marker_thread_ = std::thread(&TangoRosNode::PublishMeshMarker, this);
   ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
 }
 
@@ -953,7 +1020,15 @@ void TangoRosNode::StopPublishing() {
       }
       publish_color_image_thread_.join();
     }
-    publish_mesh_thread_.join();
+    if (publish_mesh_marker_thread_.joinable()) {
+      if (!tango_data_available_
+          || mesh_marker_publisher_.getNumSubscribers() <= 0) {
+        std::unique_lock<std::mutex> lock(mesh_available_mutex_);
+        mesh_available_.notify_all();
+        mesh_available_mutex_.unlock();
+      }
+      publish_mesh_marker_thread_.join();
+    }
     ros_spin_thread_.join();
   }
 }
@@ -1078,7 +1153,7 @@ void TangoRosNode::PublishColorImage() {
   }
 }
 
-void TangoRosNode::PublishMesh() {
+void TangoRosNode::PublishMeshMarker() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1087,107 +1162,56 @@ void TangoRosNode::PublishMesh() {
     {
       std::unique_lock<std::mutex> lock(mesh_available_mutex_);
       mesh_available_.wait(lock);
-      // Get latest point cloud.
-      Tango3DR_PointCloud t3dr_depth;
-      TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
-      t3dr_depth.timestamp = last_point_cloud_->timestamp;
-      t3dr_depth.num_points = last_point_cloud_->num_points;
-      t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud_->points);
-      // Get latest image.
-      TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_image_buffer_);
-      Tango3DR_ImageBuffer t3dr_image;
-      t3dr_image.width = last_image_buffer_->width;
-      t3dr_image.height = last_image_buffer_->height;
-      t3dr_image.stride = last_image_buffer_->stride;
-      t3dr_image.timestamp = last_image_buffer_->timestamp;
-      t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_image_buffer_->format);
-      t3dr_image.data = last_image_buffer_->data;
-      // Get updated mesh segment indices.
-      Tango3DR_GridIndexArray* t3dr_updated_indices;
-
-      Tango3DR_Status result =
-          Tango3DR_update(t3dr_context_, &t3dr_depth, &t3dr_depth_pose_, &t3dr_image,
-                          &t3dr_image_pose_, &t3dr_updated_indices);
-      if (result != TANGO_3DR_SUCCESS) {
-        LOG(ERROR) << "Tango3DR_update failed with error code " << result;
-      }
-      if (t3dr_updated_indices == nullptr) continue;
-      updated_indices_.resize(t3dr_updated_indices->num_indices);
-      std::copy(&t3dr_updated_indices->indices[0][0],
-                &t3dr_updated_indices->indices[t3dr_updated_indices->num_indices][0],
-                reinterpret_cast<uint32_t*>(updated_indices_.data()));
-      Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
-      // Extract each updated mesh segment and add them to the marker message.
-      mesh_marker_array_.markers.clear();
-      for (size_t i = 0; i < updated_indices_.size(); ++i) {
-        Tango3DR_Mesh* tango_mesh;
-        if(Tango3DR_extractMeshSegment(
-            t3dr_context_, updated_indices_[i].indices, &tango_mesh) != TANGO_3DR_SUCCESS) {
-          LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
-        }
-        if (tango_mesh == nullptr) continue;
-        visualization_msgs::Marker mesh_marker;
-        mesh_marker.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-        mesh_marker.header.stamp = ros::Time::now();
-        mesh_marker.ns = "tango";
-        // Make unique id with mesh segment indices.
-        mesh_marker.id = updated_indices_[i].indices[0];
-        mesh_marker.id *= 37;
-        mesh_marker.id += updated_indices_[i].indices[1];
-        mesh_marker.id *= 37;
-        mesh_marker.id += updated_indices_[i].indices[2];
-        mesh_marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-        mesh_marker.action = visualization_msgs::Marker::ADD;
-        mesh_marker.pose.orientation.w = 1.0;
-        mesh_marker.scale.x = 1.0;
-        mesh_marker.scale.y = 1.0;
-        mesh_marker.scale.z = 1.0;
-        mesh_marker.color.r = 1.0;
-        mesh_marker.color.g = 1.0;
-        mesh_marker.color.b = 1.0;
-        mesh_marker.color.a = 1.0;
-        mesh_marker.lifetime = ros::Duration(0);
-        for (size_t j = 0; j < tango_mesh->max_num_faces; ++j) {
-          // Add the 3 points of the triangle face.
-          geometry_msgs::Point point;
-          point.x = tango_mesh->vertices[tango_mesh->faces[j][0]][0];
-          point.y = tango_mesh->vertices[tango_mesh->faces[j][0]][1];
-          point.z = tango_mesh->vertices[tango_mesh->faces[j][0]][2];
-          mesh_marker.points.push_back(point);
-          point.x = tango_mesh->vertices[tango_mesh->faces[j][1]][0];
-          point.y = tango_mesh->vertices[tango_mesh->faces[j][1]][1];
-          point.z = tango_mesh->vertices[tango_mesh->faces[j][1]][2];
-          mesh_marker.points.push_back(point);
-          point.x = tango_mesh->vertices[tango_mesh->faces[j][2]][0];
-          point.y = tango_mesh->vertices[tango_mesh->faces[j][2]][1];
-          point.z = tango_mesh->vertices[tango_mesh->faces[j][2]][2];
-          mesh_marker.points.push_back(point);
-          // Add the corresponding color.
-          std_msgs::ColorRGBA color;
-          color.r = tango_mesh->colors[tango_mesh->faces[j][0]][0] / 255.;
-          color.g = tango_mesh->colors[tango_mesh->faces[j][0]][1] / 255.;
-          color.b = tango_mesh->colors[tango_mesh->faces[j][0]][2] / 255.;
-          color.a = tango_mesh->colors[tango_mesh->faces[j][0]][3] / 255.;
-          mesh_marker.colors.push_back(color);
-          color.r = tango_mesh->colors[tango_mesh->faces[j][1]][0] / 255.;
-          color.g = tango_mesh->colors[tango_mesh->faces[j][1]][1] / 255.;
-          color.b = tango_mesh->colors[tango_mesh->faces[j][1]][2] / 255.;
-          color.a = tango_mesh->colors[tango_mesh->faces[j][1]][3] / 255.;
-          mesh_marker.colors.push_back(color);
-          color.r = tango_mesh->colors[tango_mesh->faces[j][2]][0] / 255.;
-          color.g = tango_mesh->colors[tango_mesh->faces[j][2]][1] / 255.;
-          color.b = tango_mesh->colors[tango_mesh->faces[j][2]][2] / 255.;
-          color.a = tango_mesh->colors[tango_mesh->faces[j][2]][3] / 255.;
-          mesh_marker.colors.push_back(color);
-        }
-        Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
+      if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+        // Get latest point cloud.
+        Tango3DR_PointCloud t3dr_depth;
+        TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
+        t3dr_depth.timestamp = last_point_cloud_->timestamp;
+        t3dr_depth.num_points = last_point_cloud_->num_points;
+        t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud_->points);
+        // Get latest image.
+        TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer_);
+        Tango3DR_ImageBuffer t3dr_image;
+        t3dr_image.width = last_color_image_buffer_->width;
+        t3dr_image.height = last_color_image_buffer_->height;
+        t3dr_image.stride = last_color_image_buffer_->stride;
+        t3dr_image.timestamp = last_color_image_buffer_->timestamp;
+        t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer_->format);
+        t3dr_image.data = last_color_image_buffer_->data;
+        // Get updated mesh segment indices.
+        Tango3DR_GridIndexArray* t3dr_updated_indices;
+        Tango3DR_Status result =
+            Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
+                            &last_camera_color_pose_, &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
+          LOG(ERROR) << "Tango3DR_update failed with error code " << result;
         }
-        if (mesh_marker.points.empty()) continue;
-        mesh_marker_array_.markers.push_back(mesh_marker);
+        if (t3dr_updated_indices == nullptr) continue;
+        updated_indices_.resize(t3dr_updated_indices->num_indices);
+        std::copy(&t3dr_updated_indices->indices[0][0],
+                  &t3dr_updated_indices->indices[t3dr_updated_indices->num_indices][0],
+                  reinterpret_cast<uint32_t*>(updated_indices_.data()));
+        Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
+        mesh_marker_array_.markers.clear();
+        // Extract each updated mesh segment and add them to the marker message.
+        for (size_t i = 0; i < updated_indices_.size(); ++i) {
+          Tango3DR_Mesh* tango_mesh;
+          if(Tango3DR_extractMeshSegment(
+              t3dr_context_, updated_indices_[i].indices, &tango_mesh) != TANGO_3DR_SUCCESS) {
+            LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
+          }
+          if (tango_mesh == nullptr) continue;
+          visualization_msgs::Marker mesh_marker;
+          toMeshMarker(updated_indices_[i], tango_mesh, &mesh_marker);
+          Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
+          if (result != TANGO_3DR_SUCCESS) {
+            LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
+          }
+          if (mesh_marker.points.empty()) continue;
+          mesh_marker_array_.markers.push_back(mesh_marker);
+        }
+        mesh_marker_publisher_.publish(mesh_marker_array_);
       }
-      mesh_publisher_.publish(mesh_marker_array_);
     }
   }
 }
@@ -1198,7 +1222,6 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
   if (config.use_floor_plan != use_floor_plan_) {
     use_floor_plan_ = config.use_floor_plan;
     const char* use_floorplan = "use_floorplan";
-    //std::lock_guard<std::mutex> lock(mesh_available_mutex_);
     Tango3DR_Status result = Tango3DR_setRuntimeBool(t3dr_context_, use_floorplan, use_floor_plan_);
     if (result != TANGO_3DR_SUCCESS) {
       LOG(ERROR) << "Failed to change runtime config " << use_floorplan << " error: " << result;
