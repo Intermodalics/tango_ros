@@ -1,0 +1,15 @@
+int8 DISCONNECT=0
+int8 CONNECT=1
+int8 request
+---
+# See tango_client_api.h for documentation.
+int8 TANGO_NO_DATASET_PERMISSION = -7
+int8 TANGO_NO_IMPORT_EXPORT_PERMISSION = -6
+int8 TANGO_NO_CAMERA_PERMISSION = -5
+int8 TANGO_NO_ADF_PERMISSION = -4
+int8 TANGO_NO_MOTION_TRACKING_PERMISSION = -3
+int8 TANGO_INVALID = -2
+int8 TANGO_ERROR = -1
+int8 TANGO_SUCCESS = 0
+int8 response
+string message

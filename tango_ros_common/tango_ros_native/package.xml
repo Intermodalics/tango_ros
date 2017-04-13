@@ -18,6 +18,7 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tango_3d_reconstruction</build_depend>
   <build_depend>tango_client_api</build_depend>
+  <build_depend>tango_ros_messages</build_depend>
   <build_depend>tango_support_api</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>tf2_ros</build_depend>
@@ -31,6 +32,7 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>tango_3d_reconstruction</run_depend>
   <run_depend>tango_client_api</run_depend>
+  <run_depend>tango_ros_messages</run_depend>
   <run_depend>tango_support_api</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>tf2_ros</run_depend>

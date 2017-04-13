@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
    sensor_msgs
    tango_3d_reconstruction
    tango_client_api
+   tango_ros_messages
    tango_support_api
    tf
    tf2_ros
@@ -31,7 +32,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_support_api tf tf2_ros
+  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support_api tf tf2_ros
   LIBRARIES tango_ros_native
   DEPENDS OpenCV
   )
@@ -54,7 +55,7 @@ target_link_libraries(tango_ros_native
   ${OpenCV_LIBRARIES}
   )
 
-add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg)
+add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 
 install(TARGETS tango_ros_native
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -62,16 +63,22 @@ install(TARGETS tango_ros_native
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-# Copy generated header files by dynamic reconfigure into local include folder.
+# Copy generated header files by dynamic reconfigure, srv,... into local include folder.
 # Otherwise these header files can not be found when building for Android.
-set(dynamic_reconfigure_header_LOCATION ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/PublisherConfig.h)
-set(dynamic_reconfigure_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/PublisherConfig.h)
-add_custom_command(
-  OUTPUT ${dynamic_reconfigure_header_DESTINATION}
-  DEPENDS ${dynamic_reconfigure_header_LOCATION}
-  COMMAND cmake -E copy ${dynamic_reconfigure_header_LOCATION} ${dynamic_reconfigure_header_DESTINATION}
+set(file_names_to_copy
+  PublisherConfig
 )
-add_custom_target(copy ALL DEPENDS ${dynamic_reconfigure_header_DESTINATION})
+set(generated_header_LOCATION  ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/)
+set(generated_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/)
+foreach(file_name ${file_names_to_copy})
+  set(from ${generated_header_LOCATION}${file_name}.h)
+  set(to ${generated_header_DESTINATION}${file_name}.h)
+  add_custom_command(
+    OUTPUT ${to}
+    DEPENDS ${from}
+    COMMAND cmake -E copy ${from} ${to})
+  add_custom_target(copy_${file_name} ALL DEPENDS ${to})
+endforeach(file_name)
 
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(${PROJECT_NAME}_test_tango_ros test/test_tango_ros_msg.cpp)
