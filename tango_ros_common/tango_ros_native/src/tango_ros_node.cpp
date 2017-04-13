@@ -746,7 +746,6 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
           << point_cloud->timestamp << " for the depth camera.";
       return;
     }
-    std::lock_guard<std::mutex> lock(mesh_available_mutex_);
     std::copy(std::begin(start_of_service_T_camera_depth.translation),
               std::end(start_of_service_T_camera_depth.translation),
               std::begin(t3dr_depth_pose_.translation));
@@ -754,6 +753,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
               std::end(start_of_service_T_camera_depth.orientation),
               std::begin(t3dr_depth_pose_.orientation));
     TangoSupport_updatePointCloud(point_cloud_manager_, point_cloud);
+    new_point_cloud_available_for_t3dr_ = true;
   }
 }
 
@@ -781,7 +781,9 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_available_mutex_.unlock();
   }
 
-  if (camera_id == TangoCameraId::TANGO_CAMERA_COLOR) {
+  if (camera_id == TangoCameraId::TANGO_CAMERA_COLOR
+      && new_point_cloud_available_for_t3dr_ &&
+      mesh_available_mutex_.try_lock()) {
     if (image_buffer_manager_ == nullptr) {
       TangoErrorType result = TangoSupport_createImageBufferManager(buffer->format, buffer->width,
                                                                     buffer->height, &image_buffer_manager_);
@@ -800,7 +802,6 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
           << buffer->timestamp << " for the color camera.";
       return;
     }
-    std::lock_guard<std::mutex> lock(mesh_available_mutex_);
     std::copy(std::begin(start_of_service_T_camera_color.translation),
               std::end(start_of_service_T_camera_color.translation),
               std::begin(t3dr_image_pose_.translation));
@@ -808,6 +809,9 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
               std::end(start_of_service_T_camera_color.orientation),
               std::begin(t3dr_image_pose_.orientation));
     TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
+    new_point_cloud_available_for_t3dr_ = false;
+    mesh_available_.notify_all();
+    mesh_available_mutex_.unlock();
   }
 }
 
@@ -964,9 +968,10 @@ void TangoRosNode::PublishMesh() {
     if (!run_threads_) {
       break;
     }
+    if (image_buffer_manager_ == nullptr || point_cloud_manager_ == nullptr) continue;
     {
-      if (image_buffer_manager_ == nullptr || point_cloud_manager_ == nullptr) continue;
-
+      std::unique_lock<std::mutex> lock(mesh_available_mutex_);
+      mesh_available_.wait(lock);
       // Get latest point cloud.
       Tango3DR_PointCloud t3dr_depth;
       TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
@@ -984,14 +989,12 @@ void TangoRosNode::PublishMesh() {
       t3dr_image.data = last_image_buffer_->data;
       // Get updated mesh segment indices.
       Tango3DR_GridIndexArray* t3dr_updated_indices;
-      {
-        std::lock_guard<std::mutex> lock(mesh_available_mutex_);
-        Tango3DR_Status result =
-            Tango3DR_update(t3dr_context_, &t3dr_depth, &t3dr_depth_pose_, &t3dr_image,
-                            &t3dr_image_pose_, &t3dr_updated_indices);
-        if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_update failed with error code " << result;
-        }
+
+      Tango3DR_Status result =
+          Tango3DR_update(t3dr_context_, &t3dr_depth, &t3dr_depth_pose_, &t3dr_image,
+                          &t3dr_image_pose_, &t3dr_updated_indices);
+      if (result != TANGO_3DR_SUCCESS) {
+        LOG(ERROR) << "Tango3DR_update failed with error code " << result;
       }
       if (t3dr_updated_indices == nullptr) continue;
       updated_indices_.resize(t3dr_updated_indices->num_indices);
@@ -1000,6 +1003,7 @@ void TangoRosNode::PublishMesh() {
                 reinterpret_cast<uint32_t*>(updated_indices_.data()));
       Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
       // Extract each updated mesh segment and add them to the marker message.
+      mesh_marker_array_.markers.clear();
       for (size_t i = 0; i < updated_indices_.size(); ++i) {
         Tango3DR_Mesh* tango_mesh;
         if(Tango3DR_extractMeshSegment(
@@ -1011,7 +1015,12 @@ void TangoRosNode::PublishMesh() {
         mesh_marker.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         mesh_marker.header.stamp = ros::Time::now();
         mesh_marker.ns = "tango";
-        mesh_marker.id = mesh_marker_array_.markers.size();
+        // Make unique id with mesh segment indices.
+        mesh_marker.id = updated_indices_[i].indices[0];
+        mesh_marker.id *= 37;
+        mesh_marker.id += updated_indices_[i].indices[1];
+        mesh_marker.id *= 37;
+        mesh_marker.id += updated_indices_[i].indices[2];
         mesh_marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
         mesh_marker.action = visualization_msgs::Marker::ADD;
         mesh_marker.pose.orientation.w = 1.0;
@@ -1022,6 +1031,7 @@ void TangoRosNode::PublishMesh() {
         mesh_marker.color.g = 1.0;
         mesh_marker.color.b = 1.0;
         mesh_marker.color.a = 1.0;
+        mesh_marker.lifetime = ros::Duration(0);
         for (size_t j = 0; j < tango_mesh->max_num_faces; ++j) {
           // Add the 3 points of the triangle face.
           geometry_msgs::Point point;
@@ -1073,7 +1083,7 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
   if (config.use_floor_plan != use_floor_plan_) {
     use_floor_plan_ = config.use_floor_plan;
     const char* use_floorplan = "use_floorplan";
-    std::lock_guard<std::mutex> lock(mesh_available_mutex_);
+    //std::lock_guard<std::mutex> lock(mesh_available_mutex_);
     Tango3DR_Status result = Tango3DR_setRuntimeBool(t3dr_context_, use_floorplan, use_floor_plan_);
     if (result != TANGO_3DR_SUCCESS) {
       LOG(ERROR) << "Failed to change runtime config " << use_floorplan << " error: " << result;
