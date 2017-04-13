@@ -278,6 +278,9 @@ void toTango3DR_CameraCalibration(
             std::end(camera_intrinsics.distortion),
             std::begin(t3dr_camera_intrinsics->distortion));
 }
+// Converts TangoPoseData to Tango3DR_Pose.
+// @param tango_pose_data, TangoPoseData to convert.
+// @param t3dr_pose, the output Tango3DR_Pose.
 void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_pose) {
   std::copy(std::begin(tango_pose_data.translation),
             std::end(tango_pose_data.translation),
@@ -286,7 +289,13 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
             std::end(tango_pose_data.orientation),
             std::begin(t3dr_pose->orientation));
 }
-void toMeshMarker(const tango_ros_native::GridIndex& grid_index,
+// Converts Tango3DR_Mesh to visualization_msgs::Marker (TRIANGLE_LIST).
+// See ROS documentation:
+// http://docs.ros.org/api/visualization_msgs/html/msg/Marker.html
+// @param grid_index, index of the tango_mesh.
+// @param tango_mesh, Tango3DR_Mesh to convert.
+// @param mesh_marker, the output visualization_msgs::Marker.
+void toMeshMarker(const Tango3DR_GridIndex& grid_index,
                   Tango3DR_Mesh* tango_mesh,
                   visualization_msgs::Marker* mesh_marker) {
   mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
@@ -303,12 +312,12 @@ void toMeshMarker(const tango_ros_native::GridIndex& grid_index,
   mesh_marker->color.b = 1.0;
   mesh_marker->color.a = 1.0;
   mesh_marker->lifetime = ros::Duration(0);
-  // Make unique id from mesh segment indices.
-  mesh_marker->id = grid_index.indices[0];
+  // Make unique id from tango mesh index.
+  mesh_marker->id = grid_index[0];
   mesh_marker->id *= 37;
-  mesh_marker->id += grid_index.indices[1];
+  mesh_marker->id += grid_index[1];
   mesh_marker->id *= 37;
-  mesh_marker->id += grid_index.indices[2];
+  mesh_marker->id += grid_index[2];
   for (size_t j = 0; j < tango_mesh->max_num_faces; ++j) {
     // Add the 3 points of the triangle face.
     geometry_msgs::Point point;
@@ -324,7 +333,7 @@ void toMeshMarker(const tango_ros_native::GridIndex& grid_index,
     point.y = tango_mesh->vertices[tango_mesh->faces[j][2]][1];
     point.z = tango_mesh->vertices[tango_mesh->faces[j][2]][2];
     mesh_marker->points.push_back(point);
-    // Add the corresponding color.
+    // Add the corresponding colors.
     std_msgs::ColorRGBA color;
     color.r = tango_mesh->colors[tango_mesh->faces[j][0]][0] / 255.;
     color.g = tango_mesh->colors[tango_mesh->faces[j][0]][1] / 255.;
@@ -1163,21 +1172,24 @@ void TangoRosNode::PublishMeshMarker() {
       std::unique_lock<std::mutex> lock(mesh_available_mutex_);
       mesh_available_.wait(lock);
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+        LOG(INFO) << "PublishMeshMarker";
         // Get latest point cloud.
+        TangoPointCloud* last_point_cloud;
+        TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
         Tango3DR_PointCloud t3dr_depth;
-        TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud_);
-        t3dr_depth.timestamp = last_point_cloud_->timestamp;
-        t3dr_depth.num_points = last_point_cloud_->num_points;
-        t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud_->points);
+        t3dr_depth.timestamp = last_point_cloud->timestamp;
+        t3dr_depth.num_points = last_point_cloud->num_points;
+        t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud->points);
         // Get latest image.
-        TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer_);
+        TangoImageBuffer* last_color_image_buffer;
+        TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
         Tango3DR_ImageBuffer t3dr_image;
-        t3dr_image.width = last_color_image_buffer_->width;
-        t3dr_image.height = last_color_image_buffer_->height;
-        t3dr_image.stride = last_color_image_buffer_->stride;
-        t3dr_image.timestamp = last_color_image_buffer_->timestamp;
-        t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer_->format);
-        t3dr_image.data = last_color_image_buffer_->data;
+        t3dr_image.width = last_color_image_buffer->width;
+        t3dr_image.height = last_color_image_buffer->height;
+        t3dr_image.stride = last_color_image_buffer->stride;
+        t3dr_image.timestamp = last_color_image_buffer->timestamp;
+        t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
+        t3dr_image.data = last_color_image_buffer->data;
         // Get updated mesh segment indices.
         Tango3DR_GridIndexArray* t3dr_updated_indices;
         Tango3DR_Status result =
@@ -1187,30 +1199,31 @@ void TangoRosNode::PublishMeshMarker() {
           LOG(ERROR) << "Tango3DR_update failed with error code " << result;
         }
         if (t3dr_updated_indices == nullptr) continue;
-        updated_indices_.resize(t3dr_updated_indices->num_indices);
-        std::copy(&t3dr_updated_indices->indices[0][0],
-                  &t3dr_updated_indices->indices[t3dr_updated_indices->num_indices][0],
-                  reinterpret_cast<uint32_t*>(updated_indices_.data()));
-        Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
-        mesh_marker_array_.markers.clear();
-        // Extract each updated mesh segment and add them to the marker message.
-        for (size_t i = 0; i < updated_indices_.size(); ++i) {
+        visualization_msgs::MarkerArray mesh_marker_array;
+        for (size_t i = 0; i < t3dr_updated_indices->num_indices; ++i) {
+          // Extract tango mesh from updated index.
           Tango3DR_Mesh* tango_mesh;
           if(Tango3DR_extractMeshSegment(
-              t3dr_context_, updated_indices_[i].indices, &tango_mesh) != TANGO_3DR_SUCCESS) {
+              t3dr_context_, t3dr_updated_indices->indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
             LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
           }
           if (tango_mesh == nullptr) continue;
+          // Make mesh marker from tango mesh.
           visualization_msgs::Marker mesh_marker;
-          toMeshMarker(updated_indices_[i], tango_mesh, &mesh_marker);
-          Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
+          toMeshMarker(t3dr_updated_indices->indices[i], tango_mesh, &mesh_marker);
+          // Free tango mesh once we are finished with it.
+          result = Tango3DR_Mesh_destroy(tango_mesh);
           if (result != TANGO_3DR_SUCCESS) {
             LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
           }
           if (mesh_marker.points.empty()) continue;
-          mesh_marker_array_.markers.push_back(mesh_marker);
+          mesh_marker_array.markers.push_back(mesh_marker);
         }
-        mesh_marker_publisher_.publish(mesh_marker_array_);
+        result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
+        if (result != TANGO_3DR_SUCCESS) {
+          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy error: " << result;
+        }
+        mesh_marker_publisher_.publish(mesh_marker_array);
       }
     }
   }

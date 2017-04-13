@@ -88,14 +88,6 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
-// GridIndex makes indices into a value-struct instead of just an
-// array.
-struct GridIndex {
-  Tango3DR_GridIndex indices;
-
-  bool operator==(const GridIndex& other) const;
-};
-
 enum class TangoStatus {
   UNKNOWN = 0,
   SERVICE_NOT_BOUND,
@@ -246,21 +238,15 @@ class TangoRosNode {
   cv::Mat color_image_rect_;
 
   ros::Publisher mesh_marker_publisher_;
-  visualization_msgs::MarkerArray mesh_marker_array_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_Context t3dr_context_;
   TangoSupportPointCloudManager* point_cloud_manager_;
-  TangoPointCloud* last_point_cloud_;
   Tango3DR_Pose last_camera_depth_pose_;
   TangoSupportImageBufferManager* image_buffer_manager_;
-  TangoImageBuffer* last_color_image_buffer_;
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   bool use_floor_plan_ = false;
-  // Updated indices from the 3D Reconstruction library. The grids for
-  // each of these needs to be re-extracted.
-  std::vector<GridIndex> updated_indices_;
 
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
