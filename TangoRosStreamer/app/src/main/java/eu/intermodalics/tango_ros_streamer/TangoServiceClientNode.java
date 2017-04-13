@@ -17,7 +17,6 @@
 package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
-import android.app.Service;
 
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
@@ -59,6 +58,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onSaveMapServiceCallFinish(boolean success, String message);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
+        void onTangoReconnectServiceFinish(int response, String message);
         void onTangoStatus(int status);
     }
 
@@ -137,6 +137,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                         mCallbackListener.onTangoConnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                     } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
                         mCallbackListener.onTangoDisconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
+                    } else if (connectRequest == TangoConnectRequest.RECONNECT) {
+                        mCallbackListener.onTangoReconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                     } else {
                         mLog.error("Request not recognized: " + connectRequest);
                     }

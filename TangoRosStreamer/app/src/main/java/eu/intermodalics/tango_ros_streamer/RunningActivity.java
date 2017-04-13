@@ -30,12 +30,10 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -305,7 +303,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
             displayToastMessage(R.string.tango_connect_error);
             return;
         }
-
         displayToastMessage(R.string.tango_connect_success);
         saveUuidsNamestoHashMap();
     }
@@ -314,13 +311,21 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public void onTangoDisconnectServiceFinish(int response, String message) {
         if (response != TangoConnectResponse.TANGO_SUCCESS) {
             Log.e(TAG, "Error disconnecting from Tango: " + response + ", message: " + message);
-            // Do not switch Tango lights in this case because Tango disconnect can never fail.
-            // Failure occured due to something else, so Tango is still connected.
             displayToastMessage(R.string.tango_disconnect_error);
             return;
         }
-
         displayToastMessage(R.string.tango_disconnect_success);
+    }
+
+    @Override
+    public void onTangoReconnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error reconnecting to Tango: " + response + ", message: " + message);
+            displayToastMessage(R.string.tango_reconnect_error);
+            return;
+        }
+        displayToastMessage(R.string.tango_reconnect_success);
+        saveUuidsNamestoHashMap();
     }
 
     @Override
@@ -356,7 +361,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
         mRestartTangoAlertReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.DISCONNECT);
                 mParameterNode.uploadPreferencesToParameterServer();
                 mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
                 if (mCreateNewMap) {
@@ -364,7 +368,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
                 } else {
                     mSaveButton.setVisibility(View.GONE);
                 }
-                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT);
+                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
             }
         };
         this.registerReceiver(this.mRestartTangoAlertReceiver, new IntentFilter(RESTART_TANGO_ALERT));
