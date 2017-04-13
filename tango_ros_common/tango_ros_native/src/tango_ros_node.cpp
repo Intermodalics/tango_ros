@@ -1028,6 +1028,8 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
 
   std::string map_uuid_string = static_cast<std::string>(map_uuid);
   res.message =  "Map " + map_uuid_string + " successfully saved with the following name: " + map_name;
+  res.map_name = map_name;
+  res.map_uuid = map_uuid_string;
   res.success = true;
   tango_data_available_ = false;
   return true;
