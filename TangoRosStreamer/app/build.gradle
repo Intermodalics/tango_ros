@@ -15,13 +15,6 @@ android {
     }
 }
 
-repositories {
-  mavenLocal()
-  maven {
-      url uri(projectDir.toString() + '/../../../../devel/share/maven')
-  }
-}
-
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
