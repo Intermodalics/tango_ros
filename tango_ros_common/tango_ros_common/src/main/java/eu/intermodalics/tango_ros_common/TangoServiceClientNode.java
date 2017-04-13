@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tangoroscommon;
+package eu.intermodalics.tango_ros_common;
 
 import android.app.Activity;
 

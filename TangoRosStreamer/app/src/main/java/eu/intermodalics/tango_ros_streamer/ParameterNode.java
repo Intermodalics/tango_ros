@@ -20,7 +20,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import eu.intermodalics.tangoroscommon.NodeNamespaceHelper;
+import eu.intermodalics.tango_ros_common.NodeNamespaceHelper;
 
 import org.apache.commons.logging.Log;
 import org.ros.namespace.GraphName;
