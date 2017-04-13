@@ -15,13 +15,6 @@ android {
     }
 }
 
-repositories {
-  mavenLocal()
-  maven {
-      url uri(projectDir.toString() + '/../../../../devel/share/maven')
-  }
-}
-
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -38,4 +31,5 @@ dependencies {
     compile 'com.android.support:support-v4:25.2.0'
     compile 'com.android.support:design:25.2.0'
     compile project(':nodelet_manager')
+    compile project(':tango_ros_common')
 }

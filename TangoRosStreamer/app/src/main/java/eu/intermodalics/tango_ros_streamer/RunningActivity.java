@@ -27,12 +27,10 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -63,6 +61,8 @@ import eu.intermodalics.nodelet_manager.NodeletManager;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoServiceConnection;
 
+import eu.intermodalics.tango_ros_common.Logger;
+import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 

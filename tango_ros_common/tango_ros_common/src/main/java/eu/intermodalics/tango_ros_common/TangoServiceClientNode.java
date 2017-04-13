@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_common;
 
 import android.app.Activity;
 
@@ -31,8 +31,6 @@ import org.ros.node.topic.Subscriber;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import eu.intermodalics.tango_ros_streamer.common.NodeNamespaceHelper;
 
 import tango_ros_messages.GetMapUuids;
 import tango_ros_messages.GetMapUuidsRequest;

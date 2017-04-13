@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer.common;
+package eu.intermodalics.tango_ros_common;
 
 public class NodeNamespaceHelper {
     public static String BuildTangoRosNodeNamespaceName(String paramName) {
