@@ -1252,7 +1252,10 @@ void TangoRosNode::PublishMeshMarker() {
         if (result != TANGO_3DR_SUCCESS) {
           LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
         }
-        if (mesh_marker.points.empty()) continue;
+        if (mesh_marker.points.empty()) {
+          LOG(ERROR) << "Empty mesh!";
+          continue;
+        }
         mesh_marker_array.markers.push_back(mesh_marker);
       }
       Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
@@ -1260,7 +1263,7 @@ void TangoRosNode::PublishMeshMarker() {
         LOG(ERROR) << "Tango3DR_GridIndexArray_destroy error: " << result;
       }
       if (mesh_marker_array.markers.empty()) {
-        LOG(ERROR) << "Empty Mesh!";
+        LOG(ERROR) << "Empty mesh array!";
       }
       mesh_marker_publisher_.publish(mesh_marker_array);
     }
