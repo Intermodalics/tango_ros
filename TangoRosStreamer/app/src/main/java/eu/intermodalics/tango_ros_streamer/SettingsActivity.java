@@ -194,13 +194,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
     }
 
     private void updateMapChooserPreference() {
-        MapChooserPreference mapChooserPreference =
-                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
-
         SwitchPreference createNewMapPref = (SwitchPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_create_new_map_key));
+        if (createNewMapPref == null) return;
         boolean createNewMap = createNewMapPref.isChecked();
         ListPreference localizationModePref = (ListPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_mode_key));
+        if (localizationModePref == null) return;
         String localizationMode = localizationModePref.getValue();
+        MapChooserPreference mapChooserPreference =
+                (MapChooserPreference) mSettingsPreferenceFragment.findPreference(getString(R.string.pref_localization_map_uuid_key));
+        if (mapChooserPreference == null) return;
         mapChooserPreference.setEnabled(!createNewMap && localizationMode.equals("3"));
 
         if (mUuidsNamesMap == null || mUuidsNamesMap.isEmpty()) {
