@@ -32,11 +32,14 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
+#include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tango_ros_messages/GetMapName.h>
+#include <tango_ros_messages/GetMapUuids.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -65,13 +68,14 @@ const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
-const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh";
+const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh_marker";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
 const std::string CREATE_NEW_MAP_PARAM_NAME = "tango/create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "/tango/localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
+const std::string USE_FLOOR_PLAN_PARAM_NAME = "tango/use_floor_plan";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Localization mode values.
@@ -87,14 +91,6 @@ enum LocalizationMode {
   LOCALIZATION = 3
 };
 
-// GridIndex makes indices into a value-struct instead of just an
-// array.
-struct GridIndex {
-  Tango3DR_GridIndex indices;
-
-  bool operator==(const GridIndex& other) const;
-};
-
 enum class TangoStatus {
   UNKNOWN = 0,
   SERVICE_NOT_BOUND,
@@ -105,10 +101,12 @@ enum class TangoStatus {
 };
 
 // Node collecting tango data and publishing it on ros topics.
-class TangoRosNode {
+class TangoRosNode : public ::nodelet::Nodelet {
  public:
   TangoRosNode();
   ~TangoRosNode();
+  // Initialization function called when plugin is loaded.
+  void onInit();
   // Gets the full list of map Uuids (Universally Unique IDentifier)
   // available on the device.
   // @return a list as a string: uuids are comma-separated.
@@ -140,8 +138,7 @@ class TangoRosNode {
   // Sets the tango config to be able to collect all necessary data from tango.
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
-  // Now that Tango is configured correctly, we also need to configure
-  // 3D Reconstruction the way we want.
+  // Configure Tango 3D Reconstruction.
   Tango3DR_Status TangoSetup3DRConfig();
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully
@@ -155,21 +152,30 @@ class TangoRosNode {
   void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
-  // Publishes the available data (device pose, point cloud, laser scan, images).
+  // Publishes the available data (device pose, point cloud, images, ...).
   void PublishDevicePose();
   void PublishPointCloud();
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
-  void PublishMesh();
+  void PublishMeshMarker();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  // ROS service callback to get the user readable name from a given UUID.
+  bool GetMapName(const tango_ros_messages::GetMapName::Request& req,
+                  tango_ros_messages::GetMapName::Response &res);
+  // ROS service callback to get a list of available ADF UUIDs and corresponding
+  // user readable map names.
+  bool GetMapUuids(const tango_ros_messages::GetMapUuids::Request &req,
+                   tango_ros_messages::GetMapUuids::Response &res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(tango_ros_messages::SaveMap::Request &req, tango_ros_messages::SaveMap::Response &res);
+  bool SaveMap(tango_ros_messages::SaveMap::Request &req,
+               tango_ros_messages::SaveMap::Response &res);
+  // ROS service callback to connect or disconnect from Tango Service.
   bool TangoConnectServiceCallback(
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);
@@ -182,7 +188,7 @@ class TangoRosNode {
   std::thread publish_laserscan_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
-  std::thread publish_mesh_thread_;
+  std::thread publish_mesh_marker_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
 
@@ -196,6 +202,9 @@ class TangoRosNode {
   std::condition_variable fisheye_image_available_;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
+  std::mutex mesh_available_mutex_;
+  std::condition_variable mesh_available_;
+  std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
 
@@ -241,31 +250,19 @@ class TangoRosNode {
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
 
-
-  ros::Publisher mesh_publisher_;
-  visualization_msgs::MarkerArray mesh_marker_array_;
-  std::mutex mesh_available_mutex_;
-  std::condition_variable mesh_available_;
-  std::atomic_bool new_point_cloud_available_for_t3dr_;
+  ros::Publisher mesh_marker_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_Context t3dr_context_;
   TangoSupportPointCloudManager* point_cloud_manager_;
-  // The most recent point cloud received.
-  TangoPointCloud* last_point_cloud_;
-  // The pose the the most recent point cloud received.
-  // Only meaningful if point_cloud_available_for_td3r_ is true.
-  Tango3DR_Pose t3dr_depth_pose_;
+  Tango3DR_Pose last_camera_depth_pose_;
   TangoSupportImageBufferManager* image_buffer_manager_;
-  TangoImageBuffer* last_image_buffer_;
-  Tango3DR_Pose t3dr_image_pose_;
-  // Constant camera intrinsics for the color camera.
-  Tango3DR_CameraCalibration t3dr_intrinsics_;
-  // Updated indices from the 3D Reconstruction library. The grids for
-  // each of these needs to be re-extracted.
-  std::vector<GridIndex> updated_indices_;
+  Tango3DR_Pose last_camera_color_pose_;
+  Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   bool use_floor_plan_ = false;
 
+  ros::ServiceServer get_map_name_service_;
+  ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
 };
