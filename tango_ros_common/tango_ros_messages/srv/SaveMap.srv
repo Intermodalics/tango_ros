@@ -1,4 +1,6 @@
 string map_name
 ---
 string message
+string map_name
+string map_uuid
 bool success
