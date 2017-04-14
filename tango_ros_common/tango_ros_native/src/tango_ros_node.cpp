@@ -384,20 +384,20 @@ void TangoRosNode::onInit() {
   }
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
-      tango_ros_messages::GetMapName::Response>("/tango/get_map_name",
+      tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
 
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
-      tango_ros_messages::GetMapUuids::Response>("/tango/get_map_uuids",
+      tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
-      tango_ros_messages::SaveMap::Response>("/tango/save_map",
+      tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
-              "/tango/connect", boost::bind(
+              CONNECT_SERVICE_NAME, boost::bind(
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 
   tango_status_ = TangoStatus::UNKNOWN;
