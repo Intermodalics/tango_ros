@@ -63,6 +63,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onSaveMapServiceCallFinish(boolean success, String message);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
+        void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
     }
@@ -128,6 +129,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                     mCallbackListener.onTangoConnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
                     mCallbackListener.onTangoDisconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
+                } else if (connectRequest == TangoConnectRequest.RECONNECT) {
+                    mCallbackListener.onTangoReconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else {
                     mLog.error("Request not recognized: " + connectRequest);
                 }

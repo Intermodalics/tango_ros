@@ -987,27 +987,34 @@ void TangoRosNode::RunRosSpin() {
 }
 
 bool TangoRosNode::TangoConnectServiceCallback(
-        const tango_ros_messages::TangoConnect::Request& request,
-        tango_ros_messages::TangoConnect::Response& response) {
-    switch (request.request) {
-        case tango_ros_messages::TangoConnect::Request::CONNECT:
-            response.response = ConnectToTangoAndSetUpNode();
-            break;
-        case tango_ros_messages::TangoConnect::Request::DISCONNECT:
-            // Disconnect from Tango Service.
-            TangoDisconnect();
-            response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
-            break;
-        default:
-            LOG(ERROR) << "Did not understand request " << request.request
-                       << ", valid requests are (CONNECT: "
-                       << tango_ros_messages::TangoConnect::Request::CONNECT
-                       << ", DISCONNECT: "
-                       << tango_ros_messages::TangoConnect::Request::DISCONNECT
-                       << ")";
-            return false;
+    const tango_ros_messages::TangoConnect::Request& request,
+    tango_ros_messages::TangoConnect::Response& response) {
+  switch (request.request) {
+    case tango_ros_messages::TangoConnect::Request::CONNECT:
+      // Connect to Tango Service.
+      response.response = ConnectToTangoAndSetUpNode();
+      break;
+    case tango_ros_messages::TangoConnect::Request::DISCONNECT:
+      // Disconnect from Tango Service.
+      TangoDisconnect();
+      response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
+      break;
+    case tango_ros_messages::TangoConnect::Request::RECONNECT:
+      // Disconnect and reconnect to Tango Service.
+      TangoDisconnect();
+      response.response = ConnectToTangoAndSetUpNode();
+      break;
+    default:
+      LOG(ERROR) << "Did not understand request " << request.request
+                 << ", valid requests are (CONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::CONNECT
+                 << ", DISCONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::DISCONNECT
+                 << ", RECONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::RECONNECT
+                 << ")";
+      return false;
     }
-
     return true;
 }
 

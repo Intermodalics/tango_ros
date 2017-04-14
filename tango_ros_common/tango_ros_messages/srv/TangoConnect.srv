@@ -1,5 +1,6 @@
 int8 DISCONNECT=0
 int8 CONNECT=1
+int8 RECONNECT=2
 int8 request
 ---
 # See tango_client_api.h for documentation.

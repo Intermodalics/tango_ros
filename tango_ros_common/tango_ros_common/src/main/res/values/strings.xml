@@ -4,4 +4,6 @@
     <string name="tango_connect_error">Failed to connect to Tango.</string>
     <string name="tango_disconnect_success">Successfully disconnected from Tango.</string>
     <string name="tango_disconnect_error">Failed to disconnect from Tango.</string>
+    <string name="tango_reconnect_success">Successfully reconnected to Tango.</string>
+    <string name="tango_reconnect_error">Failed to reconnect to Tango.</string>
 </resources>
