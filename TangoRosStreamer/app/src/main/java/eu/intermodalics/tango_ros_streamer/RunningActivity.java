@@ -311,6 +311,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoRosNod
     public void onTangoDisconnectServiceFinish(int response, String message) {
         if (response != TangoConnectResponse.TANGO_SUCCESS) {
             Log.e(TAG, "Error disconnecting from Tango: " + response + ", message: " + message);
+            // Do not switch Tango lights in this case because Tango disconnect can never fail.
+            // Failure occured due to something else, so Tango is still connected.
             displayToastMessage(R.string.tango_disconnect_error);
             return;
         }
