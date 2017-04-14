@@ -469,7 +469,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         if (requestCode == REQUEST_CODE_TANGO_PERMISSION) {
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
-                finish();
+                displayToastMessage(R.string.tango_permission_denied);
             }
         }
     }
