@@ -383,9 +383,6 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 getString(R.string.pref_log_file_default));
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
-
-        getTangoPermission(EXTRA_VALUE_ADF);
-        getTangoPermission(EXTRA_VALUE_DATASET);
     }
 
     @Override
@@ -453,6 +450,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
                 mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+                getTangoPermission(EXTRA_VALUE_ADF);
+                getTangoPermission(EXTRA_VALUE_DATASET);
                 if (mCreateNewMap) {
                     mSaveButton.setVisibility(View.VISIBLE);
                 } else {
@@ -550,6 +549,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
             mLogger.start();
+            getTangoPermission(EXTRA_VALUE_ADF);
+            getTangoPermission(EXTRA_VALUE_DATASET);
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
