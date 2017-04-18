@@ -171,7 +171,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> saveMapService =
                 mConnectedNode.newServiceClient(
                         NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(GET_MAP_UUIDS_SRV_NAME),
-                        SaveMap._TYPE);
+                        GetMapUuids._TYPE);
 
         GetMapUuidsRequest request = mConnectedNode.getServiceRequestMessageFactory().newFromType(GetMapUuids._TYPE);
         saveMapService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
