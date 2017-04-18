@@ -17,6 +17,7 @@
 package eu.intermodalics.tango_ros_streamer;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
@@ -65,7 +66,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
-        // Set ROS params according to preferences.
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
                 Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
@@ -80,5 +80,25 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
             }
         }
+    }
+
+    // Set app preferences according to ROS params.
+    public void setPreferencesFromParameterServer() {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        for (String paramName : mParamNames.keySet()) {
+            if (mParamNames.get(paramName) == "boolean") {
+                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), true);
+                editor.putBoolean(paramName, booleanValue);
+            }
+            if (mParamNames.get(paramName) == "int_as_string") {
+                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                editor.putString(paramName, intValue.toString());
+            }
+            if (mParamNames.get(paramName) == "string") {
+                String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+                editor.putString(paramName, stringValue);
+            }
+        }
+        editor.commit();
     }
 }
