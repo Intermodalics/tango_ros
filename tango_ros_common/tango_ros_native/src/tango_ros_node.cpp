@@ -441,7 +441,9 @@ std::string getCurrentDateAndTime() {
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr) {}
+TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr),
+    t3dr_context_(nullptr), point_cloud_manager_(nullptr),
+    image_buffer_manager_(nullptr), new_point_cloud_available_for_t3dr_(false) {}
 
 void TangoRosNode::onInit() {
   node_handle_ = getMTPrivateNodeHandle();
@@ -892,8 +894,8 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         area_description_T_start_of_service_.child_frame_id =
             toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
       }
-      pose_available_.notify_all();
       pose_available_mutex_.unlock();
+      pose_available_.notify_all();
     }
   }
 }
@@ -904,8 +906,8 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
         point_cloud_available_mutex_.try_lock()) {
       toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
       point_cloud_.header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-      point_cloud_available_.notify_all();
       point_cloud_available_mutex_.unlock();
+      point_cloud_available_.notify_all();
     }
     if (laser_scan_publisher_.getNumSubscribers() > 0 &&
         laser_scan_available_mutex_.try_lock()) {
@@ -924,8 +926,8 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       toLaserScan(*point_cloud, time_offset_, laser_scan_min_height_,
                   laser_scan_max_height_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
-      laser_scan_available_.notify_all();
       laser_scan_available_mutex_.unlock();
+      laser_scan_available_.notify_all();
     }
 
     if (mesh_marker_publisher_.getNumSubscribers() > 0) {
@@ -955,8 +957,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-    fisheye_image_available_.notify_all();
     fisheye_image_available_mutex_.unlock();
+    fisheye_image_available_.notify_all();
   }
   if (color_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
@@ -966,8 +968,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id = toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-    color_image_available_.notify_all();
     color_image_available_mutex_.unlock();
+    color_image_available_.notify_all();
   }
 
   if (mesh_marker_publisher_.getNumSubscribers() > 0 &&
@@ -995,8 +997,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     toTango3DR_Pose(start_of_service_T_camera_color, &last_camera_color_pose_);
     TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
     new_point_cloud_available_for_t3dr_ = false;
-    mesh_available_.notify_all();
     mesh_available_mutex_.unlock();
+    mesh_available_.notify_all();
   }
 }
 
@@ -1017,8 +1019,8 @@ void TangoRosNode::StopPublishing() {
     if (publish_device_pose_thread_.joinable()) {
       if (!tango_data_available_) {
         std::unique_lock<std::mutex> lock(pose_available_mutex_);
-        pose_available_.notify_all();
         pose_available_mutex_.unlock();
+        pose_available_.notify_all();
       }
       publish_device_pose_thread_.join();
     }
@@ -1026,8 +1028,8 @@ void TangoRosNode::StopPublishing() {
       if (!tango_data_available_ ||
           point_cloud_publisher_.getNumSubscribers() <= 0) {
         std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
-        point_cloud_available_.notify_all();
         point_cloud_available_mutex_.unlock();
+        point_cloud_available_.notify_all();
       }
       publish_pointcloud_thread_.join();
     }
@@ -1035,8 +1037,8 @@ void TangoRosNode::StopPublishing() {
       if (!tango_data_available_ ||
           laser_scan_publisher_.getNumSubscribers() <= 0) {
         std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
-        laser_scan_available_.notify_all();
         laser_scan_available_mutex_.unlock();
+        laser_scan_available_.notify_all();
       }
       publish_laserscan_thread_.join();
     }
@@ -1044,8 +1046,8 @@ void TangoRosNode::StopPublishing() {
       if (!tango_data_available_
           || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
         std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
-        fisheye_image_available_.notify_all();
         fisheye_image_available_mutex_.unlock();
+        fisheye_image_available_.notify_all();
       }
       publish_fisheye_image_thread_.join();
     }
@@ -1053,8 +1055,8 @@ void TangoRosNode::StopPublishing() {
       if (!tango_data_available_
           || color_camera_publisher_.getNumSubscribers() <= 0) {
         std::unique_lock<std::mutex> lock(color_image_available_mutex_);
-        color_image_available_.notify_all();
         color_image_available_mutex_.unlock();
+        color_image_available_.notify_all();
       }
       publish_color_image_thread_.join();
     }
@@ -1062,8 +1064,8 @@ void TangoRosNode::StopPublishing() {
       if (!tango_data_available_
           || mesh_marker_publisher_.getNumSubscribers() <= 0) {
         std::unique_lock<std::mutex> lock(mesh_available_mutex_);
-        mesh_available_.notify_all();
         mesh_available_mutex_.unlock();
+        mesh_available_.notify_all();
       }
       publish_mesh_marker_thread_.join();
     }
@@ -1196,11 +1198,11 @@ void TangoRosNode::PublishMeshMarker() {
     if (!run_threads_) {
       break;
     }
-    if (image_buffer_manager_ == nullptr || point_cloud_manager_ == nullptr) continue;
-    {
-      std::unique_lock<std::mutex> lock(mesh_available_mutex_);
-      mesh_available_.wait(lock);
-      if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+    if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+      Tango3DR_GridIndexArray* t3dr_updated_indices;
+      {
+        std::unique_lock<std::mutex> lock(mesh_available_mutex_);
+        mesh_available_.wait(lock);
         // Get latest point cloud.
         TangoPointCloud* last_point_cloud;
         TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
@@ -1219,40 +1221,48 @@ void TangoRosNode::PublishMeshMarker() {
         t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
         t3dr_image.data = last_color_image_buffer->data;
         // Get updated mesh segment indices.
-        Tango3DR_GridIndexArray* t3dr_updated_indices;
         Tango3DR_Status result =
             Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
                             &last_camera_color_pose_, &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
           LOG(ERROR) << "Tango3DR_update failed with error code " << result;
         }
-        if (t3dr_updated_indices == nullptr) continue;
-        visualization_msgs::MarkerArray mesh_marker_array;
-        for (size_t i = 0; i < t3dr_updated_indices->num_indices; ++i) {
-          // Extract tango mesh from updated index.
-          Tango3DR_Mesh* tango_mesh;
-          if(Tango3DR_extractMeshSegment(
-              t3dr_context_, t3dr_updated_indices->indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
-            LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
-          }
-          if (tango_mesh == nullptr) continue;
-          // Make mesh marker from tango mesh.
-          visualization_msgs::Marker mesh_marker;
-          toMeshMarker(t3dr_updated_indices->indices[i], tango_mesh, &mesh_marker);
-          // Free tango mesh once we are finished with it.
-          result = Tango3DR_Mesh_destroy(tango_mesh);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
-          }
-          if (mesh_marker.points.empty()) continue;
-          mesh_marker_array.markers.push_back(mesh_marker);
-        }
-        result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
-        if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy error: " << result;
-        }
-        mesh_marker_publisher_.publish(mesh_marker_array);
       }
+      if (t3dr_updated_indices == nullptr) {
+        LOG(ERROR) << "No indices updated in Mesh";
+        continue;
+      }
+      visualization_msgs::MarkerArray mesh_marker_array;
+      for (size_t i = 0; i < t3dr_updated_indices->num_indices; ++i) {
+        // Extract tango mesh from updated index.
+        Tango3DR_Mesh* tango_mesh;
+        if(Tango3DR_extractMeshSegment(
+            t3dr_context_, t3dr_updated_indices->indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
+          LOG(WARNING) << "Tango3DR_extractMeshSegment failed";
+        }
+        if (tango_mesh == nullptr) {
+          LOG(ERROR) << "Invalid Mesh extracted!";
+          continue;
+        }
+        // Make mesh marker from tango mesh.
+        visualization_msgs::Marker mesh_marker;
+        toMeshMarker(t3dr_updated_indices->indices[i], tango_mesh, &mesh_marker);
+        // Free tango mesh once we are finished with it.
+        Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
+        if (result != TANGO_3DR_SUCCESS) {
+          LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
+        }
+        if (mesh_marker.points.empty()) continue;
+        mesh_marker_array.markers.push_back(mesh_marker);
+      }
+      Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
+      if (result != TANGO_3DR_SUCCESS) {
+        LOG(ERROR) << "Tango3DR_GridIndexArray_destroy error: " << result;
+      }
+      if (mesh_marker_array.markers.empty()) {
+        LOG(ERROR) << "Empty mesh array!";
+      }
+      mesh_marker_publisher_.publish(mesh_marker_array);
     }
   }
 }
