@@ -16,7 +16,9 @@
 #include <jni.h>
 
 #include <glog/logging.h>
+#include <image_transport/publisher_plugin.h>
 #include <nodelet/loader.h>
+#include <pluginlib/class_loader.h>
 #include <ros/ros.h>
 
 #include "tango_helper.h"
@@ -67,6 +69,18 @@ Java_eu_intermodalics_nodelet_1manager_NodeletManager_execute(
         return 1;
     }
     LOG(INFO) << "Finished loading nodelets.";
+
+    // Check that all necessary plugins are available.
+    pluginlib::ClassLoader<image_transport::PublisherPlugin> image_transport_pub_loader("image_transport", "image_transport::PublisherPlugin");
+    if (!image_transport_pub_loader.isClassAvailable("image_transport/raw_pub")) {
+      LOG(WARNING) << "Plugin image_transport/raw_pub is not available.";
+      return 1;
+    } else if (!image_transport_pub_loader.isClassAvailable("image_transport/compressed_pub")) {
+      LOG(WARNING) << "Plugin image_transport/compressed_pub is not available.";
+      return 1;
+    } else {
+      LOG(INFO) << "All necessary plugins are available";
+    }
 
     ros::AsyncSpinner spinner(4);
     spinner.start();
