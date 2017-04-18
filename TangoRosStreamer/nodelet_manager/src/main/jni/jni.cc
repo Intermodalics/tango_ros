@@ -73,13 +73,12 @@ Java_eu_intermodalics_nodelet_1manager_NodeletManager_execute(
     // Check that all necessary plugins are available.
     pluginlib::ClassLoader<image_transport::PublisherPlugin> image_transport_pub_loader("image_transport", "image_transport::PublisherPlugin");
     if (!image_transport_pub_loader.isClassAvailable("image_transport/raw_pub")) {
-      LOG(WARNING) << "Plugin image_transport/raw_pub is not available.";
+      LOG(ERROR) << "Plugin image_transport/raw_pub is not available.";
       return 1;
-    } else if (!image_transport_pub_loader.isClassAvailable("image_transport/compressed_pub")) {
-      LOG(WARNING) << "Plugin image_transport/compressed_pub is not available.";
+    }
+    if (!image_transport_pub_loader.isClassAvailable("image_transport/compressed_pub")) {
+      LOG(ERROR) << "Plugin image_transport/compressed_pub is not available.";
       return 1;
-    } else {
-      LOG(INFO) << "All necessary plugins are available";
     }
 
     ros::AsyncSpinner spinner(4);
