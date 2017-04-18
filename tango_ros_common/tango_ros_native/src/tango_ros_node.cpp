@@ -13,9 +13,11 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_node.h"
 
-#include <iostream>
 #include <cmath>
 #include <ctime>
+#include <iostream>
+#include <vector>
+#include <sstream>
 
 #include <glog/logging.h>
 
@@ -35,15 +37,11 @@ std::vector<std::string> splitCommaSeparatedString(const std::string& comma_sepa
   std::vector<std::string> output;
   std::stringstream ss(comma_separated_string);
 
-      std::string string_element;
-      while (ss >> string_element) {
-          output.push_back(string_element);
-
-          if (ss.peek() == ',')
-              ss.ignore();
-      }
-
-   return output;
+  std::string string_element;
+  while (std::getline(ss, string_element, ',')) {
+    output.push_back(string_element);
+  }
+  return output;
 }
 
 // This function routes onPoseAvailable callback to the application object for
