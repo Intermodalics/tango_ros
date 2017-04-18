@@ -19,7 +19,7 @@ public class NodeletManager extends NativeNodeMain {
     public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
 
     // Node specific.
-    public static final String NODE_NAME = "nodelet_manager";
+    public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "nodelet_manager";
 
     private List<String> mErrorMessages;

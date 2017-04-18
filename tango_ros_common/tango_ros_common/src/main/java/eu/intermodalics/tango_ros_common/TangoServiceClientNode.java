@@ -50,9 +50,9 @@ import std_msgs.Int8;
 public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String TAG = TangoServiceClientNode.class.getSimpleName();
     private static final String NODE_NAME = "tango_service_client_node";
-    private static final String SAVE_MAP_SRV_NAME = "/tango/save_map";
-    private static final String GET_MAP_UUIDS_SRV_NAME = "/tango/get_map_uuids";
-    private static final String TANGO_CONNECT_SRV_NAME = "/tango/connect";
+    private static final String SAVE_MAP_SRV_NAME = "save_map";
+    private static final String GET_MAP_UUIDS_SRV_NAME = "get_map_uuids";
+    private static final String TANGO_CONNECT_SRV_NAME = "connect";
     private static final String TANGO_STATUS_TOPIC_NAME = "status";
 
     ConnectedNode mConnectedNode;
@@ -63,6 +63,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onSaveMapServiceCallFinish(boolean success, String message);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
+        void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
     }
@@ -117,7 +118,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     private Boolean tangoConnect(final byte connectRequest) throws ServiceNotFoundException {
         ServiceClient<TangoConnectRequest, TangoConnectResponse> tangoConnectService =
-                mConnectedNode.newServiceClient(TANGO_CONNECT_SRV_NAME, TangoConnect._TYPE);
+                mConnectedNode.newServiceClient(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_CONNECT_SRV_NAME), TangoConnect._TYPE);
 
         TangoConnectRequest tangoConnectRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(TangoConnect._TYPE);
         tangoConnectRequest.setRequest(connectRequest);
@@ -128,6 +129,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                     mCallbackListener.onTangoConnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
                     mCallbackListener.onTangoDisconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
+                } else if (connectRequest == TangoConnectRequest.RECONNECT) {
+                    mCallbackListener.onTangoReconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else {
                     mLog.error("Request not recognized: " + connectRequest);
                 }
@@ -144,7 +147,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     private Boolean saveMap(String mapName) throws ServiceNotFoundException {
         ServiceClient<SaveMapRequest, SaveMapResponse> saveMapService =
-                mConnectedNode.newServiceClient(SAVE_MAP_SRV_NAME, SaveMap._TYPE);
+                mConnectedNode.newServiceClient(
+                        NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(SAVE_MAP_SRV_NAME),
+                        SaveMap._TYPE);
 
         SaveMapRequest saveMapRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(SaveMap._TYPE);
         saveMapRequest.setMapName(mapName);
@@ -164,7 +169,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     private Boolean getMapUuids() throws ServiceNotFoundException {
         ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> saveMapService =
-                mConnectedNode.newServiceClient(GET_MAP_UUIDS_SRV_NAME, SaveMap._TYPE);
+                mConnectedNode.newServiceClient(
+                        NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(GET_MAP_UUIDS_SRV_NAME),
+                        SaveMap._TYPE);
 
         GetMapUuidsRequest request = mConnectedNode.getServiceRequestMessageFactory().newFromType(GetMapUuids._TYPE);
         saveMapService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
@@ -183,7 +190,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     public Boolean callTangoConnectService(final byte connectRequest) {
-        final String serviceName = TANGO_CONNECT_SRV_NAME;
+        final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_CONNECT_SRV_NAME);
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
                 return tangoConnect(connectRequest);
@@ -192,7 +199,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     public Boolean callSaveMapService(final String mapName) {
-        final String serviceName = SAVE_MAP_SRV_NAME;
+        final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(SAVE_MAP_SRV_NAME);
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
                 return saveMap(mapName);
@@ -201,7 +208,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     public Boolean callGetMapUuidsService() {
-        final String serviceName = GET_MAP_UUIDS_SRV_NAME;
+        final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(GET_MAP_UUIDS_SRV_NAME);
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
                 return getMapUuids();

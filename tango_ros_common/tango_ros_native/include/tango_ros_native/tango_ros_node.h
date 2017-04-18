@@ -49,7 +49,6 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
-const std::string NODE_NAME = "tango";
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 // See laser scan message doc for definition of laser scan constants:
 // http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html
@@ -62,20 +61,27 @@ const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
-const std::string TANGO_STATUS_TOPIC = "tango/status";
-const std::string POINT_CLOUD_TOPIC_NAME = "tango/point_cloud";
-const std::string LASER_SCAN_TOPIC_NAME = "tango/laser_scan";
-const std::string FISHEYE_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_raw";
-const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/fisheye_1/image_rect";
-const std::string COLOR_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_raw";
-const std::string COLOR_MESH_TOPIC_NAME = "tango/mesh_marker";
-const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "tango/camera/color_1/image_rect";
-const std::string CREATE_NEW_MAP_PARAM_NAME = "tango/create_new_map";
-const std::string LOCALIZATION_MODE_PARAM_NAME = "tango/localization_mode";
-const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "/tango/localization_map_uuid";
-const std::string DATASET_PATH_PARAM_NAME = "tango/dataset_datasets_path";
-const std::string DATASET_UUID_PARAM_NAME = "tango/dataset_uuid";
-const std::string USE_FLOOR_PLAN_PARAM_NAME = "tango/use_floor_plan";
+const std::string TANGO_STATUS_TOPIC = "status";
+const std::string POINT_CLOUD_TOPIC_NAME = "point_cloud";
+const std::string LASER_SCAN_TOPIC_NAME = "laser_scan";
+const std::string FISHEYE_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_raw";
+const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_rect";
+const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
+const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
+const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
+
+const std::string CREATE_NEW_MAP_PARAM_NAME = "create_new_map";
+const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
+const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
+const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
+const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
+const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
+
+const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
+const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
+const std::string SAVE_MAP_SERVICE_NAME = "save_map";
+const std::string CONNECT_SERVICE_NAME = "connect";
+
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
 // Localization mode values.

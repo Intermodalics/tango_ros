@@ -18,7 +18,10 @@ package eu.intermodalics.tango_ros_streamer;
 
 import android.app.DialogFragment;
 import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -83,6 +86,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         public static final int FIRST_RUN = 1;
         public static final int STANDARD_RUN = 2;
     }
+    public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
     enum RosStatus {
         MASTER_NOT_CONNECTED,
@@ -112,6 +116,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     private boolean mCreateNewMap = false;
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
+    private BroadcastReceiver mRestartTangoAlertReceiver;
 
     // UI objects.
     private TextView mUriTextView;
@@ -252,6 +257,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         mSaveButton.setEnabled(!mMapSaved);
         if (mCreateNewMap) {
             mSaveButton.setVisibility(View.VISIBLE);
+        } else {
+            mSaveButton.setVisibility(View.GONE);
         }
     }
 
@@ -294,7 +301,6 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             displayToastMessage(R.string.tango_connect_error);
             return;
         }
-
         displayToastMessage(R.string.tango_connect_success);
         saveUuidsNamestoHashMap();
     }
@@ -308,11 +314,20 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             displayToastMessage(R.string.tango_disconnect_error);
             return;
         }
-
         displayToastMessage(R.string.tango_disconnect_success);
     }
 
     @Override
+    public void onTangoReconnectServiceFinish(int response, String message) {
+        if (response != TangoConnectResponse.TANGO_SUCCESS) {
+            Log.e(TAG, "Error reconnecting to Tango: " + response + ", message: " + message);
+            displayToastMessage(R.string.tango_reconnect_error);
+            return;
+        }
+        displayToastMessage(R.string.tango_reconnect_success);
+        saveUuidsNamestoHashMap();
+    }
+
     public void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames) {
         mUuidsNamesHashMap = new HashMap<>();
         if (mapUuids == null || mapNames == null) return;
@@ -345,6 +360,20 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mRestartTangoAlertReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mParameterNode.uploadPreferencesToParameterServer();
+                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+                if (mCreateNewMap) {
+                    mSaveButton.setVisibility(View.VISIBLE);
+                } else {
+                    mSaveButton.setVisibility(View.GONE);
+                }
+                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
+            }
+        };
+        this.registerReceiver(this.mRestartTangoAlertReceiver, new IntentFilter(RESTART_TANGO_ALERT));
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
@@ -408,6 +437,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     protected void onDestroy() {
         super.onDestroy();
         this.nodeMainExecutorService.forceShutdown();
+        this.unregisterReceiver(mRestartTangoAlertReceiver);
     }
 
     @Override
@@ -425,6 +455,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
                 if (mCreateNewMap) {
                     mSaveButton.setVisibility(View.VISIBLE);
+                } else {
+                    mSaveButton.setVisibility(View.GONE);
                 }
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {

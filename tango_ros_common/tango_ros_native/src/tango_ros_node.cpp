@@ -480,20 +480,20 @@ void TangoRosNode::onInit() {
           COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
-      tango_ros_messages::GetMapName::Response>("/tango/get_map_name",
+      tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
 
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
-      tango_ros_messages::GetMapUuids::Response>("/tango/get_map_uuids",
+      tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
-      tango_ros_messages::SaveMap::Response>("/tango/save_map",
+      tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
-              "/tango/connect", boost::bind(
+              CONNECT_SERVICE_NAME, boost::bind(
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 
   tango_status_ = TangoStatus::UNKNOWN;
@@ -1286,27 +1286,34 @@ void TangoRosNode::RunRosSpin() {
 }
 
 bool TangoRosNode::TangoConnectServiceCallback(
-        const tango_ros_messages::TangoConnect::Request& request,
-        tango_ros_messages::TangoConnect::Response& response) {
-    switch (request.request) {
-        case tango_ros_messages::TangoConnect::Request::CONNECT:
-            response.response = ConnectToTangoAndSetUpNode();
-            break;
-        case tango_ros_messages::TangoConnect::Request::DISCONNECT:
-            // Disconnect from Tango Service.
-            TangoDisconnect();
-            response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
-            break;
-        default:
-            LOG(ERROR) << "Did not understand request " << request.request
-                       << ", valid requests are (CONNECT: "
-                       << tango_ros_messages::TangoConnect::Request::CONNECT
-                       << ", DISCONNECT: "
-                       << tango_ros_messages::TangoConnect::Request::DISCONNECT
-                       << ")";
-            return false;
+    const tango_ros_messages::TangoConnect::Request& request,
+    tango_ros_messages::TangoConnect::Response& response) {
+  switch (request.request) {
+    case tango_ros_messages::TangoConnect::Request::CONNECT:
+      // Connect to Tango Service.
+      response.response = ConnectToTangoAndSetUpNode();
+      break;
+    case tango_ros_messages::TangoConnect::Request::DISCONNECT:
+      // Disconnect from Tango Service.
+      TangoDisconnect();
+      response.response = tango_ros_messages::TangoConnect::Response::TANGO_SUCCESS;
+      break;
+    case tango_ros_messages::TangoConnect::Request::RECONNECT:
+      // Disconnect and reconnect to Tango Service.
+      TangoDisconnect();
+      response.response = ConnectToTangoAndSetUpNode();
+      break;
+    default:
+      LOG(ERROR) << "Did not understand request " << request.request
+                 << ", valid requests are (CONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::CONNECT
+                 << ", DISCONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::DISCONNECT
+                 << ", RECONNECT: "
+                 << tango_ros_messages::TangoConnect::Request::RECONNECT
+                 << ")";
+      return false;
     }
-
     return true;
 }
 
