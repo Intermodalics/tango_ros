@@ -356,14 +356,14 @@ void TangoRosNode::onInit() {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   tango_status_publisher_ =
-      node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC,
+      node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC_NAME,
                                              queue_size, latching);
   start_of_service_T_device_publisher_ =
       node_handle_.advertise<geometry_msgs::TransformStamped>(
-          SOS_TO_DEVICE_TOPIC_NAME, queue_size, latching);
+          START_OF_SERVICE_T_DEVICE_TOPIC_NAME, queue_size, latching);
   area_description_T_start_of_service_publisher_ =
       node_handle_.advertise<geometry_msgs::TransformStamped>(
-          AD_TO_SOS_TOPIC_NAME, queue_size, latching);
+          AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME, queue_size, latching);
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
           POINT_CLOUD_TOPIC_NAME, queue_size, latching);
@@ -408,15 +408,15 @@ void TangoRosNode::onInit() {
 
   tango_status_ = TangoStatus::UNKNOWN;
 
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TF)) {
-    node_handle_.param(PUBLISH_POSE_ON_TF, publish_pose_on_tf_, true);
+  if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
+    node_handle_.param(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_, true);
   } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TF, true);
+    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC)) {
-    node_handle_.param(PUBLISH_POSE_ON_TOPIC, publish_pose_on_topic_, false);
+  if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
+    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
   } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC, false);
+    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
   }
 }
 
