@@ -125,7 +125,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     private Switch mlogSwitch;
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
-    private Button mSaveButton;
+    private Button mSaveMapButton;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -209,15 +209,16 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         });
     }
 
-    private void updateSaveMapButtonVisibility() {
+    private void updateSaveMapButton() {
         mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                mSaveMapButton.setEnabled(!mMapSaved);
                 if (mCreateNewMap) {
-                    mSaveButton.setVisibility(View.VISIBLE);
+                    mSaveMapButton.setVisibility(View.VISIBLE);
                 } else {
-                    mSaveButton.setVisibility(View.GONE);
+                    mSaveMapButton.setVisibility(View.GONE);
                 }
             }
         });
@@ -261,15 +262,14 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         });
         mLogTextView = (TextView)findViewById(R.id.log_view);
         mLogTextView.setMovementMethod(new ScrollingMovementMethod());
-        mSaveButton = (Button) findViewById(R.id.save_map_button);
-        mSaveButton.setOnClickListener(new View.OnClickListener() {
+        mSaveMapButton = (Button) findViewById(R.id.save_map_button);
+        mSaveMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showSaveMapDialog();
             }
         });
-        mSaveButton.setEnabled(!mMapSaved);
-        updateSaveMapButtonVisibility();
+        updateSaveMapButton();
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
@@ -294,7 +294,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mSaveButton.setEnabled(!mMapSaved);
+                    mSaveMapButton.setEnabled(!mMapSaved);
                 }
             });
             displayToastMessage(R.string.save_map_success);
@@ -312,7 +312,6 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             return;
         }
         displayToastMessage(R.string.tango_connect_success);
-        saveUuidsNamestoHashMap();
     }
 
     @Override
@@ -335,7 +334,6 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             return;
         }
         displayToastMessage(R.string.tango_reconnect_success);
-        saveUuidsNamestoHashMap();
     }
 
     public void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames) {
@@ -354,9 +352,11 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             return;
         }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
+            saveUuidsNamestoHashMap();
             mParameterNode.setPreferencesFromParameterServer();
+            mMapSaved = false;
         }
-        updateSaveMapButtonVisibility();
+        updateSaveMapButton();
         updateTangoStatus(TangoStatus.values()[status]);
     }
 
@@ -378,7 +378,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             @Override
             public void onReceive(Context context, Intent intent) {
                 mParameterNode.uploadPreferencesToParameterServer();
-                updateSaveMapButtonVisibility();
+                updateSaveMapButton();
                 mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
             }
         };
@@ -460,7 +460,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 mLogger.start();
                 getTangoPermission(EXTRA_VALUE_ADF);
                 getTangoPermission(EXTRA_VALUE_DATASET);
-                updateSaveMapButtonVisibility();
+                updateSaveMapButton();
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
