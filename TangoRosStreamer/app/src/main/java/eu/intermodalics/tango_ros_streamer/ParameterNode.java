@@ -67,11 +67,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public void uploadPreferencesToParameterServer() {
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
+                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
-                String stringValue = mSharedPreferences.getString(paramName, "");
+                String stringValue = mSharedPreferences.getString(paramName, "1");
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
             if (mParamNames.get(paramName) == "string") {

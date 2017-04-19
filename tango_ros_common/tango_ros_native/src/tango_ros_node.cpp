@@ -406,6 +406,21 @@ void TangoRosNode::onInit() {
 
   tango_status_ = TangoStatus::UNKNOWN;
 
+  if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
+    node_handle_.setParam(CREATE_NEW_MAP_PARAM_NAME, false);
+  }
+  if (!node_handle_.hasParam(LOCALIZATION_MODE_PARAM_NAME)) {
+    node_handle_.setParam(LOCALIZATION_MODE_PARAM_NAME, 2);
+  }
+  if (!node_handle_.hasParam(LOCALIZATION_MAP_UUID_PARAM_NAME)) {
+    node_handle_.setParam(LOCALIZATION_MAP_UUID_PARAM_NAME, "");
+  }
+  if (!node_handle_.hasParam(DATASET_PATH_PARAM_NAME)) {
+    node_handle_.setParam(DATASET_PATH_PARAM_NAME, "");
+  }
+  if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
+    node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF)) {
     node_handle_.param(PUBLISH_POSE_ON_TF, publish_pose_on_tf_, true);
   } else {
