@@ -343,6 +343,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         for (int i = 0; i < mapUuids.size(); ++i) {
             mUuidsNamesHashMap.put(mapUuids.get(i), mapNames.get(i));
         }
+        Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
+        settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
+        this.sendBroadcast(settingsActivityIntent);
     }
 
     @Override
