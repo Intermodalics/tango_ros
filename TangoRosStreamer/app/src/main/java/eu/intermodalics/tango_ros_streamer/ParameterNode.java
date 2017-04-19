@@ -60,7 +60,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
-        uploadPreferencesToParameterServer();
+        setPreferencesFromParameterServer();
     }
 
     // Set ROS params according to preferences.
@@ -86,11 +86,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), true);
+                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
                 editor.putBoolean(paramName, booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
-                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 1);
                 editor.putString(paramName, intValue.toString());
             }
             if (mParamNames.get(paramName) == "string") {
