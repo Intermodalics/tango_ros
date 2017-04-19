@@ -61,7 +61,7 @@ const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
-const std::string TANGO_STATUS_TOPIC = "status";
+const std::string TANGO_STATUS_TOPIC_NAME = "status";
 const std::string POINT_CLOUD_TOPIC_NAME = "point_cloud";
 const std::string LASER_SCAN_TOPIC_NAME = "laser_scan";
 const std::string FISHEYE_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_raw";
@@ -69,6 +69,8 @@ const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_r
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
+const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
+const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
 const std::string CREATE_NEW_MAP_PARAM_NAME = "create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
@@ -76,6 +78,8 @@ const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
+const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
+const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -213,8 +217,12 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
+  bool publish_pose_on_tf_ = false;
+  bool publish_pose_on_topic_ = false;
 
   tf::TransformBroadcaster tf_broadcaster_;
+  ros::Publisher start_of_service_T_device_publisher_;
+  ros::Publisher area_description_T_start_of_service_publisher_;
   geometry_msgs::TransformStamped start_of_service_T_device_;
   geometry_msgs::TransformStamped area_description_T_start_of_service_;
   tf2_ros::StaticTransformBroadcaster tf_static_broadcaster_;

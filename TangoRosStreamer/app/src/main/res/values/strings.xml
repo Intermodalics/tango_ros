@@ -9,6 +9,7 @@
     <string name="snackbar_text_restart_app">You will need to restart the app to apply these new settings</string>
     <string name="snackbar_text_restart_tango">You will need to restart Tango to apply these new settings</string>
     <string name="snackbar_action_text_restart_tango">RESTART TANGO</string>
+    <string name="tango_permission_denied">Be aware that you will not be able to use all functionalities from TangoRosStreamer</string>
 
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">

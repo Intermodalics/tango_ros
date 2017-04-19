@@ -451,8 +451,14 @@ void TangoRosNode::onInit() {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   tango_status_publisher_ =
-      node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC,
+      node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC_NAME,
                                              queue_size, latching);
+  start_of_service_T_device_publisher_ =
+      node_handle_.advertise<geometry_msgs::TransformStamped>(
+          START_OF_SERVICE_T_DEVICE_TOPIC_NAME, queue_size, latching);
+  area_description_T_start_of_service_publisher_ =
+      node_handle_.advertise<geometry_msgs::TransformStamped>(
+          AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME, queue_size, latching);
   point_cloud_publisher_ =
       node_handle_.advertise<sensor_msgs::PointCloud2>(
           POINT_CLOUD_TOPIC_NAME, queue_size, latching);
@@ -500,6 +506,17 @@ void TangoRosNode::onInit() {
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 
   tango_status_ = TangoStatus::UNKNOWN;
+
+  if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
+    node_handle_.param(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_, true);
+  } else {
+    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
+  }
+  if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
+    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
+  } else {
+    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
+  }
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -874,29 +891,31 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
-      && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-    if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
-      toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
-      start_of_service_T_device_.header.frame_id =
-        toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-      start_of_service_T_device_.child_frame_id =
-        toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-      TangoCoordinateFramePair pair;
-      pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
-      pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-      TangoPoseData area_description_T_start_of_service;
-      TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
-      if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-        toTransformStamped(area_description_T_start_of_service,
-                           time_offset_, &area_description_T_start_of_service_);
-        area_description_T_start_of_service_.header.frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
-        area_description_T_start_of_service_.child_frame_id =
-            toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  if (publish_pose_on_tf_ || publish_pose_on_topic_) {
+    if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
+        && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
+      if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
+        toTransformStamped(*pose, time_offset_, &start_of_service_T_device_);
+        start_of_service_T_device_.header.frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+        start_of_service_T_device_.child_frame_id =
+          toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+        TangoCoordinateFramePair pair;
+        pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
+        pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
+        TangoPoseData area_description_T_start_of_service;
+        TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
+        if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
+          toTransformStamped(area_description_T_start_of_service,
+                             time_offset_, &area_description_T_start_of_service_);
+          area_description_T_start_of_service_.header.frame_id =
+              toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
+          area_description_T_start_of_service_.child_frame_id =
+              toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+        }
+        pose_available_mutex_.unlock();
+        pose_available_.notify_all();
       }
-      pose_available_mutex_.unlock();
-      pose_available_.notify_all();
     }
   }
 }
@@ -1018,7 +1037,8 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (publish_device_pose_thread_.joinable()) {
-      if (!tango_data_available_) {
+      if (!tango_data_available_ || !publish_pose_on_tf_
+          || !publish_pose_on_topic_) {
         pose_available_.notify_all();
       }
       publish_device_pose_thread_.join();
@@ -1070,10 +1090,19 @@ void TangoRosNode::PublishDevicePose() {
     {
       std::unique_lock<std::mutex> lock(pose_available_mutex_);
       pose_available_.wait(lock);
-      tf_broadcaster_.sendTransform(start_of_service_T_device_);
-      if (area_description_T_start_of_service_.child_frame_id != "") {
-        // This transform can be empty. Don't publish it in this case.
-        tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
+      if (publish_pose_on_tf_) {
+        tf_broadcaster_.sendTransform(start_of_service_T_device_);
+        if (area_description_T_start_of_service_.child_frame_id != "") {
+          // This transform can be empty. Don't publish it in this case.
+          tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
+        }
+      }
+      if (publish_pose_on_topic_) {
+        start_of_service_T_device_publisher_.publish(start_of_service_T_device_);
+        if (area_description_T_start_of_service_.child_frame_id != "") {
+          // This transform can be empty. Don't publish it in this case.
+          area_description_T_start_of_service_publisher_.publish(area_description_T_start_of_service_);
+        }
       }
     }
   }
