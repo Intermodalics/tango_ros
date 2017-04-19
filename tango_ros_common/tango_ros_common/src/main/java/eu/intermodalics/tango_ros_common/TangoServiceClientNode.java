@@ -168,17 +168,17 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     private Boolean getMapUuids() throws ServiceNotFoundException {
-        ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> saveMapService =
+        ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> getMapUuidsService =
                 mConnectedNode.newServiceClient(
                         NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(GET_MAP_UUIDS_SRV_NAME),
                         GetMapUuids._TYPE);
 
         GetMapUuidsRequest request = mConnectedNode.getServiceRequestMessageFactory().newFromType(GetMapUuids._TYPE);
-        saveMapService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
+        getMapUuidsService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
             @Override
-            public void onSuccess(GetMapUuidsResponse saveMapResponse) {
-                mCallbackListener.onGetMapUuidsFinish(saveMapResponse.getMapUuids(),
-                        saveMapResponse.getMapNames());
+            public void onSuccess(GetMapUuidsResponse getMapUuidsResponse) {
+                mCallbackListener.onGetMapUuidsFinish(getMapUuidsResponse.getMapUuids(),
+                        getMapUuidsResponse.getMapNames());
             }
             @Override
             public void onFailure(RemoteException e) {
