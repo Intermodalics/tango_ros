@@ -392,9 +392,6 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 getString(R.string.pref_log_file_default));
         setupUI();
         mLogger = new Logger(this, mLogTextView, TAGS_TO_LOG, logFileName, LOG_TEXT_MAX_LENGTH);
-
-        getTangoPermission(EXTRA_VALUE_ADF);
-        getTangoPermission(EXTRA_VALUE_DATASET);
     }
 
     @Override
@@ -461,6 +458,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
+                getTangoPermission(EXTRA_VALUE_ADF);
+                getTangoPermission(EXTRA_VALUE_DATASET);
                 updateSaveMapButtonVisibility();
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
@@ -474,7 +473,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         if (requestCode == REQUEST_CODE_TANGO_PERMISSION) {
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
-                finish();
+                displayToastMessage(R.string.tango_permission_denied);
             }
         }
     }
@@ -554,6 +553,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
             mLogger.start();
+            getTangoPermission(EXTRA_VALUE_ADF);
+            getTangoPermission(EXTRA_VALUE_DATASET);
             initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);

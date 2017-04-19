@@ -25,6 +25,26 @@ typedef std::pair<std::string, ClassDesc> plugin_pair;
 classes_available_map getStaticClassesAvailable(void) {
   classes_available_map pluginClasses;
   pluginClasses.insert(
+      plugin_pair(
+          "image_transport/raw_pub",
+          ClassDesc("image_transport/raw_pub",
+                    "image_transport::RawPublisher",
+                    "image_transport::PublisherPlugin",
+                    "image_transport",
+                    "This is the default publisher. It publishes the Image as-is on the base topic.",
+                    "lib/libimage_transport_plugins",
+                    "")));
+  pluginClasses.insert(
+      plugin_pair(
+          "image_transport/raw_sub",
+          ClassDesc("image_transport/raw_sub",
+                    "image_transport::RawSubscriber",
+                    "image_transport::SubscriberPlugin",
+                    "image_transport",
+                    "This is the default pass-through subscriber for topics of type sensor_msgs/Image.",
+                    "lib/libimage_transport_plugins",
+                    "")));
+  pluginClasses.insert(
         plugin_pair(
           "image_transport/compressedDepth_pub",
           ClassDesc("image_transport/compressedDepth_pub",
