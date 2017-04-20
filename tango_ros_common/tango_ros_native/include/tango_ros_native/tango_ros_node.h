@@ -99,6 +99,7 @@ enum LocalizationMode {
 enum class TangoStatus {
   UNKNOWN = 0,
   SERVICE_NOT_CONNECTED,
+  NO_FIRST_VALID_POSE,
   SERVICE_CONNECTED
 };
 
@@ -117,8 +118,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::string GetMapNameFromUuid(const std::string& map_uuid);
 
 
-  // Sets the tango config and connects to the tango service.
-  // It also publishes the necessary static transforms (device_T_camera_*).
+  // Tries to get a first valid pose and sets the camera intrinsics.
   // @return returns success if it ended successfully.
   TangoErrorType OnTangoServiceConnected();
   // Disconnects from the tango service.

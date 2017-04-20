@@ -647,7 +647,11 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   }
   // Publish static transforms.
   PublishStaticTransforms();
-  OnTangoServiceConnected();
+  success = OnTangoServiceConnected();
+  if (success != TANGO_SUCCESS) {
+    UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
+    return success;
+  }
   // Create publishing threads.
   StartPublishing();
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);

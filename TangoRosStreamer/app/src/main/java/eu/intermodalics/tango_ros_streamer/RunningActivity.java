@@ -98,6 +98,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     enum TangoStatus {
         UNKNOWN,
         SERVICE_NOT_CONNECTED,
+        NO_FIRST_VALID_POSE,
         SERVICE_CONNECTED
     }
 
@@ -194,6 +195,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         if (mTangoStatus != status) {
             mTangoStatus = status;
             switchTangoLight(status);
+            if (status == TangoStatus.NO_FIRST_VALID_POSE) {
+                displayToastMessage(R.string.point_device);
+            }
         }
     }
 
