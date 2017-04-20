@@ -8,7 +8,8 @@ This work is developed by [Intermodalics](http://www.intermodalics.eu/) in colla
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
 
 # Known projects using TangoRosStreamer
-* [tangobot](https://github.com/ekumenlabs/tangobot/) : An android application to navigate with the [Turtlebot](http://www.turtlebot.com/) using Tango.
+* [tangobot](http://github.com/ekumenlabs/tangobot/): An android application to navigate with the [Turtlebot](http://www.turtlebot.com/) using Tango.
+* [RTAB-Map](http://wiki.ros.org/rtabmap_ros/Tutorials/Tango%20ROS%20Streamer): Use [rtabmap](http://wiki.ros.org/rtabmap_ros) with the Tango data.
 
 # Kickstart
 The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer  
@@ -102,7 +103,7 @@ Plug your device to your desktop and install the app on your device using [adb](
 adb install -r -d ~/tango_ros_ws/src/tango_ros/TangoRosStreamer/app/build/outputs/apk/app-debug.apk
 ```
 
-# Developping with Android Studio
+# Developing with Android Studio
 
 We recommend using Android Studio as a development tool. 
 
