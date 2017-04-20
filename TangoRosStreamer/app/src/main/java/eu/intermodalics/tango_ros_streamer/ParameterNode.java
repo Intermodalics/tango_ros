@@ -60,19 +60,18 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
-        uploadPreferencesToParameterServer();
+        setPreferencesFromParameterServer();
     }
 
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
-        // Set ROS params according to preferences.
         for (String paramName : mParamNames.keySet()) {
             if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
+                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
-                String stringValue = mSharedPreferences.getString(paramName, "");
+                String stringValue = mSharedPreferences.getString(paramName, "0");
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
             if (mParamNames.get(paramName) == "string") {
@@ -80,5 +79,25 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
             }
         }
+    }
+
+    // Set app preferences according to ROS params.
+    public void setPreferencesFromParameterServer() {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        for (String paramName : mParamNames.keySet()) {
+            if (mParamNames.get(paramName) == "boolean") {
+                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+                editor.putBoolean(paramName, booleanValue);
+            }
+            if (mParamNames.get(paramName) == "int_as_string") {
+                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                editor.putString(paramName, intValue.toString());
+            }
+            if (mParamNames.get(paramName) == "string") {
+                String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+                editor.putString(paramName, stringValue);
+            }
+        }
+        editor.commit();
     }
 }

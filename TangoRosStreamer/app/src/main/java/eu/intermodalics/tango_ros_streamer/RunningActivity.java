@@ -216,6 +216,20 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         });
     }
 
+    private void updateSaveMapButtonVisibility() {
+        mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mCreateNewMap) {
+                    mSaveButton.setVisibility(View.VISIBLE);
+                } else {
+                    mSaveButton.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
     /**
      * Display a toast message with the given message.
      * @param messageId String id of the message to display.
@@ -262,11 +276,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             }
         });
         mSaveButton.setEnabled(!mMapSaved);
-        if (mCreateNewMap) {
-            mSaveButton.setVisibility(View.VISIBLE);
-        } else {
-            mSaveButton.setVisibility(View.GONE);
-        }
+        updateSaveMapButtonVisibility();
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
@@ -350,6 +360,10 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             Log.e(TAG, "Invalid Tango status " + status);
             return;
         }
+        if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
+            mParameterNode.setPreferencesFromParameterServer();
+        }
+        updateSaveMapButtonVisibility();
         updateTangoStatus(TangoStatus.values()[status]);
     }
 
@@ -371,12 +385,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             @Override
             public void onReceive(Context context, Intent intent) {
                 mParameterNode.uploadPreferencesToParameterServer();
-                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
-                if (mCreateNewMap) {
-                    mSaveButton.setVisibility(View.VISIBLE);
-                } else {
-                    mSaveButton.setVisibility(View.GONE);
-                }
+                updateSaveMapButtonVisibility();
                 mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
             }
         };
@@ -456,14 +465,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
-                mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
                 getTangoPermission(EXTRA_VALUE_ADF);
                 getTangoPermission(EXTRA_VALUE_DATASET);
-                if (mCreateNewMap) {
-                    mSaveButton.setVisibility(View.VISIBLE);
-                } else {
-                    mSaveButton.setVisibility(View.GONE);
-                }
+                updateSaveMapButtonVisibility();
                 initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
