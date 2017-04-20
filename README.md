@@ -7,6 +7,10 @@ You can read the ROS wiki [here](http://wiki.ros.org/tango_ros_streamer).
 This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/) and [Google Tango](https://get.google.com/tango/).  
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
 
+# Known projects using TangoRosStreamer
+* [tangobot](http://github.com/ekumenlabs/tangobot/): An android application to navigate with the [Turtlebot](http://www.turtlebot.com/) using Tango.
+* [RTAB-Map](http://wiki.ros.org/rtabmap_ros/Tutorials/Tango%20ROS%20Streamer): Use [rtabmap](http://wiki.ros.org/rtabmap_ros) with the Tango data.
+
 # Kickstart
 The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer  
 It can be installed on any Tango-enabled device. Note that the minimum Tango version required to run Tango Ros Streamer is Yildun (you will find the Tango release history [here](https://developers.google.com/tango/release-notes)). To check the Tango version of your device go to Settings->Apps->Tango Core. 
@@ -39,6 +43,7 @@ rosdep update
 echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 sudo apt-get install ros-indigo-rosjava-build-tools
+sudo apt-get install ros-indigo-genjava
 ```
 Replace indigo by kinetic if you are using Ubuntu 16.04.
 
@@ -71,10 +76,7 @@ mkdir -p ~/tango_ros_ws/src
 cd ~/tango_ros_ws/src
 git clone --recursive git@github.com:Intermodalics/tango_ros.git
 cd ~/tango_ros_ws
-```  
-Then, you can build the app either with catkin or with Android Studio. Follow the instructions below corresponding to your prefered way.
-
-### Using catkin
+``` 
 
 Create a local.properties file
 ```
@@ -86,9 +88,13 @@ ndk.dir=/opt/android-ndk-r10b
 sdk.dir=/opt/android-sdk-linux
 ```
 
-Build the app and generate its .apk file.
+Install catkin tools if necessary.
 ```
 sudo apt-get install git python-catkin-tools
+```
+
+Build the app and generate its .apk file.
+```
 catkin build --no-jobserver
 ``` 
 
@@ -97,9 +103,11 @@ Plug your device to your desktop and install the app on your device using [adb](
 adb install -r -d ~/tango_ros_ws/src/tango_ros/TangoRosStreamer/app/build/outputs/apk/app-debug.apk
 ```
 
-### Using Android Studio
+# Developing with Android Studio
 
-#### Installation of Android Studio
+We recommend using Android Studio as a development tool. 
+
+## Installation of Android Studio
 The steps detailed below are based on this [installation guide](http://wiki.ros.org/android/kinetic/Android%20Studio/Download).
 
 For Android Studio we need Java, so let's install this first. On Ubuntu 14.04, we need to install openjdk-7-jdk, while on Ubuntu 16.04 we recommend to use openjdk-8-jdk instead.
@@ -128,9 +136,12 @@ sudo chown $(whoami) /opt/android-sdk
 echo export ANDROID_HOME=/opt/android-sdk >> ~/.bashrc
 ```
 
-Finally, launch Android Studio:
+## Building the app with Android Studio
+
+Launch Android Studio:
 ```
 source ~/.bashrc
+source ~/tango_ros_ws/devel/setup.bash
 studio.sh
 ```
 
@@ -142,7 +153,6 @@ echo "export PATH=\{$ANDROID_HOME}/ndk-bundle:\${PATH}" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-#### Building the app
 In Android Studio, choose "Import project" and select the app folder (```~/tango_ros_ws/src/tango_ros/TangoRosStreamer```). 
 
 In your local.properties file check that the paths to your Android SDK and NDK are set properly. The Gradle set-up relies on the following variables that need to set up. This can be done using the auto-generated local.properties file or gradle properties in the HOME folder (~/.gradle/gradle.properties).  

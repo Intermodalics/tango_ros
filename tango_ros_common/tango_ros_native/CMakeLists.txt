@@ -56,25 +56,3 @@ install(TARGETS tango_ros_native
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-# Copy generated header files by dynamic reconfigure, srv,... into local include folder.
-# Otherwise these header files can not be found when building for Android.
-set(file_names_to_copy
-  PublisherConfig
-)
-set(generated_header_LOCATION  ${CATKIN_DEVEL_PREFIX}/include/${PROJECT_NAME}/)
-set(generated_header_DESTINATION ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/)
-foreach(file_name ${file_names_to_copy})
-  set(from ${generated_header_LOCATION}${file_name}.h)
-  set(to ${generated_header_DESTINATION}${file_name}.h)
-  add_custom_command(
-    OUTPUT ${to}
-    DEPENDS ${from}
-    COMMAND cmake -E copy ${from} ${to})
-  add_custom_target(copy_${file_name} ALL DEPENDS ${to})
-endforeach(file_name)
-
-if(CATKIN_ENABLE_TESTING)
-  catkin_add_gtest(${PROJECT_NAME}_test_tango_ros test/test_tango_ros_msg.cpp)
-  target_link_libraries(${PROJECT_NAME}_test_tango_ros tango_ros_native)
-endif()
