@@ -13,9 +13,11 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_node.h"
 
-#include <iostream>
 #include <cmath>
 #include <ctime>
+#include <iostream>
+#include <vector>
+#include <sstream>
 
 #include <glog/logging.h>
 
@@ -35,15 +37,11 @@ std::vector<std::string> splitCommaSeparatedString(const std::string& comma_sepa
   std::vector<std::string> output;
   std::stringstream ss(comma_separated_string);
 
-      std::string string_element;
-      while (ss >> string_element) {
-          output.push_back(string_element);
-
-          if (ss.peek() == ',')
-              ss.ignore();
-      }
-
-   return output;
+  std::string string_element;
+  while (std::getline(ss, string_element, ',')) {
+    output.push_back(string_element);
+  }
+  return output;
 }
 
 // This function routes onPoseAvailable callback to the application object for
@@ -408,6 +406,21 @@ void TangoRosNode::onInit() {
 
   tango_status_ = TangoStatus::UNKNOWN;
 
+  if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
+    node_handle_.setParam(CREATE_NEW_MAP_PARAM_NAME, false);
+  }
+  if (!node_handle_.hasParam(LOCALIZATION_MODE_PARAM_NAME)) {
+    node_handle_.setParam(LOCALIZATION_MODE_PARAM_NAME, 2);
+  }
+  if (!node_handle_.hasParam(LOCALIZATION_MAP_UUID_PARAM_NAME)) {
+    node_handle_.setParam(LOCALIZATION_MAP_UUID_PARAM_NAME, "");
+  }
+  if (!node_handle_.hasParam(DATASET_PATH_PARAM_NAME)) {
+    node_handle_.setParam(DATASET_PATH_PARAM_NAME, "");
+  }
+  if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
+    node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.param(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_, true);
   } else {
