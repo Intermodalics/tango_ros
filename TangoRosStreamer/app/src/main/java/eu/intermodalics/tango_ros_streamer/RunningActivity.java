@@ -89,6 +89,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
     enum RosStatus {
+        CONNECTING,
         MASTER_NOT_CONNECTED,
         NODE_RUNNING
     }
@@ -110,7 +111,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     private ParameterNode mParameterNode;
     private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
-    private RosStatus mRosStatus = RosStatus.MASTER_NOT_CONNECTED;
+    private RosStatus mRosStatus = RosStatus.CONNECTING;
     private TangoStatus mTangoStatus = TangoStatus.UNKNOWN;
     private Logger mLogger;
     private boolean mCreateNewMap = false;
@@ -180,9 +181,11 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (status == RosStatus.NODE_RUNNING) {
+                if (status == RosStatus.CONNECTING) {
+                    mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
+                } else if (status == RosStatus.NODE_RUNNING) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
-                } else {
+                } else if (status == RosStatus.MASTER_NOT_CONNECTED) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
                 }
             }
@@ -200,7 +203,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (status == TangoStatus.SERVICE_RUNNING || status == TangoStatus.SERVICE_CONNECTED) {
+                if (status == TangoStatus.UNKNOWN) {
+                    mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
+                } else if (status == TangoStatus.SERVICE_RUNNING || status == TangoStatus.SERVICE_CONNECTED) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                 } else {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
@@ -343,7 +348,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             Log.e(TAG, "Invalid Tango status " + status);
             return;
         }
-        switchTangoLight(TangoStatus.values()[status]);
+        updateTangoStatus(TangoStatus.values()[status]);
     }
 
     private void saveUuidsNamestoHashMap() {

@@ -628,6 +628,7 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
     return TANGO_SUCCESS;
   }
+  UpdateAndPublishTangoStatus(TangoStatus::UNKNOWN);
 
   TangoErrorType success;
   // Setup config.

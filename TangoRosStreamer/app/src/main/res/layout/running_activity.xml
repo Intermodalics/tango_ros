@@ -49,7 +49,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignTop="@+id/is_ros_ok_text"
                     android:layout_alignLeft="@+id/master_uri"
-                    android:src="@drawable/btn_radio_on_red_light" />
+                    android:src="@drawable/btn_radio_on_orange_light" />
 
                 <TextView
                     android:id="@+id/is_tango_ok_text"
@@ -65,7 +65,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignTop="@+id/is_tango_ok_text"
                     android:layout_alignLeft="@+id/master_uri"
-                    android:src="@drawable/btn_radio_on_red_light" />
+                    android:src="@drawable/btn_radio_on_orange_light" />
 
                 <Button
                     android:id="@+id/save_map_button"
