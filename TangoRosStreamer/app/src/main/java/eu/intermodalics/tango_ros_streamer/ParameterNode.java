@@ -71,7 +71,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
-                String stringValue = mSharedPreferences.getString(paramName, "1");
+                String stringValue = mSharedPreferences.getString(paramName, "0");
                 mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
             }
             if (mParamNames.get(paramName) == "string") {
@@ -90,7 +90,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                 editor.putBoolean(paramName, booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
-                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 1);
+                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
                 editor.putString(paramName, intValue.toString());
             }
             if (mParamNames.get(paramName) == "string") {
