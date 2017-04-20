@@ -89,7 +89,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
     enum RosStatus {
-        CONNECTING,
+        UNKNOWN,
         MASTER_NOT_CONNECTED,
         NODE_RUNNING
     }
@@ -97,11 +97,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     // Symmetric implementation to tango_ros_node.h.
     enum TangoStatus {
         UNKNOWN,
-        SERVICE_NOT_BOUND,
         SERVICE_NOT_CONNECTED,
-        SERVICE_CONNECTED,
-        VERSION_NOT_SUPPORTED,
-        SERVICE_RUNNING,
+        SERVICE_CONNECTED
     }
 
     private SharedPreferences mSharedPref;
@@ -111,7 +108,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     private ParameterNode mParameterNode;
     private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
-    private RosStatus mRosStatus = RosStatus.CONNECTING;
+    private RosStatus mRosStatus = RosStatus.UNKNOWN;
     private TangoStatus mTangoStatus = TangoStatus.UNKNOWN;
     private Logger mLogger;
     private boolean mCreateNewMap = false;
@@ -145,15 +142,16 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             public void execute() {
                 if (TangoInitializationHelper.isTangoServiceBound()) {
                     if (TangoInitializationHelper.isTangoVersionOk()) {
-                        updateTangoStatus(TangoStatus.SERVICE_RUNNING);
+                        Log.i(TAG, "Version of Tango is ok.");
                     } else {
-                        updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                        updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
+                        Log.e(TAG, getResources().getString(R.string.tango_version_error));
+                        displayToastMessage(R.string.tango_version_error);
                     }
                 } else {
-                    updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
+                    updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
                     Log.e(TAG, getString(R.string.tango_bind_error));
                     displayToastMessage(R.string.tango_bind_error);
-                    onDestroy();
                 }
             }
         }
@@ -181,7 +179,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (status == RosStatus.CONNECTING) {
+                if (status == RosStatus.UNKNOWN) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
                 } else if (status == RosStatus.NODE_RUNNING) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
@@ -205,7 +203,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
             public void run() {
                 if (status == TangoStatus.UNKNOWN) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
-                } else if (status == TangoStatus.SERVICE_RUNNING || status == TangoStatus.SERVICE_CONNECTED) {
+                } else if (status == TangoStatus.SERVICE_CONNECTED) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                 } else {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
@@ -431,7 +429,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         if (TangoInitializationHelper.isTangoServiceBound()) {
             Log.i(TAG, "Unbind tango service");
             TangoInitializationHelper.unbindTangoService(this, mTangoServiceConnection);
-            updateTangoStatus(TangoStatus.SERVICE_NOT_BOUND);
+            updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
         }
     }
 
@@ -534,11 +532,12 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 }});
                 updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
-                updateTangoStatus(TangoStatus.VERSION_NOT_SUPPORTED);
+                updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
                 displayToastMessage(R.string.tango_version_error);
             }
         } else {
+            updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.tango_lib_error));
             displayToastMessage(R.string.tango_lib_error);
         }

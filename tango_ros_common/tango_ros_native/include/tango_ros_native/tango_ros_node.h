@@ -98,11 +98,8 @@ enum LocalizationMode {
 
 enum class TangoStatus {
   UNKNOWN = 0,
-  SERVICE_NOT_BOUND,
   SERVICE_NOT_CONNECTED,
-  SERVICE_CONNECTED,
-  VERSION_NOT_SUPPORTED,
-  SERVICE_RUNNING
+  SERVICE_CONNECTED
 };
 
 // Node collecting tango data and publishing it on ros topics.
