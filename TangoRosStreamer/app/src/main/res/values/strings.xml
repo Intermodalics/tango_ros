@@ -31,8 +31,8 @@
     <string name="ros_init_error">Unable to initialize ROS node. Do you have a roscore running?</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
-    <string name="tango_service_error">Unable to connect to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
+    <string name="point_device">Please point the device to a feature-rich environment</string>
     <string name="map_name_error">Please enter a valid name to save a map</string>
     <string name="save_map_error">Unable to save the map</string>
     <string name="save_map_success">Map saved successfully!</string>
