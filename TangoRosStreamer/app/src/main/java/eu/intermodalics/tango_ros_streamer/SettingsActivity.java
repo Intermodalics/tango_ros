@@ -17,7 +17,10 @@
 package eu.intermodalics.tango_ros_streamer;
 
 import android.annotation.TargetApi;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -49,10 +52,12 @@ import java.util.HashMap;
 public class SettingsActivity extends AppCompatPreferenceActivity implements
         SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = SettingsActivity.class.getSimpleName();
+    public static final String NEW_UUIDS_NAMES_MAP_ALERT = "new_uuids_names_map_alert";
 
     private SharedPreferences mSharedPref;
     private SettingsPreferenceFragment mSettingsPreferenceFragment;
     private HashMap<String, String> mUuidsNamesMap;
+    private BroadcastReceiver mNewUuidsNamesMapAlertReceiver;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -156,6 +161,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 .commit();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mNewUuidsNamesMapAlertReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
+                updateMapChooserPreference();
+                mSettingsPreferenceFragment.setPreferencesSummury();
+            }
+        };
+        this.registerReceiver(this.mNewUuidsNamesMapAlertReceiver, new IntentFilter(NEW_UUIDS_NAMES_MAP_ALERT));
     }
 
     @Override
@@ -191,6 +205,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
         updateMapChooserPreference();
         mSettingsPreferenceFragment.setPreferencesSummury();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        this.unregisterReceiver(mNewUuidsNamesMapAlertReceiver);
     }
 
     private void updateMapChooserPreference() {
