@@ -21,7 +21,9 @@
 #include <thread>
 #include <time.h>
 
+#include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
 #include <tango_client_api/tango_client_api.h>
+#include <tango_support_api/tango_support_api.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -42,6 +44,7 @@
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include "tango_ros_native/PublisherConfig.h"
 
@@ -65,6 +68,7 @@ const std::string FISHEYE_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
+const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
@@ -73,6 +77,7 @@ const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
+const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 
@@ -140,6 +145,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // Sets the tango config to be able to collect all necessary data from tango.
   // @return returns TANGO_SUCCESS if the config was set successfully.
   TangoErrorType TangoSetupConfig();
+  // Configure Tango 3D Reconstruction.
+  Tango3DR_Status TangoSetup3DRConfig();
   // Connects to the tango service and to the necessary callbacks.
   // @return returns TANGO_SUCCESS if connecting to tango ended successfully
   // or if service was already connected.
@@ -152,12 +159,13 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void UpdateAndPublishTangoStatus(const TangoStatus& status);
   // Publishes the necessary static transforms (device_T_camera_*).
   void PublishStaticTransforms();
-  // Publishes the available data (device pose, point cloud, laser scan, images).
+  // Publishes the available data (device pose, point cloud, images, ...).
   void PublishDevicePose();
   void PublishPointCloud();
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
+  void PublishMeshMarker();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
@@ -187,6 +195,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::thread publish_laserscan_thread_;
   std::thread publish_fisheye_image_thread_;
   std::thread publish_color_image_thread_;
+  std::thread publish_mesh_marker_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
 
@@ -200,6 +209,9 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::condition_variable fisheye_image_available_;
   std::mutex color_image_available_mutex_;
   std::condition_variable color_image_available_;
+  std::mutex mesh_available_mutex_;
+  std::condition_variable mesh_available_;
+  std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   bool publish_pose_on_tf_ = false;
@@ -248,6 +260,17 @@ class TangoRosNode : public ::nodelet::Nodelet {
   cv::Mat color_image_;
   image_geometry::PinholeCameraModel color_camera_model_;
   cv::Mat color_image_rect_;
+
+  ros::Publisher mesh_marker_publisher_;
+  // Context for a 3D Reconstruction. Maintains the state of a single
+  // mesh being reconstructed.
+  Tango3DR_Context t3dr_context_;
+  TangoSupportPointCloudManager* point_cloud_manager_;
+  Tango3DR_Pose last_camera_depth_pose_;
+  TangoSupportImageBufferManager* image_buffer_manager_;
+  Tango3DR_Pose last_camera_color_pose_;
+  Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
+  bool use_floor_plan_ = false;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;

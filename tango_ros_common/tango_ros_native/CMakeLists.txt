@@ -9,11 +9,15 @@ find_package(catkin REQUIRED COMPONENTS
    image_geometry
    roscpp
    sensor_msgs
+   tango_3d_reconstruction
    tango_client_api
    tango_ros_messages
+   tango_support_api
    tf
    tf2_ros
    )
+find_package(JNI REQUIRED)
+
 
 # Use OpenCV3 if we are using ROS Kinetic (which is the default for that distro)
 if( $ENV{ROS_DISTRO} STRLESS "kinetic")
@@ -28,7 +32,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_client_api tango_ros_messages tf tf2_ros
+  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support_api tf tf2_ros
   LIBRARIES tango_ros_native
   DEPENDS OpenCV
   )
@@ -36,6 +40,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${JNI_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake
 )
