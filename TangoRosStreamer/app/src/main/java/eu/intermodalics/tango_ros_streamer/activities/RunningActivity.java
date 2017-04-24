@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_streamer.activities;
 
 import android.app.DialogFragment;
 import android.app.FragmentManager;
@@ -66,11 +66,15 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
+import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
+import eu.intermodalics.tango_ros_streamer.nodes.ParameterNode;
+import eu.intermodalics.tango_ros_streamer.R;
+import eu.intermodalics.tango_ros_streamer.android.SaveMapDialog;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements NodeletManager.CallbackListener,
- SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
+        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
