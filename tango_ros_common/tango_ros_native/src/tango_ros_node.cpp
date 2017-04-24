@@ -631,9 +631,10 @@ void TangoRosNode::PublishStaticTransforms() {
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
   if (publish_pose_on_tf_ || publish_pose_on_topic_) {
-    if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
-        && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-      if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
+    if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
+        pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
+      if (pose->status_code == TANGO_POSE_VALID &&
+          device_pose_thread_.data_available_mutex.try_lock()) {
         tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
                                                  &start_of_service_T_device_);
         start_of_service_T_device_.header.frame_id =
@@ -653,8 +654,8 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           area_description_T_start_of_service_.child_frame_id =
               tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         }
-        pose_available_mutex_.unlock();
-        pose_available_.notify_all();
+        device_pose_thread_.data_available_mutex.unlock();
+        device_pose_thread_.data_available.notify_all();
       }
     }
   }
@@ -663,15 +664,16 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
 void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
   if (point_cloud->num_points > 0) {
     if (point_cloud_publisher_.getNumSubscribers() > 0 &&
-        point_cloud_available_mutex_.try_lock()) {
-      tango_ros_conversions_helper::toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
+        point_cloud_thread_.data_available_mutex.try_lock()) {
+      tango_ros_conversions_helper::toPointCloud2(*point_cloud, time_offset_,
+                                                  &point_cloud_);
       point_cloud_.header.frame_id =
           tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-      point_cloud_available_mutex_.unlock();
-      point_cloud_available_.notify_all();
+      point_cloud_thread_.data_available_mutex.unlock();
+      point_cloud_thread_.data_available.notify_all();
     }
     if (laser_scan_publisher_.getNumSubscribers() > 0 &&
-        laser_scan_available_mutex_.try_lock()) {
+        laser_scan_thread_.data_available_mutex.try_lock()) {
       laser_scan_.angle_min = LASER_SCAN_ANGLE_MIN;
       laser_scan_.angle_max = LASER_SCAN_ANGLE_MAX;
       laser_scan_.angle_increment = LASER_SCAN_ANGLE_INCREMENT;
@@ -688,8 +690,8 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
           *point_cloud, time_offset_, laser_scan_min_height_,
                   laser_scan_max_height_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
-      laser_scan_available_mutex_.unlock();
-      laser_scan_available_.notify_all();
+      laser_scan_thread_.data_available_mutex.unlock();
+      laser_scan_thread_.data_available.notify_all();
     }
 
     if (mesh_marker_publisher_.getNumSubscribers() > 0) {
@@ -714,33 +716,33 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
 void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
   if (fisheye_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE &&
-       fisheye_image_available_mutex_.try_lock()) {
+       fisheye_image_thread_.data_available_mutex.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
     fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-    fisheye_image_available_mutex_.unlock();
-    fisheye_image_available_.notify_all();
+    fisheye_image_thread_.data_available_mutex.unlock();
+    fisheye_image_thread_.data_available.notify_all();
   }
   if (color_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
-       color_image_available_mutex_.try_lock()) {
+       color_image_thread_.data_available_mutex.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
     color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-    color_image_available_mutex_.unlock();
-    color_image_available_.notify_all();
+    color_image_thread_.data_available_mutex.unlock();
+    color_image_thread_.data_available.notify_all();
   }
 
   if (mesh_marker_publisher_.getNumSubscribers() > 0 &&
       camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
       new_point_cloud_available_for_t3dr_ &&
-      mesh_available_mutex_.try_lock()) {
+      mesh_marker_thread_.data_available_mutex.try_lock()) {
     if (image_buffer_manager_ == nullptr) {
       TangoErrorType result = TangoSupport_createImageBufferManager(
           buffer->format, buffer->width, buffer->height, &image_buffer_manager_);
@@ -763,66 +765,72 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
                                           &last_camera_color_pose_);
     TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
     new_point_cloud_available_for_t3dr_ = false;
-    mesh_available_mutex_.unlock();
-    mesh_available_.notify_all();
+    mesh_marker_thread_.data_available_mutex.unlock();
+    mesh_marker_thread_.data_available.notify_all();
   }
 }
 
 void TangoRosNode::StartPublishing() {
   run_threads_ = true;
-  publish_device_pose_thread_ = std::thread(&TangoRosNode::PublishDevicePose, this);
-  publish_pointcloud_thread_ = std::thread(&TangoRosNode::PublishPointCloud, this);
-  publish_laserscan_thread_ = std::thread(&TangoRosNode::PublishLaserScan, this);
-  publish_fisheye_image_thread_ = std::thread(&TangoRosNode::PublishFisheyeImage, this);
-  publish_color_image_thread_ = std::thread(&TangoRosNode::PublishColorImage, this);
-  publish_mesh_marker_thread_ = std::thread(&TangoRosNode::PublishMeshMarker, this);
+  device_pose_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishDevicePose, this);
+  point_cloud_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishPointCloud, this);
+  laser_scan_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishLaserScan, this);
+  fisheye_image_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishFisheyeImage, this);
+  color_image_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishColorImage, this);
+  mesh_marker_thread_.publish_thread =
+      std::thread(&TangoRosNode::PublishMeshMarker, this);
   ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
 }
 
 void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
-    if (publish_device_pose_thread_.joinable()) {
+    if (device_pose_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ || !publish_pose_on_tf_
           || !publish_pose_on_topic_) {
-        pose_available_.notify_all();
+        device_pose_thread_.data_available.notify_all();
       }
-      publish_device_pose_thread_.join();
+      device_pose_thread_.publish_thread.join();
     }
-    if (publish_pointcloud_thread_.joinable()) {
+    if (point_cloud_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ ||
           point_cloud_publisher_.getNumSubscribers() <= 0) {
-        point_cloud_available_.notify_all();
+        point_cloud_thread_.data_available.notify_all();
       }
-      publish_pointcloud_thread_.join();
+      point_cloud_thread_.publish_thread.join();
     }
-    if (publish_laserscan_thread_.joinable()) {
+    if (laser_scan_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ ||
           laser_scan_publisher_.getNumSubscribers() <= 0) {
-        laser_scan_available_.notify_all();
+        laser_scan_thread_.data_available.notify_all();
       }
-      publish_laserscan_thread_.join();
+      laser_scan_thread_.publish_thread.join();
     }
-    if (publish_fisheye_image_thread_.joinable()) {
+    if (fisheye_image_thread_.publish_thread.joinable()) {
       if (!tango_data_available_
           || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
-        fisheye_image_available_.notify_all();
+        fisheye_image_thread_.data_available.notify_all();
       }
-      publish_fisheye_image_thread_.join();
+      fisheye_image_thread_.publish_thread.join();
     }
-    if (publish_color_image_thread_.joinable()) {
+    if (color_image_thread_.publish_thread.joinable()) {
       if (!tango_data_available_
           || color_camera_publisher_.getNumSubscribers() <= 0) {
-        color_image_available_.notify_all();
+        color_image_thread_.data_available.notify_all();
       }
-      publish_color_image_thread_.join();
+      color_image_thread_.publish_thread.join();
     }
-    if (publish_mesh_marker_thread_.joinable()) {
+    if (mesh_marker_thread_.publish_thread.joinable()) {
       if (!tango_data_available_
           || mesh_marker_publisher_.getNumSubscribers() <= 0) {
-        mesh_available_.notify_all();
+        mesh_marker_thread_.data_available.notify_all();
       }
-      publish_mesh_marker_thread_.join();
+      mesh_marker_thread_.publish_thread.join();
     }
     ros_spin_thread_.join();
   }
@@ -834,8 +842,8 @@ void TangoRosNode::PublishDevicePose() {
       break;
     }
     {
-      std::unique_lock<std::mutex> lock(pose_available_mutex_);
-      pose_available_.wait(lock);
+      std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
+      device_pose_thread_.data_available.wait(lock);
       if (publish_pose_on_tf_) {
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
@@ -860,8 +868,8 @@ void TangoRosNode::PublishPointCloud() {
       break;
     }
     {
-      std::unique_lock<std::mutex> lock(point_cloud_available_mutex_);
-      point_cloud_available_.wait(lock);
+      std::unique_lock<std::mutex> lock(point_cloud_thread_.data_available_mutex);
+      point_cloud_thread_.data_available.wait(lock);
       if (point_cloud_publisher_.getNumSubscribers() > 0) {
         point_cloud_publisher_.publish(point_cloud_);
       }
@@ -875,8 +883,8 @@ void TangoRosNode::PublishLaserScan() {
       break;
     }
     {
-      std::unique_lock<std::mutex> lock(laser_scan_available_mutex_);
-      laser_scan_available_.wait(lock);
+      std::unique_lock<std::mutex> lock(laser_scan_thread_.data_available_mutex);
+      laser_scan_thread_.data_available.wait(lock);
       if (laser_scan_publisher_.getNumSubscribers() > 0) {
         laser_scan_publisher_.publish(laser_scan_);
       }
@@ -890,8 +898,8 @@ void TangoRosNode::PublishFisheyeImage() {
       break;
     }
     {
-      std::unique_lock<std::mutex> lock(fisheye_image_available_mutex_);
-      fisheye_image_available_.wait(lock);
+      std::unique_lock<std::mutex> lock(fisheye_image_thread_.data_available_mutex);
+      fisheye_image_thread_.data_available.wait(lock);
       if (fisheye_camera_publisher_.getNumSubscribers() > 0 ||
           fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
         // The Tango image encoding is not supported by ROS.
@@ -927,8 +935,8 @@ void TangoRosNode::PublishColorImage() {
       break;
     }
     {
-      std::unique_lock<std::mutex> lock(color_image_available_mutex_);
-      color_image_available_.wait(lock);
+      std::unique_lock<std::mutex> lock(color_image_thread_.data_available_mutex);
+      color_image_thread_.data_available.wait(lock);
       if (color_camera_publisher_.getNumSubscribers() > 0 ||
           color_rectified_image_publisher_.getNumSubscribers() > 0) {
         // The Tango image encoding is not supported by ROS.
@@ -965,8 +973,8 @@ void TangoRosNode::PublishMeshMarker() {
     if (mesh_marker_publisher_.getNumSubscribers() > 0) {
       Tango3DR_GridIndexArray* t3dr_updated_indices;
       {
-        std::unique_lock<std::mutex> lock(mesh_available_mutex_);
-        mesh_available_.wait(lock);
+        std::unique_lock<std::mutex> lock(mesh_marker_thread_.data_available_mutex);
+        mesh_marker_thread_.data_available.wait(lock);
         // Get latest point cloud.
         TangoPointCloud* last_point_cloud;
         TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
