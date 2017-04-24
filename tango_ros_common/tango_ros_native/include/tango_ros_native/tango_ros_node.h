@@ -49,7 +49,6 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
-const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 // See laser scan message doc for definition of laser scan constants:
 // http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html
 const float LASER_SCAN_ANGLE_MIN = 0.;
