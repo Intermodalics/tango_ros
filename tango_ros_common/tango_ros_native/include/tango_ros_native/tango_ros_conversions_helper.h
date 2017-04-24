@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef TANGO_ROS_CONVERSIONS_HELPER_H_
+#define TANGO_ROS_CONVERSIONS_HELPER_H_
 #include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
 #include <tango_client_api/tango_client_api.h>
 #include <tango_support_api/tango_support_api.h>
@@ -23,7 +25,7 @@
 #include <tf/LinearMath/Transform.h>
 #include <visualization_msgs/MarkerArray.h>
 
-namespace tango_ros_conversion {
+namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
@@ -123,4 +125,5 @@ void toPoint(const Tango3DR_Vector3& tango_vector, geometry_msgs::Point* point);
 // @param tango_color, Tango3DR_Color to convert.
 // @param color, the output std_msgs::ColorRGBA.
 void toColor(const Tango3DR_Color& tango_color, std_msgs::ColorRGBA* color);
-} // namespace tango_ros_conversion
+} // namespace tango_ros_conversions_helper
+#endif  // TANGO_ROS_CONVERSIONS_HELPER_H_

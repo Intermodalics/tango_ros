@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "tango_ros_native/tango_ros_conversion.h"
+#include "tango_ros_native/tango_ros_conversions_helper.h"
 #include "tango_ros_native/tango_ros_node.h"
 
 #include <cmath>
@@ -268,7 +268,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
-  tango_ros_conversion::toCameraInfo(tango_camera_intrinsics, &fisheye_camera_info_);
+  tango_ros_conversions_helper::toCameraInfo(tango_camera_intrinsics, &fisheye_camera_info_);
   fisheye_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
   fisheye_camera_info_manager_->setCameraName("fisheye_1");
   // Cache warp maps for more efficiency.
@@ -278,13 +278,13 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   fisheye_image_rect_.create(fisheye_camera_info_.height, fisheye_camera_info_.width, CV_8UC1);
 
   TangoService_getCameraIntrinsics(TANGO_CAMERA_COLOR, &tango_camera_intrinsics);
-  tango_ros_conversion::toCameraInfo(tango_camera_intrinsics, &color_camera_info_);
+  tango_ros_conversions_helper::toCameraInfo(tango_camera_intrinsics, &color_camera_info_);
   color_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(node_handle_));
   color_camera_info_manager_->setCameraName("color_1");
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
 
-  tango_ros_conversion::toTango3DR_CameraCalibration(
+  tango_ros_conversions_helper::toTango3DR_CameraCalibration(
       tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
   TangoSetup3DRConfig();
   return TANGO_SUCCESS;
@@ -573,22 +573,22 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.target = TANGO_COORDINATE_FRAME_IMU;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
-  tango_ros_conversion::toTransformStamped(pose, time_offset_, &device_T_imu);
+  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
   device_T_imu.header.frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
   device_T_imu.child_frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_IMU);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_IMU);
   device_T_imu.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversion::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
+  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
   device_T_camera_depth_.header.frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
   device_T_camera_depth_.child_frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
   device_T_camera_depth_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
 
@@ -598,7 +598,7 @@ void TangoRosNode::PublishStaticTransforms() {
   // the Tango point cloud frame.
   camera_depth_T_laser_ = tf::StampedTransform(
       tf::Transform(tf::Quaternion(1 / sqrt(2), 0, 0, 1 / sqrt(2))), ros::Time::now(),
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH),
       LASER_SCAN_FRAME_ID);
   geometry_msgs::TransformStamped camera_depth_T_laser_message;
   tf::transformStampedTFToMsg(camera_depth_T_laser_, camera_depth_T_laser_message);
@@ -607,24 +607,24 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversion::toTransformStamped(pose, time_offset_,
+  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_fisheye_);
   device_T_camera_fisheye_.header.frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
   device_T_camera_fisheye_.child_frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
   device_T_camera_fisheye_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversion::toTransformStamped(pose, time_offset_,
+  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_color_);
   device_T_camera_color_.header.frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
   device_T_camera_color_.child_frame_id =
-      tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
   device_T_camera_color_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_color_);
 }
@@ -634,24 +634,24 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE
         && pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       if (pose->status_code == TANGO_POSE_VALID && pose_available_mutex_.try_lock()) {
-        tango_ros_conversion::toTransformStamped(*pose, time_offset_,
+        tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
                                                  &start_of_service_T_device_);
         start_of_service_T_device_.header.frame_id =
-            tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         start_of_service_T_device_.child_frame_id =
-            tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
+            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
         TangoCoordinateFramePair pair;
         pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
         pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
         TangoPoseData area_description_T_start_of_service;
         TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
         if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-          tango_ros_conversion::toTransformStamped(area_description_T_start_of_service,
+          tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
                              time_offset_, &area_description_T_start_of_service_);
           area_description_T_start_of_service_.header.frame_id =
-              tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
+              tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
           area_description_T_start_of_service_.child_frame_id =
-              tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+              tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         }
         pose_available_mutex_.unlock();
         pose_available_.notify_all();
@@ -664,9 +664,9 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
   if (point_cloud->num_points > 0) {
     if (point_cloud_publisher_.getNumSubscribers() > 0 &&
         point_cloud_available_mutex_.try_lock()) {
-      tango_ros_conversion::toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
+      tango_ros_conversions_helper::toPointCloud2(*point_cloud, time_offset_, &point_cloud_);
       point_cloud_.header.frame_id =
-          tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
+          tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
       point_cloud_available_mutex_.unlock();
       point_cloud_available_.notify_all();
     }
@@ -684,7 +684,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
                                        / laser_scan_.angle_increment);
       // Laser scan rays with no obstacle data will evaluate to infinity.
       laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
-      tango_ros_conversion::toLaserScan(
+      tango_ros_conversions_helper::toLaserScan(
           *point_cloud, time_offset_, laser_scan_min_height_,
                   laser_scan_max_height_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
@@ -703,7 +703,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
             << point_cloud->timestamp << " for the depth camera.";
         return;
       }
-      tango_ros_conversion::toTango3DR_Pose(start_of_service_T_camera_depth,
+      tango_ros_conversions_helper::toTango3DR_Pose(start_of_service_T_camera_depth,
                                             &last_camera_depth_pose_);
       TangoSupport_updatePointCloud(point_cloud_manager_, point_cloud);
       new_point_cloud_available_for_t3dr_ = true;
@@ -720,7 +720,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id =
-        tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
+        tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
     fisheye_image_available_mutex_.unlock();
     fisheye_image_available_.notify_all();
   }
@@ -732,7 +732,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id =
-        tango_ros_conversion::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
+        tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
     color_image_available_mutex_.unlock();
     color_image_available_.notify_all();
   }
@@ -759,7 +759,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
           << buffer->timestamp << " for the color camera.";
       return;
     }
-    tango_ros_conversion::toTango3DR_Pose(start_of_service_T_camera_color,
+    tango_ros_conversions_helper::toTango3DR_Pose(start_of_service_T_camera_color,
                                           &last_camera_color_pose_);
     TangoSupport_updateImageBuffer(image_buffer_manager_, buffer);
     new_point_cloud_available_for_t3dr_ = false;
@@ -1010,7 +1010,7 @@ void TangoRosNode::PublishMeshMarker() {
         }
         // Make mesh marker from tango mesh.
         visualization_msgs::Marker mesh_marker;
-        tango_ros_conversion::toMeshMarker(t3dr_updated_indices->indices[i],
+        tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices->indices[i],
                                            tango_mesh, time_offset_, &mesh_marker);
         // Free tango mesh once we are finished with it.
         Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);

@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "tango_ros_native/tango_ros_conversion.h"
+#include "tango_ros_native/tango_ros_conversions_helper.h"
 
 #include <ros/ros.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-namespace tango_ros_conversion {
+namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
                         geometry_msgs::TransformStamped* transform) {
@@ -261,4 +261,4 @@ void toColor(const Tango3DR_Color& tango_color, std_msgs::ColorRGBA* color) {
   color->b = tango_color[2] / 255.;
   color->a = tango_color[3] / 255.;
 }
-} // namespace tango_ros_conversion
+} // namespace tango_ros_conversions_helper
