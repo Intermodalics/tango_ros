@@ -305,6 +305,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 }
             });
             displayToastMessage(R.string.save_map_success);
+            // Restart Tango to be able to load the new map.
+            mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
         } else {
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
