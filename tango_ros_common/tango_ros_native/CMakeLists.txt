@@ -61,3 +61,8 @@ install(TARGETS tango_ros_native
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(${PROJECT_NAME}_test test/test_tango_ros_msg.cpp)
+  target_link_libraries(${PROJECT_NAME}_test tango_ros_native)
+endif()

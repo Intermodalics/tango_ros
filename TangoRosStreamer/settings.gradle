@@ -1,2 +1,2 @@
-include ':app', ':nodelet_manager', ':tango_ros_common'
+include ':app', ':nodelet_manager', ':tango_ros_common', ':tango_ros_test'
 project(':tango_ros_common').projectDir = new File('../tango_ros_common/tango_ros_common')
