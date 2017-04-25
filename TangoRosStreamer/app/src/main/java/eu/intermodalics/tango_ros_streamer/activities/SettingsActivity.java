@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_streamer.activities;
 
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
@@ -32,11 +32,13 @@ import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import java.util.HashMap;
+
+import eu.intermodalics.tango_ros_streamer.android.MapChooserPreference;
+import eu.intermodalics.tango_ros_streamer.R;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On

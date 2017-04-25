@@ -36,7 +36,7 @@
             android:entries="@array/listLocalizationMode"
             android:entryValues="@array/listLocalizationModeValues"
             android:dependency="@string/pref_create_new_map_key" />
-        <eu.intermodalics.tango_ros_streamer.MapChooserPreference
+        <eu.intermodalics.tango_ros_streamer.android.MapChooserPreference
             android:title="Choose localization map"
             android:key="@string/pref_localization_map_uuid_key" />
     </PreferenceCategory>

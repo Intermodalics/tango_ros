@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_streamer.android;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+
+import eu.intermodalics.tango_ros_streamer.R;
+import eu.intermodalics.tango_ros_streamer.activities.RunningActivity;
 
 public class RunAppOnStartupBroadcastReceiver extends BroadcastReceiver {
     @Override
