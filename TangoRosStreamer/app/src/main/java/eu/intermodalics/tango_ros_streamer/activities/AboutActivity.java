@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_streamer.activities;
 
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -29,6 +29,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import eu.intermodalics.tango_ros_streamer.R;
 
 public class AboutActivity extends AppCompatActivity {
     private static final String TAG = AboutActivity.class.getSimpleName();

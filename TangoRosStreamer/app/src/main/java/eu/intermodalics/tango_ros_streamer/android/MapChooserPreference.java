@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer;
+package eu.intermodalics.tango_ros_streamer.android;
 
 import android.content.Context;
 import android.preference.ListPreference;
 import android.util.AttributeSet;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Map;
