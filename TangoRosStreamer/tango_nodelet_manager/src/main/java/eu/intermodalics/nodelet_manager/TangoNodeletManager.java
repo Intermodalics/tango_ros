@@ -10,7 +10,7 @@ import org.ros.node.Node;
 import java.util.Arrays;
 import java.util.List;
 
-public class NodeletManager extends NativeNodeMain {
+public class TangoNodeletManager extends NativeNodeMain {
     // TODO(mcopejans) Move constants below to separate package.
     public static final int ROS_CONNECTION_ERROR = 1;
     public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
@@ -25,7 +25,7 @@ public class NodeletManager extends NativeNodeMain {
     private List<String> mErrorMessages;
     private CallbackListener mCallbackListener;
 
-    public NodeletManager() {
+    public TangoNodeletManager() {
         super(DEFAULT_LIB_NAME);
         mErrorMessages = Arrays.asList(
                 ROS_CONNECTION_FAILURE_ERROR_MSG,
@@ -34,7 +34,7 @@ public class NodeletManager extends NativeNodeMain {
                 ROS_WRONG_HOST_NAME_ERROR_MSG);
     }
 
-    public NodeletManager(String libName) {
+    public TangoNodeletManager(String libName) {
         super(libName);
     }
 
@@ -45,7 +45,7 @@ public class NodeletManager extends NativeNodeMain {
         try {
             System.loadLibrary(DEFAULT_LIB_NAME);
         } catch (UnsatisfiedLinkError e) {
-            Log.e(NodeletManager.class.getName(),
+            Log.e(TangoNodeletManager.class.getName(),
                     "Error loading shared library: " + DEFAULT_LIB_NAME, e);
             return false;
         }
