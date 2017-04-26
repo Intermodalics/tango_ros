@@ -309,6 +309,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 }
             });
             displayToastMessage(R.string.save_map_success);
+            // Restart Tango to be able to load the new map.
+            saveUuidsNamestoHashMap();
         } else {
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
@@ -357,6 +359,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
+        if (mMapSaved) {
+            mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.DISCONNECT);
+        }
     }
 
     @Override
