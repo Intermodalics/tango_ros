@@ -174,18 +174,18 @@ public class TangoInitializationHelper {
     }
 
     /**
-     * {@link TangoInitializationHelper} depends on the same library as {@link NodeletManager}.
+     * {@link TangoInitializationHelper} depends on the same library as {@link TangoNodeletManager}.
      * This code is added to ensure that the native functions will be properly linked;
      * loading the same library twice has no side effects.
      */
     public static final int loadTangoRosNodeSharedLibrary() {
         int loadedSo = ARCH_ERROR;
         try {
-            System.loadLibrary(NodeletManager.DEFAULT_LIB_NAME);
+            System.loadLibrary(TangoNodeletManager.DEFAULT_LIB_NAME);
             loadedSo = ARCH_DEFAULT;
         } catch (Exception e) {
             Log.e(TangoInitializationHelper.class.getName(),
-                    "Error loading library " + NodeletManager.DEFAULT_LIB_NAME, e);
+                    "Error loading library " + TangoNodeletManager.DEFAULT_LIB_NAME, e);
         }
         return loadedSo;
     }
