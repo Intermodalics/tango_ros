@@ -40,7 +40,7 @@ Java_eu_intermodalics_nodelet_1manager_TangoInitializationHelper_isTangoVersionO
 }
 
 JNIEXPORT jint JNICALL
-Java_eu_intermodalics_nodelet_1manager_NodeletManager_execute(
+Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
         JNIEnv* env, jobject /*obj*/, jstring master_uri_value,
         jstring host_ip_value, jstring node_name_value,
         /* unused */ jobjectArray remapping_objects_value) {
@@ -88,7 +88,7 @@ Java_eu_intermodalics_nodelet_1manager_NodeletManager_execute(
 }
 
 JNIEXPORT jint JNICALL
-Java_eu_intermodalics_nodelet_1manager_NodeletManager_shutdown(
+Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_shutdown(
         JNIEnv* /*env*/, jobject /*obj*/) {
     return 0;
 }
