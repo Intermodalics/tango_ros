@@ -48,7 +48,7 @@ public class AboutActivity extends AppCompatActivity {
         TextView textViewVersion = (TextView) findViewById(R.id.text_version);
         try {
             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            textViewVersion.setText(packageInfo.versionName + "-" + packageInfo.versionCode);
+            textViewVersion.setText(packageInfo.versionName);
         } catch (PackageManager.NameNotFoundException ex) {
             Log.e(TAG, ex.getMessage());
         }

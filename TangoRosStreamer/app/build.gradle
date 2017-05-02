@@ -27,9 +27,9 @@ dependencies {
     compile 'org.ros.rosjava_messages:sensor_msgs:[0.3,)'
     compile 'org.ros.rosjava_messages:geometry_msgs:[0.3,)'
     compile 'org.ros.rosjava_messages:dynamic_reconfigure:[0.3,)'
-    compile 'org.ros.rosjava_messages:tango_ros_messages:[0.0,)'
+    compile 'org.ros.rosjava_messages:tango_ros_messages:[1.0.0, 1.1)'
     compile 'com.android.support:support-v4:25.2.0'
     compile 'com.android.support:design:25.2.0'
-    compile project(':nodelet_manager')
+    compile project(':tango_nodelet_manager')
     compile project(':tango_ros_common')
 }

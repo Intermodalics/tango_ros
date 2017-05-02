@@ -60,7 +60,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import eu.intermodalics.nodelet_manager.NodeletManager;
+import eu.intermodalics.nodelet_manager.TangoNodeletManager;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoServiceConnection;
 
@@ -73,12 +73,13 @@ import eu.intermodalics.tango_ros_streamer.android.SaveMapDialog;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
-public class RunningActivity extends AppCompatRosActivity implements NodeletManager.CallbackListener,
+public class RunningActivity extends AppCompatRosActivity implements TangoNodeletManager.CallbackListener,
         SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final int MAX_TANGO_CONNECTION_TRY = 50;
 
     private static final String REQUEST_TANGO_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
     public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
@@ -107,7 +108,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
     }
 
     private SharedPreferences mSharedPref;
-    private NodeletManager mNodeletManager;
+    private TangoNodeletManager mTangoNodeletManager;
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
     private ParameterNode mParameterNode;
@@ -166,7 +167,7 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
      * Implements TangoRosNode.CallbackListener.
      */
     public void onNodeletManagerError(int returnCode) {
-        if (returnCode == NodeletManager.ROS_CONNECTION_ERROR) {
+        if (returnCode == TangoNodeletManager.ROS_CONNECTION_ERROR) {
             updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
             Log.e(TAG, getString(R.string.ros_init_error));
             displayToastMessage(R.string.ros_init_error);
@@ -309,6 +310,8 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                 }
             });
             displayToastMessage(R.string.save_map_success);
+            // Restart Tango to be able to load the new map.
+            saveUuidsNamestoHashMap();
         } else {
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
@@ -357,6 +360,9 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
+        if (mMapSaved) {
+            mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.DISCONNECT);
+        }
     }
 
     @Override
@@ -519,21 +525,22 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
         nodeMainExecutor.execute(mImuNode, nodeConfiguration);
         // Create and start Tango ROS Node
-        nodeConfiguration.setNodeName(NodeletManager.NODE_NAME);
+        nodeConfiguration.setNodeName(TangoNodeletManager.NODE_NAME);
         if (TangoInitializationHelper.loadTangoSharedLibrary() !=
                 TangoInitializationHelper.ARCH_ERROR &&
                 TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
                         != TangoInitializationHelper.ARCH_ERROR) {
-            mNodeletManager = new NodeletManager();
-            mNodeletManager.attachCallbackListener(this);
+            mTangoNodeletManager = new TangoNodeletManager();
+            mTangoNodeletManager.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
-                nodeMainExecutor.execute(mNodeletManager, nodeConfiguration, new ArrayList<NodeListener>(){{
+                nodeMainExecutor.execute(mTangoNodeletManager, nodeConfiguration, new ArrayList<NodeListener>(){{
                     add(new DefaultNodeListener() {
                         @Override
                         public void onStart(ConnectedNode connectedNode) {
                             int count = 0;
-                            while (count < 50 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                            while (count < MAX_TANGO_CONNECTION_TRY &&
+                                    !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
                                 try {
                                     count++;
                                     Log.e(TAG, "Trying to connect to Tango, attempt " + count);
@@ -541,6 +548,10 @@ public class RunningActivity extends AppCompatRosActivity implements NodeletMana
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+                            }
+                            if (count >= MAX_TANGO_CONNECTION_TRY) {
+                                updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
+                                displayToastMessage(R.string.tango_connect_error);
                             }
                         }
                     });

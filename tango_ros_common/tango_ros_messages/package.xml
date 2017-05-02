@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>tango_ros_messages</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>This package contains messages/services used by tango ros lib</description>
 
   <maintainer email="ruben@intermodalics.eu">Ruben Smits</maintainer>
