@@ -22,6 +22,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:25.3.0'
-    compile 'org.ros.rosjava_messages:tango_ros_messages:1.0.0'
+    compile 'org.ros.rosjava_messages:tango_ros_messages:[1.0.0, 1.1)'
     compile project(':tango_nodelet_manager')
 }
