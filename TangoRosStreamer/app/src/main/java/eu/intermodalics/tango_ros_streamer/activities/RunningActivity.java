@@ -79,6 +79,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
     private static final int LOG_TEXT_MAX_LENGTH = 5000;
+    private static final int MAX_TANGO_CONNECTION_TRY = 50;
 
     private static final String REQUEST_TANGO_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
     public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
@@ -538,7 +539,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                         @Override
                         public void onStart(ConnectedNode connectedNode) {
                             int count = 0;
-                            while (count < 50 && !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                            while (count < MAX_TANGO_CONNECTION_TRY &&
+                                    !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
                                 try {
                                     count++;
                                     Log.e(TAG, "Trying to connect to Tango, attempt " + count);
@@ -546,6 +548,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+                            }
+                            if (count >= MAX_TANGO_CONNECTION_TRY) {
+                                updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
+                                displayToastMessage(R.string.tango_connect_error);
                             }
                         }
                     });
