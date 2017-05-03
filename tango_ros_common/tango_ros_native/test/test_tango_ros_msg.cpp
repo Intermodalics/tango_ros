@@ -14,6 +14,7 @@
 #include <time.h>
 
 #include <gtest/gtest.h>
+#include <image_transport/image_transport.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -22,11 +23,11 @@
 
 #include <tango_ros_native/tango_ros_node.h>
 
-constexpr double TF_RATE = 85.; // in Hz.
+constexpr double TF_RATE = 150.; // in Hz.
 constexpr double POINT_CLOUD_RATE = 4.; // in Hz.
-constexpr double FISHEYE_IMAGE_RATE = 20.; // in Hz.
-constexpr double COLOR_IMAGE_RATE = 9.; // in Hz.
-constexpr double RATE_TOLERANCE_RATIO = 0.2;
+constexpr double FISHEYE_IMAGE_RATE = 25.; // in Hz.
+constexpr double COLOR_IMAGE_RATE = 7.; // in Hz.
+constexpr double RATE_TOLERANCE_RATIO = 0.3;
 
 constexpr int SLEEP_TIME_UNTIL_FIRST_MESSAGE = 2; // in second.
 constexpr double DURATION_RATE_TEST = 10; // in second.
@@ -37,8 +38,8 @@ class TangoRosTest : public ::testing::Test {
   tf::TransformListener tf_listener_;
   ros::Subscriber sub_tf_;
   ros::Subscriber sub_point_cloud_;
-  ros::Subscriber sub_fisheye_image_;
-  ros::Subscriber sub_color_image_;
+  image_transport::Subscriber sub_fisheye_image_;
+  image_transport::Subscriber sub_color_image_;
 
   bool tf_message_received_;
   bool point_cloud_received_;
@@ -61,16 +62,19 @@ class TangoRosTest : public ::testing::Test {
         "/tf", 1, boost::bind(&TangoRosTest::TfCallback, this, _1));
 
     sub_point_cloud_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-        tango_ros_native::POINT_CLOUD_TOPIC_NAME, 1,
+        "/tango/" + tango_ros_native::POINT_CLOUD_TOPIC_NAME, 1,
         boost::bind(&TangoRosTest::PointCloudCallback, this, _1));
 
-    /*sub_fisheye_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
-        tango_ros_native::FISHEYE_IMAGE_TOPIC_NAME, 1,
-            boost::bind(&TangoRosTest::FisheyeImageCallback, this, _1));
+    image_transport::ImageTransport it(nh_);
+    sub_fisheye_image_ =
+        it.subscribe("/tango/" + tango_ros_native::FISHEYE_IMAGE_TOPIC_NAME, 1,
+                     &TangoRosTest::FisheyeImageCallback, this,
+                     image_transport::TransportHints("compressed"));
 
-    sub_color_image_ = nh_.subscribe<sensor_msgs::CompressedImage>(
-        tango_ros_native::COLOR_IMAGE_TOPIC_NAME, 1,
-            boost::bind(&TangoRosTest::ColorImageCallback, this, _1));*/
+    sub_color_image_ =
+        it.subscribe("/tango/" + tango_ros_native::COLOR_IMAGE_TOPIC_NAME, 1,
+                     &TangoRosTest::ColorImageCallback, this,
+                     image_transport::TransportHints("compressed"));
   }
 
  private:
@@ -84,44 +88,25 @@ class TangoRosTest : public ::testing::Test {
     point_cloud_message_count_ ++;
   }
 
-  void FisheyeImageCallback(const boost::shared_ptr<const sensor_msgs::CompressedImage> msg) {
+  void FisheyeImageCallback(const sensor_msgs::ImageConstPtr& image) {
     fisheye_image_received_ = true;
     fisheye_image_message_count_++;
   }
 
-  void ColorImageCallback(const boost::shared_ptr<const sensor_msgs::CompressedImage> msg) {
+  void ColorImageCallback(const sensor_msgs::ImageConstPtr& image) {
     color_image_received_ = true;
     color_image_message_count_++;
   }
 };
 
 TEST_F(TangoRosTest, TestMessagesArePublished) {
-  tf::StampedTransform transform;
-  EXPECT_THROW(tf_listener_.lookupTransform("/start_of_service", "/device",
-                                            ros::Time(0), transform), tf::TransformException);
-  EXPECT_THROW(tf_listener_.lookupTransform("/device", "/camera_depth",
-                                              ros::Time(0), transform), tf::TransformException);
-  EXPECT_THROW(tf_listener_.lookupTransform("/device", "/camera_fisheye",
-                                              ros::Time(0), transform), tf::TransformException);
-  EXPECT_THROW(tf_listener_.lookupTransform("/device", "/camera_color",
-                                              ros::Time(0), transform), tf::TransformException);
-  EXPECT_FALSE(tf_message_received_);
-  EXPECT_FALSE(point_cloud_received_);
-  EXPECT_FALSE(fisheye_image_received_);
-  EXPECT_FALSE(color_image_received_);
-
   // Sleep some time to be sure that data is published.
   sleep(SLEEP_TIME_UNTIL_FIRST_MESSAGE);
   ros::spinOnce();
 
+  tf::StampedTransform transform;
   EXPECT_NO_THROW(tf_listener_.lookupTransform("/start_of_service", "/device",
                                            ros::Time(0), transform));
-  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_depth",
-                                             ros::Time(0), transform));
-  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_fisheye",
-                                             ros::Time(0), transform));
-  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_color",
-                                             ros::Time(0), transform));
   EXPECT_TRUE(tf_message_received_);
   EXPECT_TRUE(point_cloud_received_);
   EXPECT_TRUE(fisheye_image_received_);

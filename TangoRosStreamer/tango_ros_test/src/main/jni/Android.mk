@@ -4,7 +4,7 @@ PROJECT_ROOT:= $(call my-dir)/../../../..
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := tango_ros_test
-LOCAL_SRC_FILES := test/tango_ros_api_test.cc
+LOCAL_SRC_FILES := test/tango_ros_api_test.cc $(PROJECT_ROOT)/tango_nodelet_manager/src/main/jni/plugin_generator.cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
 LOCAL_LDLIBS += -landroid -lm -llog -lz
