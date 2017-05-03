@@ -26,8 +26,8 @@
 constexpr double TF_RATE = 150.; // in Hz.
 constexpr double POINT_CLOUD_RATE = 4.; // in Hz.
 constexpr double FISHEYE_IMAGE_RATE = 25.; // in Hz.
-constexpr double COLOR_IMAGE_RATE = 7.; // in Hz.
-constexpr double RATE_TOLERANCE_RATIO = 0.3;
+constexpr double COLOR_IMAGE_RATE = 8.; // in Hz.
+constexpr double RATE_TOLERANCE_RATIO = 0.2;
 
 constexpr int SLEEP_TIME_UNTIL_FIRST_MESSAGE = 2; // in second.
 constexpr double DURATION_RATE_TEST = 10; // in second.
