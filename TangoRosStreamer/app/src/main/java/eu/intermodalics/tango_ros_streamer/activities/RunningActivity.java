@@ -85,11 +85,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
     public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
     private static final String EXTRA_VALUE_DATASET = "DATASET_PERMISSION";
-    private static final int REQUEST_CODE_TANGO_PERMISSION = 111;
+    private static final int REQUEST_CODE_ADF_PERMISSION = 111;
+    private static final int REQUEST_CODE_DATASET_PERMISSION = 112;
 
     public static class startSettingsActivityRequest {
-        public static final int FIRST_RUN = 1;
-        public static final int STANDARD_RUN = 2;
+        public static final int FIRST_RUN = 11;
+        public static final int STANDARD_RUN = 12;
     }
     public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
@@ -384,11 +385,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         mTangoServiceClientNode.callGetMapUuidsService();
     }
 
-    private void getTangoPermission(String permissionType) {
+    private void getTangoPermission(String permissionType, int requestCode) {
         Intent intent = new Intent();
         intent.setAction(REQUEST_TANGO_PERMISSION_ACTION);
         intent.putExtra(EXTRA_KEY_PERMISSIONTYPE, permissionType);
-        startActivityForResult(intent, REQUEST_CODE_TANGO_PERMISSION);
+        startActivityForResult(intent, requestCode);
     }
 
     @Override
@@ -478,10 +479,9 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
-                getTangoPermission(EXTRA_VALUE_ADF);
-                getTangoPermission(EXTRA_VALUE_DATASET);
+                getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
+                getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
                 updateSaveMapButton();
-                initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
@@ -490,11 +490,16 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             }
         }
 
-        if (requestCode == REQUEST_CODE_TANGO_PERMISSION) {
+        if (requestCode == REQUEST_CODE_ADF_PERMISSION || requestCode == REQUEST_CODE_DATASET_PERMISSION) {
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
             }
+            if (requestCode == REQUEST_CODE_DATASET_PERMISSION) {
+                Log.i(TAG, "initAndStartRosJavaNode");
+                initAndStartRosJavaNode();
+            }
+
         }
     }
 
@@ -579,9 +584,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
             mLogger.start();
-            getTangoPermission(EXTRA_VALUE_ADF);
-            getTangoPermission(EXTRA_VALUE_DATASET);
-            initAndStartRosJavaNode();
+            getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
+            getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);

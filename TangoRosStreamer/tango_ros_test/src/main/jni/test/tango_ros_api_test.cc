@@ -26,7 +26,7 @@ std::string host_ip;
 
 class TangoRosTest : public ::testing::Test {
  public:
-  constexpr static int TEST_DURATION = 20; // in second.
+  constexpr static int TEST_DURATION = 60; // in second.
 };
 
 TEST_F(TangoRosTest, TestPublishingForFixedTime) {
