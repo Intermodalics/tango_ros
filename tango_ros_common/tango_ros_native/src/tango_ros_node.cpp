@@ -578,18 +578,13 @@ void TangoRosNode::PublishStaticTransforms() {
       tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
   device_T_imu.child_frame_id =
       tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_IMU);
-  device_T_imu.header.stamp = ros::Time::now();
+//  device_T_imu.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
-  device_T_camera_depth_.header.frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-  device_T_camera_depth_.child_frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH);
-  device_T_camera_depth_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
 
   // According to the ROS documentation, laser scan angles are measured around
@@ -609,11 +604,6 @@ void TangoRosNode::PublishStaticTransforms() {
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_fisheye_);
-  device_T_camera_fisheye_.header.frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-  device_T_camera_fisheye_.child_frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
-  device_T_camera_fisheye_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
@@ -621,11 +611,6 @@ void TangoRosNode::PublishStaticTransforms() {
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_color_);
-  device_T_camera_color_.header.frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-  device_T_camera_color_.child_frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
-  device_T_camera_color_.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_camera_color_);
 }
 
@@ -637,10 +622,6 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           device_pose_thread_.data_available_mutex.try_lock()) {
         tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
                                                  &start_of_service_T_device_);
-        start_of_service_T_device_.header.frame_id =
-            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-        start_of_service_T_device_.child_frame_id =
-            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
         TangoCoordinateFramePair pair;
         pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
         pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
@@ -649,10 +630,6 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
           tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
                              time_offset_, &area_description_T_start_of_service_);
-          area_description_T_start_of_service_.header.frame_id =
-              tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION);
-          area_description_T_start_of_service_.child_frame_id =
-              tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
         }
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
