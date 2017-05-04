@@ -49,7 +49,6 @@
 #include "tango_ros_native/PublisherConfig.h"
 
 namespace tango_ros_native {
-const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 // See laser scan message doc for definition of laser scan constants:
 // http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html
 const float LASER_SCAN_ANGLE_MIN = 0.;
@@ -106,6 +105,12 @@ enum class TangoStatus {
   SERVICE_NOT_CONNECTED,
   NO_FIRST_VALID_POSE,
   SERVICE_CONNECTED
+};
+
+struct PublishThread {
+  std::thread publish_thread;
+  std::mutex  data_available_mutex;
+  std::condition_variable data_available;
 };
 
 // Node collecting tango data and publishing it on ros topics.
@@ -190,27 +195,14 @@ class TangoRosNode : public ::nodelet::Nodelet {
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
 
-  std::thread publish_device_pose_thread_;
-  std::thread publish_pointcloud_thread_;
-  std::thread publish_laserscan_thread_;
-  std::thread publish_fisheye_image_thread_;
-  std::thread publish_color_image_thread_;
-  std::thread publish_mesh_marker_thread_;
+  PublishThread device_pose_thread_;
+  PublishThread point_cloud_thread_;
+  PublishThread laser_scan_thread_;
+  PublishThread fisheye_image_thread_;
+  PublishThread color_image_thread_;
+  PublishThread mesh_marker_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
-
-  std::mutex pose_available_mutex_;
-  std::condition_variable pose_available_;
-  std::mutex point_cloud_available_mutex_;
-  std::condition_variable point_cloud_available_;
-  std::mutex laser_scan_available_mutex_;
-  std::condition_variable laser_scan_available_;
-  std::mutex fisheye_image_available_mutex_;
-  std::condition_variable fisheye_image_available_;
-  std::mutex color_image_available_mutex_;
-  std::condition_variable color_image_available_;
-  std::mutex mesh_available_mutex_;
-  std::condition_variable mesh_available_;
   std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.

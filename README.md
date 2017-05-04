@@ -2,7 +2,7 @@
 This repository hosts the code of the Tango Ros Streamer application.  
 It is an Android application for [Tango](https://get.google.com/tango/)-enabled devices.
 Its main purpose is to provide Tango sensor data to the [ROS](http://wiki.ros.org/) ecosystem in order to easily use the Tango functionalities on robots.  
-You can read the ROS wiki [here](http://wiki.ros.org/tango_ros_streamer).
+Please read our [ROS wiki](http://wiki.ros.org/tango_ros_streamer) for more information.
 
 This work is developed by [Intermodalics](http://www.intermodalics.eu/) in collaboration with [Ekumen](http://www.ekumenlabs.com/) and [Google Tango](https://get.google.com/tango/).  
 Do not hesitate to give us feedback if something is broken or if you think it lacks some features. The best way to do this is by adding issues to this repository.
@@ -13,19 +13,8 @@ Do not hesitate to give us feedback if something is broken or if you think it la
 
 # Kickstart
 The app is available in Google's Play Store: https://play.google.com/store/apps/details?id=eu.intermodalics.tango_ros_streamer  
-It can be installed on any Tango-enabled device. Note that the minimum Tango version required to run Tango Ros Streamer is Yildun (you will find the Tango release history [here](https://developers.google.com/tango/release-notes)). To check the Tango version of your device go to Settings->Apps->Tango Core. 
-
-# Running the app
-
-* Launch a roscore on your desktop.
-
-* On the first run, the app will ask you to set some settings. Press DONE once the set-up is completed.
-![screenshot_2017-01-19-16-41-47](https://cloud.githubusercontent.com/assets/12640723/22114676/a08ee398-de6a-11e6-84b3-4c72d7398942.png)
-
-* You can enable/disable published data at runtime via the app switch buttons located in a right drawer.
-![screenshot_2017-01-19-14-20-37](https://cloud.githubusercontent.com/assets/12640723/22108292/b9b1990a-de52-11e6-9426-0662b9b1cd65.png)
-
-* You can run rviz with the config file located at ```tango_ros/TangoRosStreamer/tango_ros.rviz``` to visualize Tango data (device pose, pointcloud, images,...).
+It can be installed on any Tango-enabled device. Note that the minimum Tango version required to run Tango Ros Streamer is Yildun (you will find the Tango release history [here](https://developers.google.com/tango/release-notes)). To check the Tango version of your device go to Settings->Apps->Tango Core.  
+Please read our [ROS tutorial](http://wiki.ros.org/tango_ros_streamer/Visualisation) for help when running the app.
 
 # Installation from source
 For this guide, we assume that you have a clean installation of Ubuntu 14.04 and we will use ROS Indigo. However, the app should also work on Ubuntu 16.04 in combination with ROS Kinetic.
