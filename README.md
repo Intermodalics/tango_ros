@@ -50,13 +50,7 @@ cd roscpp_android
 ./do_docker.sh --portable
 ```
 
-Note that the last command will take long time to complete. Once this has ended, copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
-
-```
-cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/lib/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
-cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/include/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
-cp ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/Application.mk ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
-```
+Note that the last command will take long time to complete.
 
 ## Building the app
 First clone the repository at the correct location:
@@ -67,11 +61,19 @@ git clone --recursive git@github.com:Intermodalics/tango_ros.git
 cd ~/tango_ros_ws
 ``` 
 
+Copy the the content of the output ```roscpp_android_ndk``` folder into ```tango_ros/third_party/roscpp_android_ndk/```, except the ```Android.mk``` file and the ```share``` folder.
+
+```
+cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/lib/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
+cp -r ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/include/ ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
+cp ~/ros-android-ndk/roscpp_android/output/roscpp_android_ndk/Application.mk ~/tango_ros_ws/src/tango_ros/third_party/roscpp_android_ndk/
+```
+
 Create a local.properties file
 ```
 touch ~/tango_ros_ws/src/tango_ros/TangoRosStreamer/local.properties
 ```
-In this file, write the path to your Android SDK and NDK in the following way:
+In this file, write the path to your Android SDK and NDK in the following way e.g.:
 ```
 ndk.dir=/opt/android-ndk-r10b
 sdk.dir=/opt/android-sdk-linux
@@ -79,7 +81,7 @@ sdk.dir=/opt/android-sdk-linux
 
 Install catkin tools if necessary.
 ```
-sudo apt-get install git python-catkin-tools
+sudo apt-get install python-catkin-tools
 ```
 
 Build the app and generate its .apk file.
