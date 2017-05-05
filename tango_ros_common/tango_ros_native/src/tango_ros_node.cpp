@@ -1176,7 +1176,7 @@ std::string TangoRosNode::GetAvailableMapUuidsList() {
   char* uuid_list;
   TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
   if (result != TANGO_SUCCESS) {
-    LOG(INFO) << "Error while retrieving all available map UUIDs, error: " << result;
+    LOG(ERROR) << "Error while retrieving all available map UUIDs, error: " << result;
     return "";
   }
   if (uuid_list != NULL && uuid_list[0] != '\0') {
