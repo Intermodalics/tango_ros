@@ -107,6 +107,14 @@ TEST_F(TangoRosTest, TestMessagesArePublished) {
   tf::StampedTransform transform;
   EXPECT_NO_THROW(tf_listener_.lookupTransform("/start_of_service", "/device",
                                            ros::Time(0), transform));
+  EXPECT_NO_THROW(tf_listener_.lookupTransform("/area_description", "/device",
+                                             ros::Time(0), transform));
+  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_depth",
+                                               ros::Time(0), transform));
+  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_fisheye",
+                                               ros::Time(0), transform));
+  EXPECT_NO_THROW(tf_listener_.lookupTransform("/device", "/camera_color",
+                                               ros::Time(0), transform));
   EXPECT_TRUE(tf_message_received_);
   EXPECT_TRUE(point_cloud_received_);
   EXPECT_TRUE(fisheye_image_received_);
