@@ -22,6 +22,10 @@ namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
                         geometry_msgs::TransformStamped* transform) {
+  transform->header.stamp.fromSec(pose.timestamp + time_offset);
+  transform->header.frame_id = toFrameId(pose.frame.base);
+  transform->child_frame_id = toFrameId(pose.frame.target);
+
   transform->transform.translation.x = pose.translation[0];
   transform->transform.translation.y = pose.translation[1];
   transform->transform.translation.z = pose.translation[2];
@@ -29,7 +33,6 @@ void toTransformStamped(const TangoPoseData& pose,
   transform->transform.rotation.y = pose.orientation[1];
   transform->transform.rotation.z = pose.orientation[2];
   transform->transform.rotation.w = pose.orientation[3];
-  transform->header.stamp.fromSec(pose.timestamp + time_offset);
 }
 
 void toPointCloud2(const TangoPointCloud& tango_point_cloud,
