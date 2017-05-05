@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
    dynamic_reconfigure
    glog_catkin
    image_geometry
+   image_transport
    roscpp
    sensor_msgs
    tango_3d_reconstruction
@@ -32,7 +33,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support_api tf tf2_ros
+  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry image_transport roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support_api tf tf2_ros
   LIBRARIES tango_ros_native
   DEPENDS OpenCV
   )
@@ -62,3 +63,8 @@ install(TARGETS tango_ros_native
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(${PROJECT_NAME}_test test/test_tango_ros_msg.cpp)
+  target_link_libraries(${PROJECT_NAME}_test tango_ros_native)
+endif()
