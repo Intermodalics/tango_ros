@@ -574,11 +574,6 @@ void TangoRosNode::PublishStaticTransforms() {
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
-  device_T_imu.header.frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE);
-  device_T_imu.child_frame_id =
-      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_IMU);
-//  device_T_imu.header.stamp = ros::Time::now();
   tf_static_broadcaster_.sendTransform(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
