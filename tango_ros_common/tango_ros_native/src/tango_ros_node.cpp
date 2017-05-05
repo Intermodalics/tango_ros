@@ -351,7 +351,9 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
-  result = TangoConfig_setBool(tango_config_, config_enable_depth, true);
+  bool enable_depth;
+  node_handle_.param<bool>(ENABLE_DEPTH, enable_depth, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_depth, enable_depth);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_depth << " error: " << result;

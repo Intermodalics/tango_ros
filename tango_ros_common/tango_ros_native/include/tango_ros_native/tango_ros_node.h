@@ -77,6 +77,7 @@ const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
+const std::string ENABLE_DEPTH = "enable_depth";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 

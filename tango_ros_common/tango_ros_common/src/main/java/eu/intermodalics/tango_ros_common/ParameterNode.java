@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.intermodalics.tango_ros_streamer.nodes;
+package eu.intermodalics.tango_ros_common;
 
 import android.app.Activity;
 import android.content.SharedPreferences;

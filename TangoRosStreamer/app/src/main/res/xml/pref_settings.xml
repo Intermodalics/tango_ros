@@ -39,6 +39,12 @@
         <eu.intermodalics.tango_ros_streamer.android.MapChooserPreference
             android:title="Choose localization map"
             android:key="@string/pref_localization_map_uuid_key" />
+        <SwitchPreference
+            android:title="@string/pref_enable_depth"
+            android:key="@string/pref_enable_depth_key"
+            android:defaultValue="true"
+            android:disableDependentsState="true"
+            android:summary="@string/pref_enable_depth_summary" />
     </PreferenceCategory>
 
 
