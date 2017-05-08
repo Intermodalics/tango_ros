@@ -638,7 +638,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
         pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       LOG(INFO) << function_name << "New device pose available in start of service frame.";
-      LOG(INFO) << function_name << "Valid pose: " << pose->status_code == TANGO_POSE_VALID;
+      LOG(INFO) << function_name << "Valid pose: " << (pose->status_code == TANGO_POSE_VALID);
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
         LOG(INFO) << function_name << "New pose is valid and pose thread mutex is locked.";
