@@ -209,6 +209,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   bool publish_pose_on_tf_ = false;
   bool publish_pose_on_topic_ = false;
+  bool enable_depth_ = true;
 
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Publisher start_of_service_T_device_publisher_;
