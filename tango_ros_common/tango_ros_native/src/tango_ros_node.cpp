@@ -235,9 +235,9 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
-    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
+    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, true);
   } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
+    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, true);
   }
 }
 
