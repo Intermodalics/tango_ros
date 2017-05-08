@@ -239,6 +239,11 @@ void TangoRosNode::onInit() {
   } else {
     node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
   }
+  if (node_handle_.hasParam(ENABLE_DEPTH)) {
+    node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
+  } else {
+    node_handle_.setParam(ENABLE_DEPTH, true);
+  }
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -351,7 +356,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
-  result = TangoConfig_setBool(tango_config_, config_enable_depth, true);
+  node_handle_.param<bool>(ENABLE_DEPTH, enable_depth_, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_depth, enable_depth_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_depth << " error: " << result;

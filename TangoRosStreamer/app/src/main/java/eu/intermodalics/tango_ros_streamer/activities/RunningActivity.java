@@ -67,7 +67,7 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
-import eu.intermodalics.tango_ros_streamer.nodes.ParameterNode;
+import eu.intermodalics.tango_ros_common.ParameterNode;
 import eu.intermodalics.tango_ros_streamer.R;
 import eu.intermodalics.tango_ros_streamer.android.SaveMapDialog;
 import tango_ros_messages.TangoConnectRequest;
@@ -511,6 +511,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         }
         HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
         tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
+        tangoConfigurationParameters.put(getString(R.string.pref_enable_depth_key), "boolean");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_mode_key), "int_as_string");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
