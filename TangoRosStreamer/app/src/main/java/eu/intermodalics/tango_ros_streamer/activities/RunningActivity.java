@@ -122,6 +122,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
     private BroadcastReceiver mRestartTangoAlertReceiver;
+    private boolean mAdfPermissionHasBeenAsked = false;
+    private boolean mDatasetPermissionHasBeenAsked = false;
 
     // UI objects.
     private TextView mUriTextView;
@@ -495,7 +497,13 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
             }
-            if (requestCode == REQUEST_CODE_DATASET_PERMISSION) {
+            if (requestCode == REQUEST_CODE_ADF_PERMISSION) {
+                mAdfPermissionHasBeenAsked = true;
+            }
+            if (requestCode ==  REQUEST_CODE_DATASET_PERMISSION) {
+                mDatasetPermissionHasBeenAsked = true;
+            }
+            if (mAdfPermissionHasBeenAsked && mDatasetPermissionHasBeenAsked) {
                 Log.i(TAG, "initAndStartRosJavaNode");
                 initAndStartRosJavaNode();
             }
