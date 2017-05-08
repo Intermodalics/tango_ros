@@ -122,8 +122,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
     private BroadcastReceiver mRestartTangoAlertReceiver;
-    private boolean mAdfPermissionHasBeenAsked = false;
-    private boolean mDatasetPermissionHasBeenAsked = false;
+    // True after the user answered the ADF permission popup (the permission has not been necessarily granted).
+    private boolean mAdfPermissionHasBeenAnswered = false;
+    // True after the user answered the dataset permission popup (the permission has not been necessarily granted).
+    private boolean mDatasetPermissionHasBeenAnswered = false;
 
     // UI objects.
     private TextView mUriTextView;
@@ -498,12 +500,16 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 displayToastMessage(R.string.tango_permission_denied);
             }
             if (requestCode == REQUEST_CODE_ADF_PERMISSION) {
-                mAdfPermissionHasBeenAsked = true;
+                // The user answered the ADF permission popup (the permission has not been necessarily granted).
+                mAdfPermissionHasBeenAnswered = true;
             }
             if (requestCode ==  REQUEST_CODE_DATASET_PERMISSION) {
-                mDatasetPermissionHasBeenAsked = true;
+                // The user answered the dataset permission popup (the permission has not been necessarily granted).
+                mDatasetPermissionHasBeenAnswered = true;
             }
-            if (mAdfPermissionHasBeenAsked && mDatasetPermissionHasBeenAsked) {
+            if (mAdfPermissionHasBeenAnswered && mDatasetPermissionHasBeenAnswered) {
+                // Both ADF and dataset permissions popup have been answered by the user, the node
+                // can start.
                 Log.i(TAG, "initAndStartRosJavaNode");
                 initAndStartRosJavaNode();
             }
