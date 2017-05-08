@@ -1154,12 +1154,14 @@ std::string TangoRosNode::GetAvailableMapUuidsList() {
   char* uuid_list;
   TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
   if (result != TANGO_SUCCESS) {
-    LOG(INFO) << "Error while retrieving all available map UUIDs, error: " << result;
+    LOG(ERROR) << "Error while retrieving all available map UUIDs, error: " << result;
+    return "";
   }
   if (uuid_list != NULL && uuid_list[0] != '\0') {
     LOG(INFO) << "UUID list: " << uuid_list;
   } else {
     LOG(ERROR) << "No area description file available.";
+    return "";
   }
   return std::string(uuid_list);
 }
