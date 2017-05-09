@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <objectAnimator
+        android:propertyName="textColor"
+        android:valueFrom="#676767"
+        android:valueTo="#FF0000"
+        android:interpolator="@android:anim/linear_interpolator"
+        android:valueType="colorType"
+        android:repeatCount="3"
+        android:repeatMode="reverse"
+        android:duration="400"
+        />
+
+</set>

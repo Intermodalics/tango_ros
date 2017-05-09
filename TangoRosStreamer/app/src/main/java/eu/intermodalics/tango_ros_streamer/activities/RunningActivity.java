@@ -16,6 +16,8 @@
 
 package eu.intermodalics.tango_ros_streamer.activities;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
@@ -30,6 +32,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
 import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
@@ -135,6 +138,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
     private Button mSaveMapButton;
+    private Snackbar mSnackbarRosReconnection;
+    Menu mToolbarMenu;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -193,9 +198,34 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 if (status == RosStatus.UNKNOWN) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
                 } else if (status == RosStatus.NODE_RUNNING) {
+                    // Turn ROS light to green.
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
+                    // Dismiss ROS reconnection snackbar if necessary.
+                    if (mSnackbarRosReconnection != null && mSnackbarRosReconnection.isShown()) {
+                        mSnackbarRosReconnection.dismiss();
+                    }
+                    // Set settings icon color to white.
+                    mToolbarMenu.findItem(R.id.settings).setIcon(R.drawable.ic_settings_white_24dp);
                 } else if (status == RosStatus.MASTER_NOT_CONNECTED) {
+                    // Turn ROS light to red.
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
+                    // Show snackbar for ROS reconnection.
+                    mSnackbarRosReconnection = Snackbar.make(findViewById(android.R.id.content),
+                            getString(R.string.snackbar_text_reconnect_ros), Snackbar.LENGTH_INDEFINITE);
+                    mSnackbarRosReconnection.setAction(getString(R.string.snackbar_action_text_reconnect_ros),
+                            new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    initAndStartRosJavaNode();
+                                }
+                            });
+                    mSnackbarRosReconnection.show();
+                    // Highlight ROS Master URI.
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(RunningActivity.this, R.animator.master_uri_text_animation);
+                    set.setTarget(mUriTextView);
+                    set.start();
+                    // Set settings icon color to red.
+                    mToolbarMenu.findItem(R.id.settings).setIcon(R.drawable.ic_settings_red_24dp);
                 }
             }
         });
@@ -433,6 +463,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
+        mToolbarMenu = menu;
         return true;
     }
 
