@@ -122,10 +122,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
     private BroadcastReceiver mRestartTangoAlertReceiver;
-    // True after the user answered the ADF permission popup (the permission has not been necessarily granted).
-    private boolean mAdfPermissionHasBeenAnswered = false;
-    // True after the user answered the dataset permission popup (the permission has not been necessarily granted).
-    private boolean mDatasetPermissionHasBeenAnswered = false;
 
     // UI objects.
     private TextView mUriTextView;
@@ -380,6 +376,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             saveUuidsNamestoHashMap();
             mParameterNode.setPreferencesFromParameterServer();
             mMapSaved = false;
+            if (mParameterNode.getBoolParam(getString(R.string.pref_create_new_map_key)) ||
+                    mParameterNode.getIntParam(getString(R.string.pref_localization_mode_key)) == 3)
+                getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
+            if (!mParameterNode.getStringParam(getString(R.string.dataset_datasets_path_key)).isEmpty() &&
+                    !mParameterNode.getStringParam(getString(R.string.dataset_uuid_key)).isEmpty())
+                getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
         }
         updateSaveMapButton();
         updateTangoStatus(TangoStatus.values()[status]);
@@ -483,9 +485,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 mLogger.start();
-                getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
-                getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
                 updateSaveMapButton();
+                initAndStartRosJavaNode();
             } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
@@ -499,21 +500,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
             }
-            if (requestCode == REQUEST_CODE_ADF_PERMISSION) {
-                // The user answered the ADF permission popup (the permission has not been necessarily granted).
-                mAdfPermissionHasBeenAnswered = true;
-            }
-            if (requestCode ==  REQUEST_CODE_DATASET_PERMISSION) {
-                // The user answered the dataset permission popup (the permission has not been necessarily granted).
-                mDatasetPermissionHasBeenAnswered = true;
-            }
-            if (mAdfPermissionHasBeenAnswered && mDatasetPermissionHasBeenAnswered) {
-                // Both ADF and dataset permissions popup have been answered by the user, the node
-                // can start.
-                Log.i(TAG, "initAndStartRosJavaNode");
-                initAndStartRosJavaNode();
-            }
-
         }
     }
 
@@ -599,8 +585,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         boolean appPreviouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
         if (appPreviouslyStarted) {
             mLogger.start();
-            getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
-            getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
+            initAndStartRosJavaNode();
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
@@ -611,6 +596,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
      * This function initializes the tango ros node with RosJava interface.
      */
     private void initAndStartRosJavaNode() {
+        Log.i(TAG, "initAndStartRosJavaNode");
         this.nodeMainExecutorService.addListener(new NodeMainExecutorServiceListener() {
             @Override
             public void onShutdown(NodeMainExecutorService nodeMainExecutorService) {
