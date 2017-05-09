@@ -39,11 +39,14 @@
         <eu.intermodalics.tango_ros_streamer.android.MapChooserPreference
             android:title="Choose localization map"
             android:key="@string/pref_localization_map_uuid_key" />
-        <SwitchPreference
+        <!-- Use CheckBoxPreference rather than SwitchPreference,
+        having multiple SwitchPreference is not working properly in Android 4.4.2
+        (version used by the Tango Development Kit device):
+        http://stackoverflow.com/questions/17664259/android-switchpreference-not-working-correctly-in-4-2-2 -->
+        <CheckBoxPreference
             android:title="@string/pref_enable_depth"
             android:key="@string/pref_enable_depth_key"
             android:defaultValue="true"
-            android:disableDependentsState="true"
             android:summary="@string/pref_enable_depth_summary" />
     </PreferenceCategory>
 
