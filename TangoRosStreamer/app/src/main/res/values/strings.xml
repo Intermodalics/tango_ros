@@ -10,8 +10,7 @@
     <string name="snackbar_text_restart_tango">You will need to restart Tango to apply these new settings</string>
     <string name="snackbar_action_text_restart_tango">RESTART TANGO</string>
     <string name="snackbar_text_reconnect_ros">Connection to ROS Master failed.</string>
-    <string name="snackbar_action_text_reconnect_ros">Reconnect ROS.</string>
-    <string name="tango_permission_denied">Be aware that you will not be able to use all functionalities from TangoRosStreamer</string>
+    <string name="snackbar_action_text_reconnect_ros">RECONNECT ROS.</string>
 
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">
@@ -26,11 +25,12 @@
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
     <string name="uuids_names_map">uuids_names_map</string>
+    <string name="ros_status">ros_status</string>
 
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
-    <string name="ros_init_error">Unable to initialize ROS node. Do you have a roscore running?</string>
+    <string name="ros_init_error">Unable to initialize ROS nodes. Do you have a roscore running?</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
@@ -38,23 +38,7 @@
     <string name="map_name_error">Please enter a valid name to save a map</string>
     <string name="save_map_error">Unable to save the map</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
-
-    <!-- Strings related to running preferences -->
-
-    <string name="publish_device_pose">Device pose</string>
-    <string name="publish_device_pose_key">publish_device_pose</string>
-
-    <string name="publish_point_cloud">Point cloud</string>
-    <string name="publish_point_cloud_key">publish_point_cloud</string>
-
-    <string name="publish_laser_scan">Laser scan</string>
-    <string name="publish_laser_scan_key">publish_laser_scan</string>
-
-    <string name="publish_fisheye_camera">Fisheye image</string>
-    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
-
-    <string name="publish_color_camera">Color image</string>
-    <string name="publish_color_camera_key">publish_color_camera</string>
+    <string name="tango_permission_denied">Be aware that you will not be able to use all functionalities from TangoRosStreamer</string>
 
     <!-- Strings related to settings preferences -->
     

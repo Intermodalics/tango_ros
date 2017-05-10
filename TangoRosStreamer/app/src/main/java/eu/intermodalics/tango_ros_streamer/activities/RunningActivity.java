@@ -62,12 +62,14 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import eu.intermodalics.nodelet_manager.TangoNodeletManager;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoServiceConnection;
 
 import eu.intermodalics.tango_ros_common.Logger;
+import eu.intermodalics.tango_ros_common.MasterConnectionChecker;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
 import eu.intermodalics.tango_ros_common.ParameterNode;
@@ -76,7 +78,7 @@ import eu.intermodalics.tango_ros_streamer.android.SaveMapDialog;
 import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
-public class RunningActivity extends AppCompatRosActivity implements TangoNodeletManager.CallbackListener,
+public class RunningActivity extends AppCompatRosActivity implements
         SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
@@ -100,7 +102,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     enum RosStatus {
         UNKNOWN,
         MASTER_NOT_CONNECTED,
-        NODE_RUNNING
+        MASTER_CONNECTED
     }
 
     // Symmetric implementation to tango_ros_node.h.
@@ -115,6 +117,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     private TangoNodeletManager mTangoNodeletManager;
     private boolean mRunLocalMaster = false;
     private String mMasterUri = "";
+    private CountDownLatch mRosConnectionLatch;
     private ParameterNode mParameterNode;
     private TangoServiceClientNode mTangoServiceClientNode;
     private ImuNode mImuNode;
@@ -173,22 +176,14 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         }
     );
 
-    /**
-     * Implements TangoRosNode.CallbackListener.
-     */
-    public void onNodeletManagerError(int returnCode) {
-        if (returnCode == TangoNodeletManager.ROS_CONNECTION_ERROR) {
-            updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
-            Log.e(TAG, getString(R.string.ros_init_error));
-            displayToastMessage(R.string.ros_init_error);
-        }
-    }
-
     private void updateRosStatus(RosStatus status) {
         if (mRosStatus != status) {
             mRosStatus = status;
-            switchRosLight(status);
         }
+        switchRosLight(status);
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putInt(getString(R.string.ros_status), status.ordinal());
+        editor.commit();
     }
 
     private void switchRosLight(final RosStatus status) {
@@ -197,7 +192,7 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             public void run() {
                 if (status == RosStatus.UNKNOWN) {
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
-                } else if (status == RosStatus.NODE_RUNNING) {
+                } else if (status == RosStatus.MASTER_CONNECTED) {
                     // Turn ROS light to green.
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
                     // Dismiss ROS reconnection snackbar if necessary.
@@ -216,9 +211,15 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                             new View.OnClickListener() {
                                 @Override
                                 public void onClick(View view) {
+                                    mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
+                                            getResources().getString(R.string.pref_master_uri_default));
+                                    mUriTextView.setText(mMasterUri);
                                     initAndStartRosJavaNode();
                                 }
-                            });
+                            }
+                    );
+                    View snackBarView = mSnackbarRosReconnection.getView();
+                    snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
                     mSnackbarRosReconnection.show();
                     // Highlight ROS Master URI.
                     AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(RunningActivity.this, R.animator.master_uri_text_animation);
@@ -522,6 +523,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
+                if (mRosStatus == RosStatus.MASTER_NOT_CONNECTED && mSnackbarRosReconnection != null) {
+                    // Show the snackbar to reconnect to ROS master.
+                    // It was dismissed when switching to the SettingsActivity.
+                   mSnackbarRosReconnection.show();
+                }
             }
         }
 
@@ -548,6 +554,32 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
         }
     }
 
+    /**
+     * Attempts a connection to the configured ROS Master URI, handling ROS status.
+     */
+    private void checkRosMasterConnection() {
+        updateRosStatus(RosStatus.UNKNOWN);
+        mRosConnectionLatch = new CountDownLatch(1);
+        new MasterConnectionChecker(mMasterUri.toString(),
+                new MasterConnectionChecker.UserHook() {
+                    @Override
+                    public void onSuccess(Object o) {
+                        updateRosStatus(RosStatus.MASTER_CONNECTED);
+                        mRosConnectionLatch.countDown();
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        updateRosStatus(RosStatus.MASTER_NOT_CONNECTED);
+                        Log.e(TAG, getString(R.string.ros_init_error));
+                        displayToastMessage(R.string.ros_init_error);
+                        mRosConnectionLatch.countDown();
+                    }},
+                mRosConnectionLatch
+        ).runTest();
+        waitForLatchUnlock(mRosConnectionLatch, "ROS CONNECTION");
+    }
+
     @Override
     protected void init(NodeMainExecutor nodeMainExecutor) {
         NodeConfiguration nodeConfiguration;
@@ -559,6 +591,11 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             displayToastMessage(R.string.network_error);
             return;
         }
+        checkRosMasterConnection();
+        if (mRosStatus == RosStatus.MASTER_NOT_CONNECTED) {
+            return;
+        }
+
         HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
         tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
         tangoConfigurationParameters.put(getString(R.string.pref_enable_depth_key), "boolean");
@@ -582,7 +619,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                 TangoInitializationHelper.loadTangoRosNodeSharedLibrary()
                         != TangoInitializationHelper.ARCH_ERROR) {
             mTangoNodeletManager = new TangoNodeletManager();
-            mTangoNodeletManager.attachCallbackListener(this);
             TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
             if (TangoInitializationHelper.isTangoVersionOk()) {
                 nodeMainExecutor.execute(mTangoNodeletManager, nodeConfiguration, new ArrayList<NodeListener>(){{
@@ -607,7 +643,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                         }
                     });
                 }});
-                updateRosStatus(RosStatus.NODE_RUNNING);
             } else {
                 updateTangoStatus(TangoStatus.SERVICE_NOT_CONNECTED);
                 Log.e(TAG, getResources().getString(R.string.tango_version_error));
@@ -681,6 +716,21 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             }.execute();
         } else {
             Log.e(TAG, "Master URI is null");
+        }
+    }
+
+    /**
+     * Helper method to block the calling thread until the latch is zeroed by some other task.
+     * @param latch Latch to wait for.
+     * @param latchName Name to be used in log messages for the given latch.
+     */
+    private void waitForLatchUnlock(CountDownLatch latch, String latchName) {
+        try {
+            Log.i(TAG, "Waiting for " + latchName + " latch release...");
+            latch.await();
+            Log.i(TAG, latchName + " latch released!");
+        } catch (InterruptedException ie) {
+            Log.w(TAG, "Warning: continuing before " + latchName + " latch was released");
         }
     }
 }
