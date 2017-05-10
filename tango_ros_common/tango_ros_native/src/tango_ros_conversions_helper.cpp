@@ -22,7 +22,8 @@ namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
                         geometry_msgs::TransformStamped* transform) {
-  transform->header.stamp.fromSec(pose.timestamp + time_offset);
+  //transform->header.stamp.fromSec(pose.timestamp + time_offset);
+  transform->header.stamp = ros::Time::now();
   transform->header.frame_id = toFrameId(pose.frame.base);
   transform->child_frame_id = toFrameId(pose.frame.target);
 
@@ -63,7 +64,8 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
   }
-  point_cloud->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
+  //point_cloud->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
+  point_cloud->header.stamp = ros::Time::now();
 }
 
 void toLaserScanRange(double x, double y, double z, double min_height,
@@ -111,7 +113,8 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
     toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
                      min_height, max_height, laser_scan);
   }
-  laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
+  //laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
+  laser_scan->header.stamp = ros::Time::now();
 }
 
 std::string toFrameId(const TangoCoordinateFrameType& tango_frame_type) {

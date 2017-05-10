@@ -269,7 +269,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
+  time_offset_ =  0.0; //ros::Time::now().toSec() - pose.timestamp;
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -697,7 +697,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_thread_.data_available_mutex.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    //fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    fisheye_image_header_.stamp = ros::Time::now();
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
@@ -709,7 +710,8 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_thread_.data_available_mutex.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    //color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
+    color_image_header_.stamp = ros::Time::now();
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
