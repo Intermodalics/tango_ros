@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="eu.intermodalics.tango_ros_streamer"
-    android:versionCode="18"
+    android:versionCode="19"
     android:versionName="1.1">
 
     <uses-permission android:name="android.permission.CAMERA" />
