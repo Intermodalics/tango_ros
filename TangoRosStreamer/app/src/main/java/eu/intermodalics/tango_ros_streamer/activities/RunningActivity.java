@@ -142,7 +142,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private TextView mLogTextView;
     private Button mSaveMapButton;
     private Snackbar mSnackbarRosReconnection;
-    Menu mToolbarMenu;
+    private Menu mToolbarMenu;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -204,7 +204,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 } else if (status == RosStatus.MASTER_NOT_CONNECTED) {
                     // Turn ROS light to red.
                     mRosLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
-                    // Show snackbar for ROS reconnection.
+                    // Show snackbar with ROS reconnection button.
                     mSnackbarRosReconnection = Snackbar.make(findViewById(android.R.id.content),
                             getString(R.string.snackbar_text_reconnect_ros), Snackbar.LENGTH_INDEFINITE);
                     mSnackbarRosReconnection.setAction(getString(R.string.snackbar_action_text_reconnect_ros),
@@ -524,7 +524,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                         getString(R.string.pref_log_file_default));
                 mLogger.setLogFileName(logFileName);
                 if (mRosStatus == RosStatus.MASTER_NOT_CONNECTED && mSnackbarRosReconnection != null) {
-                    // Show the snackbar to reconnect to ROS master.
+                    // Show snackbar with ROS reconnection button.
                     // It was dismissed when switching to the SettingsActivity.
                    mSnackbarRosReconnection.show();
                 }
