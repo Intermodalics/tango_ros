@@ -134,6 +134,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mDatasetPermissionHasBeenAnswered = false;
 
     // UI objects.
+    private Menu mToolbarMenu;
     private TextView mUriTextView;
     private ImageView mRosLightImageView;
     private ImageView mTangoLightImageView;
@@ -141,8 +142,8 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
     private Button mSaveMapButton;
+    private Snackbar mSnackbarLoadNewMap;
     private Snackbar mSnackbarRosReconnection;
-    private Menu mToolbarMenu;
 
     public RunningActivity() {
         super("TangoRosStreamer", "TangoRosStreamer");
@@ -336,18 +337,32 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     @Override
-    public void onSaveMapServiceCallFinish(boolean success, String message) {
+    public void onSaveMapServiceCallFinish(boolean success, final String message,
+                                           final String mapName, final String mapUuid) {
         if (success) {
             mMapSaved = true;
+            displayToastMessage(R.string.save_map_success);
+            saveUuidsNamestoHashMap();
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mSaveMapButton.setEnabled(!mMapSaved);
+                    mSnackbarLoadNewMap = Snackbar.make(findViewById(android.R.id.content),
+                            getString(R.string.snackbar_text_load_new_map), Snackbar.LENGTH_INDEFINITE);
+                    mSnackbarLoadNewMap.setAction(getString(R.string.snackbar_action_text_load_new_map), new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            SharedPreferences.Editor editor = mSharedPref.edit();
+                            editor.putBoolean(getString(R.string.pref_create_new_map_key), false);
+                            editor.putString(getString(R.string.pref_localization_mode_key), "3");
+                            editor.putString(getString(R.string.pref_localization_map_uuid_key), mapUuid);
+                            editor.commit();
+                            restartTango();
+                        }
+                    });
+                    mSnackbarLoadNewMap.show();
                 }
             });
-            displayToastMessage(R.string.save_map_success);
-            // Restart Tango to be able to load the new map.
-            saveUuidsNamestoHashMap();
         } else {
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
@@ -396,9 +411,6 @@ public class RunningActivity extends AppCompatRosActivity implements
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
-        if (mMapSaved) {
-            mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.DISCONNECT);
-        }
     }
 
     @Override
@@ -411,6 +423,9 @@ public class RunningActivity extends AppCompatRosActivity implements
             saveUuidsNamestoHashMap();
             mParameterNode.setPreferencesFromParameterServer();
             mMapSaved = false;
+            if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
+                mSnackbarLoadNewMap.dismiss();
+            }
         }
         updateSaveMapButton();
         updateTangoStatus(TangoStatus.values()[status]);
@@ -433,9 +448,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         mRestartTangoAlertReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                mParameterNode.uploadPreferencesToParameterServer();
-                updateSaveMapButton();
-                mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
+                restartTango();
             }
         };
         this.registerReceiver(this.mRestartTangoAlertReceiver, new IntentFilter(RESTART_TANGO_ALERT));
@@ -574,10 +587,17 @@ public class RunningActivity extends AppCompatRosActivity implements
                         Log.e(TAG, getString(R.string.ros_init_error));
                         displayToastMessage(R.string.ros_init_error);
                         mRosConnectionLatch.countDown();
-                    }},
+                    }
+                },
                 mRosConnectionLatch
         ).runTest();
         waitForLatchUnlock(mRosConnectionLatch, "ROS CONNECTION");
+    }
+
+    private void restartTango() {
+        mParameterNode.uploadPreferencesToParameterServer();
+        updateSaveMapButton();
+        mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 
     @Override
@@ -604,7 +624,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-        // ServiceClient node which is responsible for calling the "save map" service.
+        // ServiceClient node which is responsible for calling ros services.
         mTangoServiceClientNode = new TangoServiceClientNode(this);
         nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
         nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);

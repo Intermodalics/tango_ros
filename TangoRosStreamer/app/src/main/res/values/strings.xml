@@ -11,6 +11,9 @@
     <string name="snackbar_action_text_restart_tango">RESTART TANGO</string>
     <string name="snackbar_text_reconnect_ros">Connection to ROS Master failed.</string>
     <string name="snackbar_action_text_reconnect_ros">RECONNECT ROS.</string>
+    <string name="snackbar_text_load_new_map">You can now load your new map and localize in it.</string>
+    <string name="snackbar_action_text_load_new_map">LOAD AND LOCALIZE</string>
+
 
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">
