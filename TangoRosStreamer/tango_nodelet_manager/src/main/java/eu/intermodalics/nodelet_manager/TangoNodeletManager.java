@@ -11,27 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TangoNodeletManager extends NativeNodeMain {
-    // TODO(mcopejans) Move constants below to separate package.
-    public static final int ROS_CONNECTION_ERROR = 1;
-    public static final String ROS_CONNECTION_FAILURE_ERROR_MSG = "ECONNREFUSED";
-    public static final String ROS_CONNECTION_UNREACHABLE_ERROR_MSG = "ENETUNREACH";
-    public static final String ROS_CONNECTION_TIMEOUT_ERROR_MSG = "No response after waiting for 10000 milliseconds.";
-    public static final String ROS_WRONG_HOST_NAME_ERROR_MSG = "No address associated with hostname";
-
     // Node specific.
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "nodelet_manager";
 
-    private List<String> mErrorMessages;
-    private CallbackListener mCallbackListener;
-
     public TangoNodeletManager() {
         super(DEFAULT_LIB_NAME);
-        mErrorMessages = Arrays.asList(
-                ROS_CONNECTION_FAILURE_ERROR_MSG,
-                ROS_CONNECTION_UNREACHABLE_ERROR_MSG,
-                ROS_CONNECTION_TIMEOUT_ERROR_MSG,
-                ROS_WRONG_HOST_NAME_ERROR_MSG);
     }
 
     public TangoNodeletManager(String libName) {
@@ -58,36 +43,8 @@ public class TangoNodeletManager extends NativeNodeMain {
     @Override
     public native int shutdown();
 
-    public interface CallbackListener {
-        void onNodeletManagerError(int returnCode);
-    }
-
-    public void attachCallbackListener(CallbackListener callbackListener) {
-        mCallbackListener = callbackListener;
-    }
-
     @Override
     public GraphName getDefaultNodeName() {
         return GraphName.of(NODE_NAME);
-    }
-
-    @Override
-    public void onError(Node node, Throwable throwable) {
-        super.onError(node, throwable);
-        for (String errorMessage : mErrorMessages) {
-            if (throwable.getMessage().contains(errorMessage)) {
-                executeOnErrorHook(ROS_CONNECTION_ERROR);
-                return;
-            }
-        }
-        if (this.executeReturnCode != 0) {
-            executeOnErrorHook(this.executeReturnCode);
-        }
-    }
-
-    private void executeOnErrorHook(int returnCode) {
-        if (mCallbackListener != null) {
-            mCallbackListener.onNodeletManagerError(returnCode);
-        }
     }
 }
