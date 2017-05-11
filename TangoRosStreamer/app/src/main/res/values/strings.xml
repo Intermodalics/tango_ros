@@ -41,7 +41,7 @@
     <string name="map_name_error">Please enter a valid name to save a map</string>
     <string name="save_map_error">Unable to save the map</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
-    <string name="tango_permission_denied">Be aware that you will not be able to use all functionalities from TangoRosStreamer</string>
+    <string name="tango_permission_denied">Requested permission denied: connection to Tango can fail and some functionalities will not work properly.</string>
 
     <!-- Strings related to settings preferences -->
     

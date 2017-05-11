@@ -281,7 +281,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), messageId, Toast.LENGTH_LONG).show();
             }
         });
     }
