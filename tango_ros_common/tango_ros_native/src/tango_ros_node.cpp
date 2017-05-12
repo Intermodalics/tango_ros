@@ -235,9 +235,9 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
-    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
+    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, true);
   } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
+    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, true);
   }
   if (node_handle_.hasParam(ENABLE_DEPTH)) {
     node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
@@ -616,11 +616,18 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
+  const char* function_name = "TangoRosNode::OnPoseAvailable ";
+  LOG(INFO) << function_name << "Entering OnPoseAvailable callback.";
   if (publish_pose_on_tf_ || publish_pose_on_topic_) {
+    LOG(INFO) << function_name << "publish_pose_on_tf: " << publish_pose_on_tf_
+        << "\n" << "publish_pose_on_topic: " << publish_pose_on_topic_;
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
         pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
+      LOG(INFO) << function_name << "New device pose available in start of service frame.";
+      LOG(INFO) << function_name << "Valid pose: " << (pose->status_code == TANGO_POSE_VALID);
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
+        LOG(INFO) << function_name << "New pose is valid and pose thread mutex is locked.";
         tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
                                                  &start_of_service_T_device_);
         TangoCoordinateFramePair pair;
@@ -632,7 +639,9 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
                              time_offset_, &area_description_T_start_of_service_);
         }
+        LOG(INFO) << function_name << "Unlocking pose thread mutex.";
         device_pose_thread_.data_available_mutex.unlock();
+        LOG(INFO) << function_name << "Notifying new pose available.";
         device_pose_thread_.data_available.notify_all();
       }
     }
@@ -815,14 +824,20 @@ void TangoRosNode::StopPublishing() {
 }
 
 void TangoRosNode::PublishDevicePose() {
+  const char* function_name = "TangoRosNode::PublishDevicePose ";
+  LOG(INFO) << function_name << "Starting device pose thread.";
   while(ros::ok()) {
     if (!run_threads_) {
       break;
     }
     {
+      LOG(INFO) << function_name << "Creating lock for device pose thread.";
       std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
+      LOG(INFO) << function_name << "Waiting for new pose available.";
       device_pose_thread_.data_available.wait(lock);
+      LOG(INFO) << function_name << "New pose available.";
       if (publish_pose_on_tf_) {
+        LOG(INFO) << function_name << "Publishing device pose on /tf.";
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
           // This transform can be empty. Don't publish it in this case.
@@ -830,6 +845,7 @@ void TangoRosNode::PublishDevicePose() {
         }
       }
       if (publish_pose_on_topic_) {
+        LOG(INFO) << function_name << "Publishing device pose on topic.";
         start_of_service_T_device_publisher_.publish(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
           // This transform can be empty. Don't publish it in this case.
