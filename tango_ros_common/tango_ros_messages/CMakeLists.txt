@@ -11,6 +11,7 @@ add_service_files(
   FILES
   GetMapName.srv
   GetMapUuids.srv
+  MapIO.srv
   SaveMap.srv
   TangoConnect.srv
 )
@@ -39,6 +40,9 @@ set(file_names_to_copy
   GetMapUuids
   GetMapUuidsRequest
   GetMapUuidsResponse
+  MapIO
+  MapIORequest
+  MapIOResponse
   SaveMap
   SaveMapRequest
   SaveMapResponse

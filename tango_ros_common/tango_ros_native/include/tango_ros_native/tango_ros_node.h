@@ -40,6 +40,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
+#include <tango_ros_messages/MapIO.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -81,8 +82,10 @@ const std::string ENABLE_DEPTH = "enable_depth";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 
+const std::string EXPORT_MAP_SERVICE_NAME = "export_map";
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
+const std::string IMPORT_MAP_SERVICE_NAME = "import_map";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
@@ -177,6 +180,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // Function called when one of the dynamic reconfigure parameter is changed.
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
+  // Function called when the ExportMap service is called.
+  // Export the map (ADF) with the given UUID to the given location.
+  bool ExportMap(tango_ros_messages::MapIO::Request &req,
+               tango_ros_messages::MapIO::Response &res);
   // ROS service callback to get the user readable name from a given UUID.
   bool GetMapName(const tango_ros_messages::GetMapName::Request& req,
                   tango_ros_messages::GetMapName::Response &res);
@@ -184,6 +191,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // user readable map names.
   bool GetMapUuids(const tango_ros_messages::GetMapUuids::Request &req,
                    tango_ros_messages::GetMapUuids::Response &res);
+  // Function called when the ImportMap service is called.
+  // Import the map (ADF) on the given location and with the given UUID.
+  bool ImportMap(tango_ros_messages::MapIO::Request &req,
+               tango_ros_messages::MapIO::Response &res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMap(tango_ros_messages::SaveMap::Request &req,
@@ -266,8 +277,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   bool use_floor_plan_ = false;
 
+  ros::ServiceServer export_map_service_;
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
+  ros::ServiceServer import_map_service_;
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
 };

@@ -195,6 +195,10 @@ void TangoRosNode::onInit() {
       node_handle_.advertise<visualization_msgs::MarkerArray>(
           COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
+  export_map_service_ = node_handle_.advertiseService<tango_ros_messages::MapIO::Request,
+      tango_ros_messages::MapIO::Response>(EXPORT_MAP_SERVICE_NAME,
+                                             boost::bind(&TangoRosNode::ExportMap, this, _1, _2));
+
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
@@ -202,6 +206,10 @@ void TangoRosNode::onInit() {
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
       tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
+
+  import_map_service_ = node_handle_.advertiseService<tango_ros_messages::MapIO::Request,
+      tango_ros_messages::MapIO::Response>(IMPORT_MAP_SERVICE_NAME,
+                                             boost::bind(&TangoRosNode::ImportMap, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
@@ -1081,6 +1089,21 @@ bool TangoRosNode::TangoConnectServiceCallback(
     return true;
 }
 
+bool TangoRosNode::ExportMap(tango_ros_messages::MapIO::Request &req,
+                           tango_ros_messages::MapIO::Response &res) {
+  TangoErrorType result;
+  TangoUUID map_uuid;
+  result = TangoService_exportAreaDescription(map_uuid, req.path.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while exporting area description, error: " << result;
+    res.message =  "Could not export the map."
+        "Did you provide a valid path to a folder?";
+    res.success = false;
+    return true;
+  }
+  return true;  
+}
+
 bool TangoRosNode::GetMapName(
     const tango_ros_messages::GetMapName::Request &req,
     tango_ros_messages::GetMapName::Response &res) {
@@ -1095,6 +1118,21 @@ bool TangoRosNode::GetMapUuids(
   for (const std::string uuid : res.map_uuids) {
     res.map_names.push_back(GetMapNameFromUuid(uuid));
   }
+}
+
+bool TangoRosNode::ImportMap(tango_ros_messages::MapIO::Request &req,
+                           tango_ros_messages::MapIO::Response &res) {
+  TangoErrorType result;
+  TangoUUID map_uuid;
+  result = TangoService_importAreaDescription(req.path.c_str(), &map_uuid);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while importing area description, error: " << result;
+    res.message =  "Could not import the map."
+        "Did you provide a valid path to a map ADF file?";
+    res.success = false;
+    return true;
+  }
+  return true;  
 }
 
 bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,

@@ -1,0 +1,6 @@
+string map_uuid
+#source file path for import or destination directory for export
+string path
+---
+string message
+bool success
