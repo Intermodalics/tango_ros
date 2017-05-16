@@ -78,6 +78,7 @@ In this file, write the path to your Android SDK and NDK in the following way e.
 ndk.dir=/opt/android-ndk-r10b
 sdk.dir=/opt/android-sdk-linux
 ```
+If you haven't installed the SDK and NDK already, follow the instructions in section 'Building the app with Android Studio'.
 
 Install catkin tools if necessary.
 ```
@@ -88,6 +89,7 @@ Build the app and generate its .apk file.
 ```
 catkin build --no-jobserver
 ``` 
+or use Android Studio to build (and install).
 
 Plug your device to your desktop and install the app on your device using [adb](http://developer.android.com/studio/command-line/adb.html).
 ```
@@ -136,7 +138,7 @@ source ~/tango_ros_ws/devel/setup.bash
 studio.sh
 ```
 
-After launch, open the Configure -- SDK Manager. From SDK Platforms, install Android 4.4 and 5.1 (API level 19 + 22). From SDK Tools, install `NDK` and `Android SDK Build-Tools 21.1.2`. 
+After launch, open the Configure -- SDK Manager. From SDK Platforms, install Android 4.4 and 5.1 (API level 19 + 22). From SDK Tools, install `NDK` and `Android SDK Build-Tools 21.1.2 + 25.0.2 + 25.0.3`. 
 
 Now extend your PATH variable so that ```ndk-build``` can be executed:
 ```
