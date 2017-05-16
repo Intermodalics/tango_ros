@@ -107,6 +107,12 @@ sudo apt-get update
 sudo apt-get install openjdk-7-jdk
 echo "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/" >> ~/.bashrc
 ```
+In case the build insists of using Java 8 when using Ubuntu 14.04,
+check and point to the version installed by android-studio:
+```
+cat /opt/android-studio/jre/release
+echo "export JAVA_HOME=/opt/android-studio/jre/" >> ~/.bashrc
+```
 
 Subsequently, download Android Studio from [here](https://developer.android.com/studio/index.html) and unzip (for example) to /opt/android-studio:
 
