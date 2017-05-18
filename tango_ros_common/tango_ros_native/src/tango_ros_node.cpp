@@ -368,7 +368,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
-  result = TangoConfig_setBool(tango_config_, config_enable_color_camera, true);
+  node_handle_.param<bool>(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_color_camera, enable_color_camera_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_color_camera << " error: " << result;
