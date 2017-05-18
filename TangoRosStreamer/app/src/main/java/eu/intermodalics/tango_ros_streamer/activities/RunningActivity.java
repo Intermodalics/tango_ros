@@ -421,7 +421,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
-            mParameterNode.setPreferencesFromParameterServer();
+            mParameterNode.syncLocalPreferencesWithParameterServer();
             mMapSaved = false;
             if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
                 mSnackbarLoadNewMap.dismiss();
@@ -512,6 +512,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mParameterNode != null) mParameterNode.syncLocalPreferencesWithParameterServer();
         this.nodeMainExecutorService.forceShutdown();
         this.unregisterReceiver(mRestartTangoAlertReceiver);
     }
@@ -595,7 +596,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     private void restartTango() {
-        mParameterNode.uploadPreferencesToParameterServer();
+        mParameterNode.syncLocalPreferencesWithParameterServer();
         updateSaveMapButton();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
