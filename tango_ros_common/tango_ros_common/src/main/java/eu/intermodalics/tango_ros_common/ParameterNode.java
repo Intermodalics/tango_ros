@@ -61,6 +61,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
         setPreferencesFromParameterServer();
+        uploadPreferencesToParameterServer();
     }
 
     // Set ROS params according to preferences.
