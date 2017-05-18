@@ -120,6 +120,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 key == getString(R.string.pref_master_uri_key) ||
                 key == getString(R.string.pref_create_new_map_key) ||
                 key == getString(R.string.pref_enable_depth_key) ||
+                key == getString(R.string.pref_enable_color_camera_key) ||
                 key == getString(R.string.pref_localization_mode_key) ||
                 key == getString(R.string.pref_localization_map_uuid_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
@@ -139,6 +140,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 // These changes require to restart Tango only.
                 if (key == getString(R.string.pref_create_new_map_key) ||
                     key == getString(R.string.pref_enable_depth_key) ||
+                    key == getString(R.string.pref_enable_color_camera_key) ||
                     key == getString(R.string.pref_localization_mode_key) ||
                     key == getString(R.string.pref_localization_map_uuid_key)) {
                     Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(),
