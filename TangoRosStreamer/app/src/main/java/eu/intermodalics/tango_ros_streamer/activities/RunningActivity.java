@@ -105,6 +105,10 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
     enum TangoStatus {
         UNKNOWN,
         SERVICE_NOT_CONNECTED,
+        NEED_TO_REQUEST_ADF_PERMISSION,
+        ADF_PERMISSION_REQUEST_ANSWERED,
+        NEED_TO_REQUEST_DATASET_PERMISSION,
+        DATASET_PERMISSION_REQUEST_ANSWERED,
         NO_FIRST_VALID_POSE,
         SERVICE_CONNECTED
     }
@@ -217,7 +221,8 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_orange_light));
                 } else if (status == TangoStatus.SERVICE_CONNECTED) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_green_light));
-                } else {
+                } else if (status == TangoStatus.SERVICE_NOT_CONNECTED ||
+                           status == TangoStatus.NO_FIRST_VALID_POSE) {
                     mTangoLightImageView.setImageDrawable(getResources().getDrawable(R.drawable.btn_radio_on_red_light));
                 }
             }
@@ -385,6 +390,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             Log.e(TAG, "Invalid Tango status " + status);
             return;
         }
+        if (status == TangoStatus.NEED_TO_REQUEST_ADF_PERMISSION.ordinal()) {
+             getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
+        }
+        if (status == TangoStatus.NEED_TO_REQUEST_DATASET_PERMISSION.ordinal()) {
+            getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
+        }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
             mParameterNode.setPreferencesFromParameterServer();
@@ -392,13 +403,6 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
                 mSnackbarLoadNewMap.dismiss();
             }
-
-            if (mParameterNode.getBoolParam(getString(R.string.pref_create_new_map_key)) ||
-                    mParameterNode.getIntParam(getString(R.string.pref_localization_mode_key)) == 3)
-                getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
-            if (!mParameterNode.getStringParam(getString(R.string.dataset_datasets_path_key)).isEmpty() &&
-                    !mParameterNode.getStringParam(getString(R.string.dataset_uuid_key)).isEmpty())
-                getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
         }
         updateSaveMapButton();
         updateTangoStatus(TangoStatus.values()[status]);
@@ -514,6 +518,12 @@ public class RunningActivity extends AppCompatRosActivity implements TangoNodele
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
+            }
+            if (requestCode == REQUEST_CODE_ADF_PERMISSION) {
+                mTangoServiceClientNode.publishTangoStatus(TangoStatus.ADF_PERMISSION_REQUEST_ANSWERED.ordinal());
+            }
+            if (requestCode == REQUEST_CODE_DATASET_PERMISSION) {
+                mTangoServiceClientNode.publishTangoStatus(TangoStatus.DATASET_PERMISSION_REQUEST_ANSWERED.ordinal());
             }
         }
     }

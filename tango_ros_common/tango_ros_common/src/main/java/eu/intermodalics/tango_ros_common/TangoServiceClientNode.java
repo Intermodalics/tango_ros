@@ -27,6 +27,7 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
 import java.util.List;
@@ -58,6 +59,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     ConnectedNode mConnectedNode;
     private Log mLog;
     CallbackListener mCallbackListener;
+    Publisher<Int8> mStatusPublisher;
 
     public interface CallbackListener {
         void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
@@ -81,13 +83,21 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
 
-        Subscriber<Int8> subscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
-        subscriber.addMessageListener(new MessageListener<Int8>() {
+        mStatusPublisher = mConnectedNode.newPublisher(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
+        Subscriber<Int8> statusSubscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
+        statusSubscriber.addMessageListener(new MessageListener<Int8>() {
             @Override
             public void onNewMessage(Int8 status) {
                 mCallbackListener.onTangoStatus(status.getData());
             }
         });
+    }
+
+    public void publishTangoStatus(int status) {
+        if (mStatusPublisher == null) return;
+        Int8 statusMessage = mStatusPublisher.newMessage();
+        statusMessage.setData((byte) status);
+        mStatusPublisher.publish(statusMessage);
     }
 
     /**

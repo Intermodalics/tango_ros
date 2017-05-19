@@ -27,9 +27,6 @@
     <string name="save_map_dialog_title">Enter the name of the map</string>
     <string name="uuids_names_map">uuids_names_map</string>
 
-    <string name="dataset_datasets_path_key">dataset_datasets_path</string>
-    <string name="dataset_uuid_key">dataset_uuid</string>
-
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
