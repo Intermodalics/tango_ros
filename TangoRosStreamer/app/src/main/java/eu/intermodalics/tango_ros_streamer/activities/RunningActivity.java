@@ -20,10 +20,7 @@ import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -92,12 +89,12 @@ public class RunningActivity extends AppCompatRosActivity implements
     private static final String EXTRA_VALUE_DATASET = "DATASET_PERMISSION";
     private static final int REQUEST_CODE_ADF_PERMISSION = 111;
     private static final int REQUEST_CODE_DATASET_PERMISSION = 112;
+    public static final String RESTART_TANGO = "restart_tango";
 
-    public static class startSettingsActivityRequest {
+    public static class StartSettingsActivityRequest {
         public static final int FIRST_RUN = 11;
         public static final int STANDARD_RUN = 12;
     }
-    public static final String RESTART_TANGO_ALERT = "restart_tango_alert";
 
     enum RosStatus {
         UNKNOWN,
@@ -127,7 +124,6 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mCreateNewMap = false;
     private boolean mMapSaved = false;
     private HashMap<String, String> mUuidsNamesHashMap;
-    private BroadcastReceiver mRestartTangoAlertReceiver;
     // True after the user answered the ADF permission popup (the permission has not been necessarily granted).
     private boolean mAdfPermissionHasBeenAnswered = false;
     // True after the user answered the dataset permission popup (the permission has not been necessarily granted).
@@ -408,6 +404,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         for (int i = 0; i < mapUuids.size(); ++i) {
             mUuidsNamesHashMap.put(mapUuids.get(i), mapNames.get(i));
         }
+        if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
@@ -421,7 +418,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
-            mParameterNode.syncLocalPreferencesWithParameterServer();
+            mParameterNode.setPreferencesFromParameterServer();
             mMapSaved = false;
             if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
                 mSnackbarLoadNewMap.dismiss();
@@ -445,13 +442,6 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mRestartTangoAlertReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                restartTango();
-            }
-        };
-        this.registerReceiver(this.mRestartTangoAlertReceiver, new IntentFilter(RESTART_TANGO_ALERT));
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
@@ -485,9 +475,10 @@ public class RunningActivity extends AppCompatRosActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
+                if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
-                startActivityForResult(settingsActivityIntent, startSettingsActivityRequest.STANDARD_RUN);
+                startActivityForResult(settingsActivityIntent, StartSettingsActivityRequest.STANDARD_RUN);
                 return true;
             case R.id.share:
                 mLogger.saveLogToFile();
@@ -512,15 +503,25 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mParameterNode != null) mParameterNode.syncLocalPreferencesWithParameterServer();
+        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
         this.nodeMainExecutorService.forceShutdown();
-        this.unregisterReceiver(mRestartTangoAlertReceiver);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_CANCELED) { // Result code returned when back button is pressed.
-            if (requestCode == startSettingsActivityRequest.FIRST_RUN) {
+            // Upload new settings to parameter server.
+            if ((requestCode == StartSettingsActivityRequest.STANDARD_RUN ||
+                    requestCode == StartSettingsActivityRequest.FIRST_RUN) &&
+                    mParameterNode != null) {
+                mParameterNode.uploadPreferencesToParameterServer();
+            }
+
+            if (data != null && data.getBooleanExtra(RESTART_TANGO, false)) {
+                restartTango();
+            }
+
+            if (requestCode == StartSettingsActivityRequest.FIRST_RUN) {
                 mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
                 mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                         getResources().getString(R.string.pref_master_uri_default));
@@ -532,7 +533,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
                 getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
                 updateSaveMapButton();
-            } else if (requestCode == startSettingsActivityRequest.STANDARD_RUN) {
+            } else if (requestCode == StartSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
                         getString(R.string.pref_log_file_default));
@@ -596,7 +597,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     private void restartTango() {
-        mParameterNode.syncLocalPreferencesWithParameterServer();
+        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
         updateSaveMapButton();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
@@ -691,7 +692,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
         } else {
             Intent intent = new Intent(this, SettingsActivity.class);
-            startActivityForResult(intent, startSettingsActivityRequest.FIRST_RUN);
+            startActivityForResult(intent, StartSettingsActivityRequest.FIRST_RUN);
         }
     }
 

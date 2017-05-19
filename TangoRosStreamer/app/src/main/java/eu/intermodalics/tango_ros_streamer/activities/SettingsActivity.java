@@ -177,7 +177,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             public void onReceive(Context context, Intent intent) {
                 mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
                 updateMapChooserPreference();
-                mSettingsPreferenceFragment.setPreferencesSummury();
+                mSettingsPreferenceFragment.setPreferencesSummary();
             }
         };
         this.registerReceiver(this.mNewUuidsNamesMapAlertReceiver, new IntentFilter(NEW_UUIDS_NAMES_MAP_ALERT));
@@ -198,6 +198,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    setResult(RESULT_CANCELED, getIntent().putExtra(RunningActivity.RESTART_TANGO, false));
                     onBackPressed();
                 }
             });
@@ -215,7 +216,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         Intent intent = getIntent();
         mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
         updateMapChooserPreference();
-        mSettingsPreferenceFragment.setPreferencesSummury();
+        mSettingsPreferenceFragment.setPreferencesSummary();
     }
 
     @Override
@@ -268,7 +269,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         // to their values. When their values change, their summaries are
         // updated to reflect the new value, per the Android Design
         // guidelines.
-        public void setPreferencesSummury() {
+        public void setPreferencesSummary() {
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
@@ -292,9 +293,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         startActivity(intent);
     }
 
+    /**
+     * Returns to Running Acitivity and restart Tango.
+     */
     private void restartTango() {
-        Intent intent = new Intent(RunningActivity.RESTART_TANGO_ALERT);
-        this.sendBroadcast(intent);
+        setResult(RESULT_CANCELED, getIntent().putExtra(RunningActivity.RESTART_TANGO, true));
         onBackPressed();
     }
 }
