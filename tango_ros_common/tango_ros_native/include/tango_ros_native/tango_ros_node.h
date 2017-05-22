@@ -208,7 +208,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
-  bool publish_pose_on_tf_ = false;
+  bool publish_pose_on_tf_ = true;
   bool publish_pose_on_topic_ = false;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
