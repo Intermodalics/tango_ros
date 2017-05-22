@@ -195,6 +195,9 @@ void TangoRosNode::onInit() {
       node_handle_.advertise<visualization_msgs::MarkerArray>(
           COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
+  occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+      OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
+
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
@@ -1015,6 +1018,27 @@ void TangoRosNode::PublishMeshMarker() {
         LOG(INFO) << "Empty mesh array!";
       }
       mesh_marker_publisher_.publish(mesh_marker_array);
+
+
+      // Occupancy grid stuff.
+      Tango3DR_Vector2 origin;
+      Tango3DR_ImageBuffer image_grid;
+      Tango3DR_Status result = Tango3DR_extractFullFloorplanImage(
+          t3dr_context_, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
+      if(result != TANGO_3DR_SUCCESS) {
+        LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with: " << result;
+      } else {
+        if (image_grid.width == 0 && image_grid.height == 0) {
+          LOG(INFO) << "Invalid grid image extracted!";
+        }
+        nav_msgs::OccupancyGrid occupancy_grid;
+        tango_ros_conversions_helper::toOccupancyGrid(image_grid, origin, time_offset_, &occupancy_grid);
+        if (!occupancy_grid.data.empty()) {
+          occupancy_grid_publisher_.publish(occupancy_grid);
+        } else {
+          LOG(INFO) << "Empty occupancy grid.";
+        }
+      }
     }
   }
 }

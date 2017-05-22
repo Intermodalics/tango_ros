@@ -18,12 +18,16 @@
 #include <tango_support_api/tango_support_api.h>
 
 #include <geometry_msgs/TransformStamped.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/PointField.h>
 #include <tf/LinearMath/Transform.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <glog/logging.h>
+
 
 namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
@@ -112,9 +116,20 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 // @param tango_mesh, Tango3DR_Mesh to convert.
 // @param mesh_marker, the output visualization_msgs::Marker.
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
-                  Tango3DR_Mesh tango_mesh,
+                  const Tango3DR_Mesh& tango_mesh,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker);
+
+// Converts Tango3DR_ImageBuffer to nav_msgs::OccupancyGrid.
+// See ROS documentation:
+// http://docs.ros.org/kinetic/api/nav_msgs/html/msg/OccupancyGrid.html
+// @param image_grid, Tango3DR_ImageBuffer to convert.
+// @param origin,
+// @param occupancy_grid, the output nav_msgs::OccupancyGrid.
+void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
+                     const Tango3DR_Vector2& origin,
+                     double time_offset,
+                     nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.
 // @param tango_vector, Tango3DR_Vector3 to convert.

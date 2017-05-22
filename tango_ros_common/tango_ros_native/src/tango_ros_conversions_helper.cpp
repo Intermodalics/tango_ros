@@ -209,7 +209,7 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 }
 
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
-                  Tango3DR_Mesh tango_mesh,
+                  const Tango3DR_Mesh& tango_mesh,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker) {
   mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
@@ -249,6 +249,27 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
     mesh_marker->colors.push_back(color);
     toColor(tango_mesh.colors[tango_mesh.faces[j][2]], &color);
     mesh_marker->colors.push_back(color);
+  }
+}
+
+void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
+                     const Tango3DR_Vector2& origin,
+                     double time_offset,
+                     nav_msgs::OccupancyGrid* occupancy_grid) {
+  occupancy_grid->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
+  occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
+  occupancy_grid->info.width = image_grid.width;
+  occupancy_grid->info.height = image_grid.height;
+  LOG(INFO) << "Image format: " << image_grid.format;
+  LOG(INFO) << "Image width: " << image_grid.width;
+  LOG(INFO) << "Image height: " << image_grid.height;
+  LOG(INFO) << "Image stride: " << image_grid.stride;
+  occupancy_grid->info.origin.position.x = origin[0];
+  occupancy_grid->info.origin.position.y = origin[1];
+
+  for (size_t i = 0; i < image_grid.height * image_grid.width; ++i) {
+    occupancy_grid->data.push_back(image_grid.data[i]);
   }
 }
 
