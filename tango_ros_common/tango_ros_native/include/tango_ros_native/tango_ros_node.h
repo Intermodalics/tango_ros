@@ -260,7 +260,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   ros::Publisher mesh_marker_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
-  Tango3DR_Context t3dr_context_;
+  Tango3DR_ReconstructionContext t3dr_context_;
   TangoSupportPointCloudManager* point_cloud_manager_;
   Tango3DR_Pose last_camera_depth_pose_;
   TangoSupportImageBufferManager* image_buffer_manager_;

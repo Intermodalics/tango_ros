@@ -209,11 +209,11 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 }
 
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
-                  Tango3DR_Mesh* tango_mesh,
+                  Tango3DR_Mesh tango_mesh,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker) {
   mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-  mesh_marker->header.stamp.fromSec(tango_mesh->timestamp + time_offset);
+  mesh_marker->header.stamp.fromSec(tango_mesh.timestamp + time_offset);
   mesh_marker->ns = "tango";
   mesh_marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
   mesh_marker->action = visualization_msgs::Marker::ADD;
@@ -232,22 +232,22 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
   mesh_marker->id += grid_index[1];
   mesh_marker->id *= 37;
   mesh_marker->id += grid_index[2];
-  for (size_t j = 0; j < tango_mesh->num_faces; ++j) {
+  for (size_t j = 0; j < tango_mesh.num_faces; ++j) {
     // Add the 3 points of the triangle face and the corresponding colors.
     geometry_msgs::Point point;
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][0]], &point);
+    toPoint(tango_mesh.vertices[tango_mesh.faces[j][0]], &point);
     mesh_marker->points.push_back(point);
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][1]], &point);
+    toPoint(tango_mesh.vertices[tango_mesh.faces[j][1]], &point);
     mesh_marker->points.push_back(point);
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][2]], &point);
+    toPoint(tango_mesh.vertices[tango_mesh.faces[j][2]], &point);
     mesh_marker->points.push_back(point);
 
     std_msgs::ColorRGBA color;
-    toColor(tango_mesh->colors[tango_mesh->faces[j][0]], &color);
+    toColor(tango_mesh.colors[tango_mesh.faces[j][0]], &color);
     mesh_marker->colors.push_back(color);
-    toColor(tango_mesh->colors[tango_mesh->faces[j][1]], &color);
+    toColor(tango_mesh.colors[tango_mesh.faces[j][1]], &color);
     mesh_marker->colors.push_back(color);
-    toColor(tango_mesh->colors[tango_mesh->faces[j][2]], &color);
+    toColor(tango_mesh.colors[tango_mesh.faces[j][2]], &color);
     mesh_marker->colors.push_back(color);
   }
 }

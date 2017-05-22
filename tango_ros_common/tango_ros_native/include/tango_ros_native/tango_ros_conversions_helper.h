@@ -112,7 +112,7 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 // @param tango_mesh, Tango3DR_Mesh to convert.
 // @param mesh_marker, the output visualization_msgs::Marker.
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
-                  Tango3DR_Mesh* tango_mesh,
+                  Tango3DR_Mesh tango_mesh,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker);
 

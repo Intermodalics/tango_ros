@@ -414,8 +414,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
   const char* function_name = "TangoRosNode::TangoSetup3DRConfig()";
 
-  Tango3DR_ConfigH t3dr_config =
-      Tango3DR_Config_create(TANGO_3DR_CONFIG_CONTEXT);
+  Tango3DR_Config t3dr_config =
+      Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
   Tango3DR_Status result;
   const char* resolution = "resolution";
   result = Tango3DR_Config_setDouble(t3dr_config, resolution, 0.05);
@@ -439,13 +439,13 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
         << use_floorplan << " error: " << result;
     return result;
   }
-  t3dr_context_ = Tango3DR_create(t3dr_config);
+  t3dr_context_ = Tango3DR_ReconstructionContext_create(t3dr_config);
   if (t3dr_context_ == nullptr) {
-    LOG(ERROR) << function_name << ", Tango3DR_create error: Unable to create 3DR context.";
+    LOG(ERROR) << function_name << ", Tango3DR_ReconstructionContext_create error: Unable to create 3DR context.";
     return TANGO_3DR_ERROR;
   }
   // Configure the color camera intrinsics to be used with updates to the mesh.
-  result = Tango3DR_setColorCalibration(t3dr_context_, &t3dr_color_camera_intrinsics_);
+  result = Tango3DR_ReconstructionContext_setColorCalibration(t3dr_context_, &t3dr_color_camera_intrinsics_);
   if (t3dr_context_ == nullptr) {
     LOG(ERROR) << function_name << ", Unable to set color calibration.";
     return TANGO_3DR_ERROR;
@@ -562,7 +562,7 @@ void TangoRosNode::TangoDisconnect() {
   }
   if (t3dr_context_ != nullptr) {
     Tango3DR_clear(t3dr_context_);
-    Tango3DR_destroy(t3dr_context_);
+    Tango3DR_ReconstructionContext_destroy(t3dr_context_);
     t3dr_context_ = nullptr;
   }
   TangoService_disconnect();
@@ -947,7 +947,7 @@ void TangoRosNode::PublishMeshMarker() {
       break;
     }
     if (mesh_marker_publisher_.getNumSubscribers() > 0) {
-      Tango3DR_GridIndexArray* t3dr_updated_indices;
+      Tango3DR_GridIndexArray t3dr_updated_indices;
       {
         std::unique_lock<std::mutex> lock(mesh_marker_thread_.data_available_mutex);
         mesh_marker_thread_.data_available.wait(lock);
@@ -970,47 +970,47 @@ void TangoRosNode::PublishMeshMarker() {
         t3dr_image.data = last_color_image_buffer->data;
         // Get updated mesh segment indices.
         Tango3DR_Status result =
-            Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
+            Tango3DR_updateFromPointCloud(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
                             &last_camera_color_pose_, &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
           LOG(ERROR) << "Tango3DR_update failed with error code " << result;
         }
       }
-      if (t3dr_updated_indices == nullptr) {
+      /*if (t3dr_updated_indices == nullptr) {
         LOG(INFO) << "No indices updated in mesh";
         continue;
-      }
+      }*/
       visualization_msgs::MarkerArray mesh_marker_array;
-      for (size_t i = 0; i < t3dr_updated_indices->num_indices; ++i) {
+      for (size_t i = 0; i < t3dr_updated_indices.num_indices; ++i) {
         // Extract tango mesh from updated index.
-        Tango3DR_Mesh* tango_mesh;
+        Tango3DR_Mesh tango_mesh;
         if(Tango3DR_extractMeshSegment(
-            t3dr_context_, t3dr_updated_indices->indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
+            t3dr_context_, t3dr_updated_indices.indices[i], &tango_mesh) != TANGO_3DR_SUCCESS) {
           LOG(ERROR) << "Tango3DR_extractMeshSegment failed";
         }
-        if (tango_mesh == nullptr || tango_mesh->num_faces == 0) {
+        if (/*tango_mesh == nullptr || */tango_mesh.num_faces == 0) {
           LOG(INFO) << "Invalid mesh extracted!";
           continue;
         }
         // Make mesh marker from tango mesh.
         visualization_msgs::Marker mesh_marker;
-        tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices->indices[i],
+        tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices.indices[i],
                                            tango_mesh, time_offset_, &mesh_marker);
         // Free tango mesh once we are finished with it.
-        Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
+        /*Tango3DR_Status result = Tango3DR_Mesh_destroy(tango_mesh);
         if (result != TANGO_3DR_SUCCESS) {
           LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
-        }
+        }*/
         if (mesh_marker.points.empty()) {
           LOG(INFO) << "Empty mesh marker.";
           continue;
         }
         mesh_marker_array.markers.push_back(mesh_marker);
       }
-      Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
+      /*Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(t3dr_updated_indices);
       if (result != TANGO_3DR_SUCCESS) {
         LOG(ERROR) << "Tango3DR_GridIndexArray_destroy error: " << result;
-      }
+      }*/
       if (mesh_marker_array.markers.empty()) {
         LOG(INFO) << "Empty mesh array!";
       }
@@ -1022,7 +1022,7 @@ void TangoRosNode::PublishMeshMarker() {
 void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   laser_scan_max_height_ = config.laser_scan_max_height;
   laser_scan_min_height_ = config.laser_scan_min_height;
-  if (config.use_floor_plan != use_floor_plan_) {
+  /*if (config.use_floor_plan != use_floor_plan_) {
     use_floor_plan_ = config.use_floor_plan;
     const char* use_floorplan = "use_floorplan";
     Tango3DR_Status result = Tango3DR_setRuntimeBool(t3dr_context_, use_floorplan, use_floor_plan_);
@@ -1030,7 +1030,7 @@ void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t 
       LOG(ERROR) << "Failed to change runtime config " << use_floorplan << " error: " << result;
     }
 
-  }
+  }*/
 }
 
 void TangoRosNode::RunRosSpin() {
