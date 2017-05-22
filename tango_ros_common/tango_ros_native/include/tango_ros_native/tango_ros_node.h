@@ -111,7 +111,7 @@ enum class TangoStatus {
 
 struct PublishThread {
   std::thread publish_thread;
-  std::mutex  data_available_mutex;
+  std::mutex data_available_mutex;
   std::condition_variable data_available;
 };
 
