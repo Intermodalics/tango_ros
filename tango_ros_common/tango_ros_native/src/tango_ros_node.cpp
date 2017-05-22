@@ -233,10 +233,14 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
-    node_handle_.param(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_, true);
+    node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
+  } else {
+    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
-    node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
+    node_handle_.getParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_);
+  } else {
+    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
   }
   if (node_handle_.hasParam(ENABLE_DEPTH)) {
     node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
