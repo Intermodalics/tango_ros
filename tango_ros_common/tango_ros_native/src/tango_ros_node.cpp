@@ -231,18 +231,15 @@ void TangoRosNode::onInit() {
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.param(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_, true);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
     node_handle_.param(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_, false);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
   }
   if (node_handle_.hasParam(ENABLE_DEPTH)) {
     node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
-  } else {
-    node_handle_.setParam(ENABLE_DEPTH, true);
+  }
+  if (node_handle_.hasParam(ENABLE_COLOR_CAMERA)) {
+    node_handle_.param(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
   }
 }
 
@@ -371,7 +368,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
-  result = TangoConfig_setBool(tango_config_, config_enable_color_camera, true);
+  node_handle_.param<bool>(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
+  result = TangoConfig_setBool(tango_config_, config_enable_color_camera, enable_color_camera_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
         << config_enable_color_camera << " error: " << result;

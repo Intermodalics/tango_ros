@@ -44,6 +44,11 @@
             android:key="@string/pref_enable_depth_key"
             android:defaultValue="true"
             android:summary="@string/pref_enable_depth_summary" />
+        <eu.intermodalics.tango_ros_streamer.android.CustomSwitchPreference
+            android:title="@string/pref_enable_color_camera"
+            android:key="@string/pref_enable_color_camera_key"
+            android:defaultValue="true"
+            android:summary="@string/pref_enable_color_camera_summary" />
     </PreferenceCategory>
 
 
