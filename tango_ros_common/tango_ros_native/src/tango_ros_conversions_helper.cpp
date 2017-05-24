@@ -18,6 +18,9 @@
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
@@ -261,16 +264,62 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
   occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
   occupancy_grid->info.width = image_grid.width;
   occupancy_grid->info.height = image_grid.height;
+  occupancy_grid->info.resolution = 0.04;
   LOG(INFO) << "Image format: " << image_grid.format;
   LOG(INFO) << "Image width: " << image_grid.width;
   LOG(INFO) << "Image height: " << image_grid.height;
   LOG(INFO) << "Image stride: " << image_grid.stride;
   occupancy_grid->info.origin.position.x = origin[0];
-  occupancy_grid->info.origin.position.y = origin[1];
+  occupancy_grid->info.origin.position.y = -origin[1];
+  LOG(INFO) << "Origin x: " << origin[0];
+  LOG(INFO) << "Origin y: " << origin[1];
 
-  for (size_t i = 0; i < image_grid.height * image_grid.width; ++i) {
-    occupancy_grid->data.push_back(image_grid.data[i]);
+  /*cv::Mat color_map = cv::Mat(image_grid.height, image_grid.width,
+                              CV_8UC1, image_grid.data); // No deep copy.*/
+  /*cv::Mat gray_map;
+  cv::cvtColor(color_map, gray_map, cv::COLOR_RGBA2GRAY);*/
+
+  /*for (int i = 0; i < color_map.rows; ++i) {
+    for (int j = 0; j < color_map.cols; ++j) {
+      //LOG(INFO) << gray_map.at<int>(i, j);
+      occupancy_grid->data.push_back(-1 * (std::abs(color_map.at<int>(i, color_map.cols - j - 1)) / 255) * 100 + 100);
+      if (gray_map.at<int>(i, j) == 0) {
+        //LOG(INFO) << "Here is an obstacle";
+        occupancy_grid->data.push_back(100);
+      } else if (gray_map.at<int>(i, j) != 0) {
+        //LOG(INFO) << "Here it is free";
+        occupancy_grid->data.push_back(0);
+      } else {
+        //LOG(INFO) << "Here I do not know";
+        occupancy_grid->data.push_back(-1);
+      }
+    }
+  }*/
+
+  /*for (size_t i = 0; i < image_grid.height * image_grid.width; ++i) {
+    occupancy_grid->data.push_back(-1 * (std::abs(image_grid.data[i]) / 255) * 100 + 100);
+    if (image_grid.data[i] == 0) {
+      //LOG(INFO) << "Here is an obstacle";
+      occupancy_grid->data.push_back(100);
+    } else if (image_grid.data[i] == 255) {
+      //LOG(INFO) << "Here it is free";
+      occupancy_grid->data.push_back(0);
+    } else {
+      //LOG(INFO) << "Here I do not know";
+      occupancy_grid->data.push_back(-1);
+    }
+  }*/
+
+  /*occupancy_grid->data.resize(image_grid.height * image_grid.width);
+  memcpy(occupancy_grid->data.data(), image_grid.data, image_grid.height * image_grid.width);*/
+
+  for (size_t i = 0; i < image_grid.height; ++i) {
+    for (size_t j = 0; j < image_grid.width; ++j) {
+      //occupancy_grid->data.push_back(-1 * (std::abs(image_grid.data[j + i * image_grid.width]) / 255) * 100 + 100);
+      occupancy_grid->data.push_back(-1 * (std::abs(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]) / 255) * 100 + 100);
+    }
   }
+
 }
 
 void toPoint(const Tango3DR_Vector3& tango_vector, geometry_msgs::Point* point) {
