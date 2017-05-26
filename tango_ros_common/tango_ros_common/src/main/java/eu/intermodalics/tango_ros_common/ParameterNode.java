@@ -82,8 +82,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     public void uploadPreferenceToParameterServer(String paramName) {
         String valueType = mParamNames.get(paramName);
-        if (valueType == "boolean") {
+        if (valueType == "boolean_default_false") {
             Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
+            mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+        } else if (valueType == "boolean_default_true") {
+            Boolean booleanValue = mSharedPreferences.getBoolean(paramName, true);
             mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
         } else if (valueType == "int_as_string") {
             String stringValue = mSharedPreferences.getString(paramName, "0");
@@ -98,8 +101,12 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public void setPreferencesFromParameterServer() {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
-            if (mParamNames.get(paramName) == "boolean") {
+            if (mParamNames.get(paramName) == "boolean_default_false") {
                 Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+                editor.putBoolean(paramName, booleanValue);
+            }
+            if (mParamNames.get(paramName) == "boolean_default_true") {
+                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), true);
                 editor.putBoolean(paramName, booleanValue);
             }
             if (mParamNames.get(paramName) == "int_as_string") {
