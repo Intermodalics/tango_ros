@@ -173,7 +173,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
-  void PublishMeshMarker();
+  void PublishMesh();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
@@ -203,7 +203,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   PublishThread laser_scan_thread_;
   PublishThread fisheye_image_thread_;
   PublishThread color_image_thread_;
-  PublishThread mesh_marker_thread_;
+  PublishThread mesh_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
   std::atomic_bool new_point_cloud_available_for_t3dr_;
@@ -259,6 +259,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   cv::Mat color_image_rect_;
 
   ros::Publisher mesh_marker_publisher_;
+  ros::Publisher occupancy_grid_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_ReconstructionContext t3dr_context_;
@@ -267,9 +268,6 @@ class TangoRosNode : public ::nodelet::Nodelet {
   TangoSupportImageBufferManager* image_buffer_manager_;
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
-  bool use_floor_plan_ = false;
-
-  ros::Publisher occupancy_grid_publisher_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
