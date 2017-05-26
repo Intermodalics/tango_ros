@@ -26,9 +26,6 @@
 #include <tf/LinearMath/Transform.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <glog/logging.h>
-
-
 namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
 const float OCCUPANCY_GRID_RESOLUTION = 0.05;
@@ -125,7 +122,8 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // See ROS documentation:
 // http://docs.ros.org/kinetic/api/nav_msgs/html/msg/OccupancyGrid.html
 // @param image_grid, Tango3DR_ImageBuffer to convert.
-// @param origin,
+// @param origin, position of the top left pixel in
+/// world coordinates (x: right, y: up).
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,

@@ -1012,7 +1012,7 @@ void TangoRosNode::PublishMesh() {
           // Free tango mesh once we are finished with it.
           result = Tango3DR_Mesh_destroy(&tango_mesh);
           if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_Mesh_destroy error: " << result;
+            LOG(ERROR) << "Tango3DR_Mesh_destroy failed with error code: " << result;
           }
           if (mesh_marker.points.empty()) {
             LOG(INFO) << "Empty mesh marker.";
@@ -1022,7 +1022,7 @@ void TangoRosNode::PublishMesh() {
         }
         Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(&t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with: " << result;
+          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with error code: " << result;
         }
         if (mesh_marker_array.markers.empty()) {
           LOG(INFO) << "Empty mesh array!";
@@ -1042,11 +1042,14 @@ void TangoRosNode::PublishMesh() {
             tango_ros_conversions_helper::toOccupancyGrid(image_grid, origin, time_offset_, &occupancy_grid);
             occupancy_grid_publisher_.publish(occupancy_grid);
           } else {
-            LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with: " << result;
+            LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error code: " << result;
           }
-          Tango3DR_ImageBuffer_destroy(&image_grid);
+          result = Tango3DR_ImageBuffer_destroy(&image_grid);
+          if (result != TANGO_3DR_SUCCESS) {
+            LOG(ERROR) << "Tango3DR_ImageBuffer_destroy failed with error code: " << result;
+          }
         } else {
-          LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with: " << result;
+          LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with error code: " << result;
         }
       }
     }

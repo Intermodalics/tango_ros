@@ -13,13 +13,12 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 
+#include <glog/logging.h>
+
 #include <ros/ros.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
@@ -266,12 +265,14 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
   occupancy_grid->info.height = image_grid.height;
   occupancy_grid->info.resolution = OCCUPANCY_GRID_RESOLUTION;
   occupancy_grid->info.origin.position.x = origin[0];
-  occupancy_grid->info.origin.position.y = -origin[1];
-  LOG(INFO) << "Origin x: " << origin[0];
-  LOG(INFO) << "Origin y: " << origin[1];
+  // We have the position of the top left pixel, instead we want the position
+  // of the bottom left pixel.
+  occupancy_grid->info.origin.position.y = origin[1] - image_grid.height * OCCUPANCY_GRID_RESOLUTION;
   for (size_t i = 0; i < image_grid.height; ++i) {
     for (size_t j = 0; j < image_grid.width; ++j) {
-      // The image uses a coordinate system with (x: right, y: down).
+      // The image uses a coordinate system with (x: right, y: down), while
+      // the occupancy grid is using (x: right, y: up). The image is therefore
+      // flipped around the x axis.
       int value = static_cast<int>(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
       if (value == 1) {
         // The cell is occupied.
