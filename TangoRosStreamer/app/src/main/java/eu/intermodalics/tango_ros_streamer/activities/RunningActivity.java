@@ -619,9 +619,9 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
 
         HashMap<String, String> tangoConfigurationParameters = new HashMap<String, String>();
-        tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean_default_false");
-        tangoConfigurationParameters.put(getString(R.string.pref_enable_depth_key), "boolean_default_true");
-        tangoConfigurationParameters.put(getString(R.string.pref_enable_color_camera_key), "boolean_default_true");
+        tangoConfigurationParameters.put(getString(R.string.pref_create_new_map_key), "boolean");
+        tangoConfigurationParameters.put(getString(R.string.pref_enable_depth_key), "boolean");
+        tangoConfigurationParameters.put(getString(R.string.pref_enable_color_camera_key), "boolean");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_mode_key), "int_as_string");
         tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
