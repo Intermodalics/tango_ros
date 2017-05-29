@@ -993,7 +993,7 @@ void TangoRosNode::PublishMesh() {
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
         for (size_t i = 0; i < t3dr_updated_indices.num_indices; ++i) {
-          // Extract tango mesh from updated index.
+          // Extract Tango mesh from updated index.
           Tango3DR_Mesh tango_mesh;
           Tango3DR_Status result = Tango3DR_extractMeshSegment(
               t3dr_context_, t3dr_updated_indices.indices[i], &tango_mesh);

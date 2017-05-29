@@ -268,6 +268,8 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
   // We have the position of the top left pixel, instead we want the position
   // of the bottom left pixel.
   occupancy_grid->info.origin.position.y = origin[1] - image_grid.height * OCCUPANCY_GRID_RESOLUTION;
+
+  occupancy_grid->data.reserve(image_grid.height * image_grid.width);
   for (size_t i = 0; i < image_grid.height; ++i) {
     for (size_t j = 0; j < image_grid.width; ++j) {
       // The image uses a coordinate system with (x: right, y: down), while
@@ -275,14 +277,11 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
       // flipped around the x axis.
       int value = static_cast<int>(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
       if (value == 1) {
-        // The cell is occupied.
-        occupancy_grid->data.push_back(100);
+        occupancy_grid->data.push_back(OCCUPIED_CELL);
       } else if (value == 255) {
-        // The cell is free.
-        occupancy_grid->data.push_back(0);
+        occupancy_grid->data.push_back(FREE_CELL);
       } else if (value == 128) {
-        // The status of the cell is unknown.
-        occupancy_grid->data.push_back(-1);
+        occupancy_grid->data.push_back(UNKNOWN_CELL);
       } else {
         LOG(WARNING) << "Unknown value: " << static_cast<int>(value);
       }

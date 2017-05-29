@@ -28,7 +28,10 @@
 
 namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
-const float OCCUPANCY_GRID_RESOLUTION = 0.05;
+const float OCCUPANCY_GRID_RESOLUTION = 0.05; // in meter.
+constexpr int FREE_CELL = 0;
+constexpr int OCCUPIED_CELL = 100;
+constexpr int UNKNOWN_CELL = -1;
 
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
 // @param pose, TangoPoseData to convert.
