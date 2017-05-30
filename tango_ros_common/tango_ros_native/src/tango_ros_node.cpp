@@ -771,43 +771,43 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ || !publish_pose_on_tf_
-          || !publish_pose_on_topic_) {
+      if (!tango_data_available_ || !publish_pose_on_tf_ ||
+          !publish_pose_on_topic_) {
         device_pose_thread_.data_available.notify_all();
       }
       device_pose_thread_.publish_thread.join();
     }
     if (point_cloud_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !enable_depth_ ||
           point_cloud_publisher_.getNumSubscribers() <= 0) {
         point_cloud_thread_.data_available.notify_all();
       }
       point_cloud_thread_.publish_thread.join();
     }
     if (laser_scan_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !enable_depth_ ||
           laser_scan_publisher_.getNumSubscribers() <= 0) {
         laser_scan_thread_.data_available.notify_all();
       }
       laser_scan_thread_.publish_thread.join();
     }
     if (fisheye_image_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_
-          || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ ||
+          fisheye_camera_publisher_.getNumSubscribers() <= 0) {
         fisheye_image_thread_.data_available.notify_all();
       }
       fisheye_image_thread_.publish_thread.join();
     }
     if (color_image_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_
-          || color_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ || !enable_color_camera_ ||
+          color_camera_publisher_.getNumSubscribers() <= 0) {
         color_image_thread_.data_available.notify_all();
       }
       color_image_thread_.publish_thread.join();
     }
     if (mesh_marker_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_
-          || mesh_marker_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ || !enable_depth_ || !enable_color_camera_ ||
+          mesh_marker_publisher_.getNumSubscribers() <= 0) {
         mesh_marker_thread_.data_available.notify_all();
       }
       mesh_marker_thread_.publish_thread.join();
@@ -964,20 +964,22 @@ void TangoRosNode::PublishMeshMarker() {
         t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud->points);
         // Get latest image.
         TangoImageBuffer* last_color_image_buffer;
-        TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
-        Tango3DR_ImageBuffer t3dr_image;
-        t3dr_image.width = last_color_image_buffer->width;
-        t3dr_image.height = last_color_image_buffer->height;
-        t3dr_image.stride = last_color_image_buffer->stride;
-        t3dr_image.timestamp = last_color_image_buffer->timestamp;
-        t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
-        t3dr_image.data = last_color_image_buffer->data;
-        // Get updated mesh segment indices.
-        Tango3DR_Status result =
-            Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
-                            &last_camera_color_pose_, &t3dr_updated_indices);
-        if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_update failed with error code " << result;
+        if (image_buffer_manager_ != nullptr) {
+          TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
+          Tango3DR_ImageBuffer t3dr_image;
+          t3dr_image.width = last_color_image_buffer->width;
+          t3dr_image.height = last_color_image_buffer->height;
+          t3dr_image.stride = last_color_image_buffer->stride;
+          t3dr_image.timestamp = last_color_image_buffer->timestamp;
+          t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
+          t3dr_image.data = last_color_image_buffer->data;
+          // Get updated mesh segment indices.
+          Tango3DR_Status result =
+              Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
+                              &last_camera_color_pose_, &t3dr_updated_indices);
+          if (result != TANGO_3DR_SUCCESS) {
+            LOG(ERROR) << "Tango3DR_update failed with error code " << result;
+          }
         }
       }
       if (t3dr_updated_indices == nullptr) {
@@ -1070,7 +1072,7 @@ bool TangoRosNode::TangoConnectServiceCallback(
       response.response = ConnectToTangoAndSetUpNode();
       break;
     default:
-      LOG(ERROR) << "Did not understand request " << request.request
+      LOG(ERROR) << "Did not understand request " << static_cast<int>(request.request)
                  << ", valid requests are (CONNECT: "
                  << tango_ros_messages::TangoConnect::Request::CONNECT
                  << ", DISCONNECT: "

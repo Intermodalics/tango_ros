@@ -98,17 +98,19 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public void setPreferencesFromParameterServer() {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
-            if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
-                editor.putBoolean(paramName, booleanValue);
-            }
-            if (mParamNames.get(paramName) == "int_as_string") {
-                Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
-                editor.putString(paramName, intValue.toString());
-            }
-            if (mParamNames.get(paramName) == "string") {
-                String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
-                editor.putString(paramName, stringValue);
+            if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
+                if (mParamNames.get(paramName) == "boolean") {
+                    Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+                    editor.putBoolean(paramName, booleanValue);
+                }
+                if (mParamNames.get(paramName) == "int_as_string") {
+                    Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                    editor.putString(paramName, intValue.toString());
+                }
+                if (mParamNames.get(paramName) == "string") {
+                    String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+                    editor.putString(paramName, stringValue);
+                }
             }
         }
         editor.commit();
