@@ -166,12 +166,6 @@ void TangoRosNode::onInit() {
   area_description_T_start_of_service_publisher_ =
       node_handle_.advertise<geometry_msgs::TransformStamped>(
           AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME, queue_size, latching);
-  point_cloud_publisher_ =
-      node_handle_.advertise<sensor_msgs::PointCloud2>(
-          POINT_CLOUD_TOPIC_NAME, queue_size, latching);
-  laser_scan_publisher_ =
-      node_handle_.advertise<sensor_msgs::LaserScan>(
-          LASER_SCAN_TOPIC_NAME, queue_size, latching);
 
   image_transport_.reset(new image_transport::ImageTransport(node_handle_));
   try {
@@ -181,19 +175,9 @@ void TangoRosNode::onInit() {
     fisheye_rectified_image_publisher_ =
         image_transport_->advertise(FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME,
                                    queue_size, latching);
-    color_camera_publisher_ =
-        image_transport_->advertiseCamera(COLOR_IMAGE_TOPIC_NAME,
-                                          queue_size, latching);
-    color_rectified_image_publisher_ =
-        image_transport_->advertise(COLOR_RECTIFIED_IMAGE_TOPIC_NAME,
-                                   queue_size, latching);
   } catch (const image_transport::Exception& e) {
-    LOG(ERROR) << "Error while creating image transport publishers" << e.what();
+    LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
   }
-
-  mesh_marker_publisher_ =
-      node_handle_.advertise<visualization_msgs::MarkerArray>(
-          COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
@@ -252,6 +236,43 @@ TangoRosNode::~TangoRosNode() {
 }
 
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+  const  uint32_t queue_size = 1;
+  const bool latching = true;
+  // Advertise depth and color cameras topic only if they are enable.
+  if (enable_depth_) {
+    point_cloud_publisher_ =
+        node_handle_.advertise<sensor_msgs::PointCloud2>(
+            POINT_CLOUD_TOPIC_NAME, queue_size, latching);
+    laser_scan_publisher_ =
+        node_handle_.advertise<sensor_msgs::LaserScan>(
+            LASER_SCAN_TOPIC_NAME, queue_size, latching);
+  } else {
+    point_cloud_publisher_.shutdown();
+    laser_scan_publisher_.shutdown();
+  }
+  if (enable_color_camera_) {
+    try {
+      color_camera_publisher_ =
+          image_transport_->advertiseCamera(COLOR_IMAGE_TOPIC_NAME,
+                                            queue_size, latching);
+      color_rectified_image_publisher_ =
+          image_transport_->advertise(COLOR_RECTIFIED_IMAGE_TOPIC_NAME,
+                                      queue_size, latching);
+      } catch (const image_transport::Exception& e) {
+        LOG(ERROR) << "Error while creating color image transport publishers" << e.what();
+      }
+  } else {
+    color_camera_publisher_.shutdown();
+    color_rectified_image_publisher_.shutdown();
+  }
+  if (enable_depth_ && enable_color_camera_) {
+    mesh_marker_publisher_ =
+        node_handle_.advertise<visualization_msgs::MarkerArray>(
+            COLOR_MESH_TOPIC_NAME, queue_size, latching);
+  } else {
+    mesh_marker_publisher_.shutdown();
+  }
+
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
