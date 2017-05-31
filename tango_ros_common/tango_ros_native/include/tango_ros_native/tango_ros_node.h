@@ -78,8 +78,8 @@ const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
+const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
-const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -110,7 +110,7 @@ enum class TangoStatus {
 
 struct PublishThread {
   std::thread publish_thread;
-  std::mutex  data_available_mutex;
+  std::mutex data_available_mutex;
   std::condition_variable data_available;
 };
 
@@ -207,9 +207,9 @@ class TangoRosNode : public ::nodelet::Nodelet {
   std::atomic_bool new_point_cloud_available_for_t3dr_;
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
-  bool publish_pose_on_tf_ = false;
-  bool publish_pose_on_topic_ = false;
+  bool publish_pose_on_tf_ = true;
   bool enable_depth_ = true;
+  bool enable_color_camera_ = true;
 
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Publisher start_of_service_T_device_publisher_;

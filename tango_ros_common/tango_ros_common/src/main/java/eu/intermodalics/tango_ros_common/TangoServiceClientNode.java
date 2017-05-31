@@ -60,7 +60,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     CallbackListener mCallbackListener;
 
     public interface CallbackListener {
-        void onSaveMapServiceCallFinish(boolean success, String message);
+        void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
         void onTangoReconnectServiceFinish(int response, String message);
@@ -156,11 +156,12 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
-                mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(), saveMapResponse.getMessage());
+                mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
+                        saveMapResponse.getMessage(), saveMapResponse.getMapName(), saveMapResponse.getMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
-                mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage());
+                mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage(), null, null);
             }
         });
 

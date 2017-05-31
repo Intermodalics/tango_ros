@@ -9,7 +9,11 @@
     <string name="snackbar_text_restart_app">You will need to restart the app to apply these new settings</string>
     <string name="snackbar_text_restart_tango">You will need to restart Tango to apply these new settings</string>
     <string name="snackbar_action_text_restart_tango">RESTART TANGO</string>
-    <string name="tango_permission_denied">Be aware that you will not be able to use all functionalities from TangoRosStreamer</string>
+    <string name="snackbar_text_reconnect_ros">Connection to ROS Master failed.</string>
+    <string name="snackbar_action_text_reconnect_ros">RECONNECT ROS.</string>
+    <string name="snackbar_text_load_new_map">You can now load your new map and localize in it.</string>
+    <string name="snackbar_action_text_load_new_map">LOAD AND LOCALIZE</string>
+
 
     <string name="title_activity_about">About Tango Ros Streamer</string>
     <string name="description_activity_about">
@@ -24,11 +28,12 @@
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
     <string name="uuids_names_map">uuids_names_map</string>
+    <string name="ros_status">ros_status</string>
 
     <!-- Strings related to error messages -->
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
-    <string name="ros_init_error">Unable to initialize ROS node. Do you have a roscore running?</string>
+    <string name="ros_init_error">Unable to connect to ROS master.</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
@@ -36,23 +41,7 @@
     <string name="map_name_error">Please enter a valid name to save a map</string>
     <string name="save_map_error">Unable to save the map</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
-
-    <!-- Strings related to running preferences -->
-
-    <string name="publish_device_pose">Device pose</string>
-    <string name="publish_device_pose_key">publish_device_pose</string>
-
-    <string name="publish_point_cloud">Point cloud</string>
-    <string name="publish_point_cloud_key">publish_point_cloud</string>
-
-    <string name="publish_laser_scan">Laser scan</string>
-    <string name="publish_laser_scan_key">publish_laser_scan</string>
-
-    <string name="publish_fisheye_camera">Fisheye image</string>
-    <string name="publish_fisheye_camera_key">publish_fisheye_camera</string>
-
-    <string name="publish_color_camera">Color image</string>
-    <string name="publish_color_camera_key">publish_color_camera</string>
+    <string name="tango_permission_denied">Requested permission denied: connection to Tango can fail and some functionalities will not work properly.</string>
 
     <!-- Strings related to settings preferences -->
     
@@ -77,6 +66,10 @@
     <string name="pref_enable_depth">Enable depth camera</string>
     <string name="pref_enable_depth_key">enable_depth</string>
     <string name="pref_enable_depth_summary">Enable depth camera when connecting to Tango.</string>
+
+    <string name="pref_enable_color_camera">Enable color camera</string>
+    <string name="pref_enable_color_camera_key">enable_color_camera</string>
+    <string name="pref_enable_color_camera_summary">Enable color camera when connecting to Tango. (Requires API > 23.)</string>
 
     <string name="pref_localization_mode_key">localization_mode</string>
     <string name="pref_localization_map_uuid_key">localization_map_uuid</string>

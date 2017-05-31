@@ -120,14 +120,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 key == getString(R.string.pref_master_uri_key) ||
                 key == getString(R.string.pref_create_new_map_key) ||
                 key == getString(R.string.pref_enable_depth_key) ||
+                key == getString(R.string.pref_enable_color_camera_key) ||
                 key == getString(R.string.pref_localization_mode_key) ||
                 key == getString(R.string.pref_localization_map_uuid_key)) {
             boolean previouslyStarted = mSharedPref.getBoolean(getString(R.string.pref_previously_started_key), false);
             if (previouslyStarted && mSettingsPreferenceFragment.getView() != null) {
+                boolean isRosMasterConnected =  (mSharedPref.getInt(getString(R.string.ros_status),
+                        RunningActivity.RosStatus.UNKNOWN.ordinal()) ==
+                        RunningActivity.RosStatus.MASTER_CONNECTED.ordinal());
                 // These changes require to restart the app.
                 if (key == getString(R.string.pref_master_is_local_key) ||
-                        key == getString(R.string.pref_master_uri_key)) {
-                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart_app), Snackbar.LENGTH_INDEFINITE);
+                        (key == getString(R.string.pref_master_uri_key)) && isRosMasterConnected) {
+                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(),
+                            getString(R.string.snackbar_text_restart_app), Snackbar.LENGTH_INDEFINITE);
                     View snackBarView = snackbar.getView();
                     snackBarView.setBackgroundColor(getResources().getColor(android.R.color.holo_orange_dark));
                     snackbar.show();
@@ -135,9 +140,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
                 // These changes require to restart Tango only.
                 if (key == getString(R.string.pref_create_new_map_key) ||
                     key == getString(R.string.pref_enable_depth_key) ||
+                    key == getString(R.string.pref_enable_color_camera_key) ||
                     key == getString(R.string.pref_localization_mode_key) ||
                     key == getString(R.string.pref_localization_map_uuid_key)) {
-                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(), getString(R.string.snackbar_text_restart_tango), Snackbar.LENGTH_INDEFINITE);
+                    Snackbar snackbar = Snackbar.make(mSettingsPreferenceFragment.getView(),
+                            getString(R.string.snackbar_text_restart_tango), Snackbar.LENGTH_INDEFINITE);
                     snackbar.setAction(getString(R.string.snackbar_action_text_restart_tango), new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -170,7 +177,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             public void onReceive(Context context, Intent intent) {
                 mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
                 updateMapChooserPreference();
-                mSettingsPreferenceFragment.setPreferencesSummury();
+                mSettingsPreferenceFragment.setPreferencesSummary();
             }
         };
         this.registerReceiver(this.mNewUuidsNamesMapAlertReceiver, new IntentFilter(NEW_UUIDS_NAMES_MAP_ALERT));
@@ -191,10 +198,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             snackbar.setAction(getString(R.string.snackbar_action_text_first_run), new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    setResult(RESULT_CANCELED, getIntent().putExtra(RunningActivity.RESTART_TANGO, false));
                     onBackPressed();
                 }
             });
             snackbar.show();
+        }
+        Preference enableColorCameraPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_enable_color_camera_key));
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+            enableColorCameraPref.setEnabled(true);
         }
         Preference aboutPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_about_app_key));
         aboutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -208,7 +220,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         Intent intent = getIntent();
         mUuidsNamesMap = (HashMap<String, String>) intent.getSerializableExtra(getString(R.string.uuids_names_map));
         updateMapChooserPreference();
-        mSettingsPreferenceFragment.setPreferencesSummury();
+        mSettingsPreferenceFragment.setPreferencesSummary();
     }
 
     @Override
@@ -261,7 +273,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         // to their values. When their values change, their summaries are
         // updated to reflect the new value, per the Android Design
         // guidelines.
-        public void setPreferencesSummury() {
+        public void setPreferencesSummary() {
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_master_uri_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_log_file_key)));
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.pref_localization_mode_key)));
@@ -285,9 +297,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
         startActivity(intent);
     }
 
+    /**
+     * Returns to Running Acitivity and restart Tango.
+     */
     private void restartTango() {
-        Intent intent = new Intent(RunningActivity.RESTART_TANGO_ALERT);
-        this.sendBroadcast(intent);
+        setResult(RESULT_CANCELED, getIntent().putExtra(RunningActivity.RESTART_TANGO, true));
         onBackPressed();
     }
 }
