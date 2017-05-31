@@ -81,6 +81,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     }
 
     public void uploadPreferenceToParameterServer(String paramName) {
+        if (mSharedPreferences == null) {
+            // Cannot use mLog here because it is null.
+            System.out.println("Shared preferences are null, failed to edit.");
+            return;
+        }
         String valueType = mParamNames.get(paramName);
         if (valueType == "boolean") {
             Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
@@ -96,6 +101,11 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     // Set app preferences according to ROS params.
     public void setPreferencesFromParameterServer() {
+        if (mSharedPreferences == null) {
+            // Cannot use mLog here because it is null.
+            System.out.println("Shared preferences are null, failed to edit.");
+            return;
+        }
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
             if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
