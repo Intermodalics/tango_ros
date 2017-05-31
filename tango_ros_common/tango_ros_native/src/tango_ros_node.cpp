@@ -234,11 +234,6 @@ void TangoRosNode::onInit() {
   } else {
     node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
-    node_handle_.getParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
-  }
   if (node_handle_.hasParam(ENABLE_DEPTH)) {
     node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
   }
@@ -618,7 +613,9 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  if (publish_pose_on_tf_ || publish_pose_on_topic_) {
+  if (publish_pose_on_tf_ ||
+      start_of_service_T_device_publisher_.getNumSubscribers() > 0 ||
+      area_description_T_start_of_service_publisher_.getNumSubscribers() > 0) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
         pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       if (pose->status_code == TANGO_POSE_VALID &&
@@ -771,8 +768,9 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ || !publish_pose_on_tf_ ||
-          !publish_pose_on_topic_) {
+      if (!tango_data_available_ || (!publish_pose_on_tf_ &&
+          start_of_service_T_device_publisher_.getNumSubscribers() <= 0 &&
+          area_description_T_start_of_service_publisher_.getNumSubscribers() <= 0)) {
         device_pose_thread_.data_available.notify_all();
       }
       device_pose_thread_.publish_thread.join();
@@ -831,12 +829,13 @@ void TangoRosNode::PublishDevicePose() {
           tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
         }
       }
-      if (publish_pose_on_topic_) {
+      if (start_of_service_T_device_publisher_.getNumSubscribers() > 0) {
         start_of_service_T_device_publisher_.publish(start_of_service_T_device_);
-        if (area_description_T_start_of_service_.child_frame_id != "") {
-          // This transform can be empty. Don't publish it in this case.
-          area_description_T_start_of_service_publisher_.publish(area_description_T_start_of_service_);
-        }
+      }
+      if (area_description_T_start_of_service_publisher_.getNumSubscribers() > 0 &&
+          area_description_T_start_of_service_.child_frame_id != "") {
+        // This transform can be empty. Don't publish it in this case.
+        area_description_T_start_of_service_publisher_.publish(area_description_T_start_of_service_);
       }
     }
   }

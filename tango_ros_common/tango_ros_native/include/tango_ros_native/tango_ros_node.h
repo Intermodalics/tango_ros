@@ -80,7 +80,6 @@ const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
-const std::string PUBLISH_POSE_ON_TOPIC_PARAM_NAME = "publish_pose_on_topic";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -209,7 +208,6 @@ class TangoRosNode : public ::nodelet::Nodelet {
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   bool publish_pose_on_tf_ = true;
-  bool publish_pose_on_topic_ = false;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
 
