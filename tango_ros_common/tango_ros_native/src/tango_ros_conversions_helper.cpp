@@ -234,23 +234,26 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
   mesh_marker->id += grid_index[1];
   mesh_marker->id *= 37;
   mesh_marker->id += grid_index[2];
-  for (size_t j = 0; j < tango_mesh.num_faces; ++j) {
+
+  mesh_marker->points.reserve(tango_mesh.num_faces * 3);
+  mesh_marker->colors.reserve(tango_mesh.num_faces * 3);
+  for (size_t i = 0; i < tango_mesh.num_faces; ++i) {
     // Add the 3 points of the triangle face and the corresponding colors.
     geometry_msgs::Point point;
-    toPoint(tango_mesh.vertices[tango_mesh.faces[j][0]], &point);
-    mesh_marker->points.push_back(point);
-    toPoint(tango_mesh.vertices[tango_mesh.faces[j][1]], &point);
-    mesh_marker->points.push_back(point);
-    toPoint(tango_mesh.vertices[tango_mesh.faces[j][2]], &point);
-    mesh_marker->points.push_back(point);
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][0]], &point);
+    mesh_marker->points[i * 3] = point;
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][1]], &point);
+    mesh_marker->points[i * 3 + 1] = point;
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][2]], &point);
+    mesh_marker->points[i * 3 + 2] = point;
 
     std_msgs::ColorRGBA color;
-    toColor(tango_mesh.colors[tango_mesh.faces[j][0]], &color);
-    mesh_marker->colors.push_back(color);
-    toColor(tango_mesh.colors[tango_mesh.faces[j][1]], &color);
-    mesh_marker->colors.push_back(color);
-    toColor(tango_mesh.colors[tango_mesh.faces[j][2]], &color);
-    mesh_marker->colors.push_back(color);
+    toColor(tango_mesh.colors[tango_mesh.faces[i][0]], &color);
+    mesh_marker->colors[i * 3] = color;
+    toColor(tango_mesh.colors[tango_mesh.faces[i][1]], &color);
+    mesh_marker->colors[i * 3 + 1] = color;
+    toColor(tango_mesh.colors[tango_mesh.faces[i][2]], &color);
+    mesh_marker->colors[i * 3 + 2] = color;
   }
 }
 
