@@ -41,6 +41,7 @@
 #include <std_msgs/Int8.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
+#include <tango_ros_messages/RequestPermission.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -86,6 +87,7 @@ const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
+const std::string REQUEST_PERMISSION_SERVICE_NAME = "request_permission";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 
@@ -105,10 +107,6 @@ enum LocalizationMode {
 enum class TangoStatus {
   UNKNOWN = 0,
   SERVICE_NOT_CONNECTED,
-  NEED_TO_REQUEST_ADF_PERMISSION,
-  ADF_PERMISSION_REQUEST_ANSWERED,
-  NEED_TO_REQUEST_DATASET_PERMISSION,
-  DATASET_PERMISSION_REQUEST_ANSWERED,
   NO_FIRST_VALID_POSE,
   SERVICE_CONNECTED
 };
@@ -200,9 +198,9 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // ROS subscriber callback from tango status topic.
   void TangoStatusCallback(const std_msgs::Int8::ConstPtr& msg);
   // Request ADF permision via tango status topic and wait until user answers the request.
-  void RequestADFPermissionAndWaitForAnswer();
+  void RequestADFPermission();
   // Request dataset permision via tango status topic and wait until user answers the request.
-  void RequestDatasetPermissionAndWaitForAnswer();
+  void RequestDatasetPermission();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -282,6 +280,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
+  ros::ServiceClient request_permission_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

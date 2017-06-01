@@ -87,8 +87,8 @@ public class RunningActivity extends AppCompatRosActivity implements
     private static final int MAX_TANGO_CONNECTION_TRY = 50;
 
     private static final String REQUEST_TANGO_PERMISSION_ACTION = "android.intent.action.REQUEST_TANGO_PERMISSION";
-    public static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
-    public static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
+    private static final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
+    private static final String EXTRA_VALUE_ADF = "ADF_LOAD_SAVE_PERMISSION";
     private static final String EXTRA_VALUE_DATASET = "DATASET_PERMISSION";
     private static final int REQUEST_CODE_ADF_PERMISSION = 111;
     private static final int REQUEST_CODE_DATASET_PERMISSION = 112;
@@ -109,13 +109,10 @@ public class RunningActivity extends AppCompatRosActivity implements
     enum TangoStatus {
         UNKNOWN,
         SERVICE_NOT_CONNECTED,
-        NEED_TO_REQUEST_ADF_PERMISSION,
-        ADF_PERMISSION_REQUEST_ANSWERED,
-        NEED_TO_REQUEST_DATASET_PERMISSION,
-        DATASET_PERMISSION_REQUEST_ANSWERED,
         NO_FIRST_VALID_POSE,
         SERVICE_CONNECTED
     }
+
 
     private SharedPreferences mSharedPref;
     private TangoNodeletManager mTangoNodeletManager;
@@ -420,12 +417,6 @@ public class RunningActivity extends AppCompatRosActivity implements
             Log.e(TAG, "Invalid Tango status " + status);
             return;
         }
-        if (status == TangoStatus.NEED_TO_REQUEST_ADF_PERMISSION.ordinal()) {
-             getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
-        }
-        if (status == TangoStatus.NEED_TO_REQUEST_DATASET_PERMISSION.ordinal()) {
-            getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
-        }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
             mParameterNode.setPreferencesFromParameterServer();
@@ -440,6 +431,18 @@ public class RunningActivity extends AppCompatRosActivity implements
 
     private void saveUuidsNamestoHashMap() {
         mTangoServiceClientNode.callGetMapUuidsService();
+    }
+
+    @Override
+    public void onRequestPermissionServiceCalled(tango_ros_messages.RequestPermissionRequest request,
+                                          tango_ros_messages.RequestPermissionResponse response) {
+        if (request.getPermission() == tango_ros_messages.RequestPermissionRequest.ADF_PERMISSION) {
+            getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
+        } else if (request.getPermission() == tango_ros_messages.RequestPermissionRequest.DATASET_PERMISSION) {
+            getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
+        } else {
+            Log.e(TAG, "Unknown permission requested: " + request.getPermission());
+        }
     }
 
     private void getTangoPermission(String permissionType, int requestCode) {
@@ -554,12 +557,9 @@ public class RunningActivity extends AppCompatRosActivity implements
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
-            }
-            if (requestCode == REQUEST_CODE_ADF_PERMISSION) {
-                mTangoServiceClientNode.publishTangoStatus(TangoStatus.ADF_PERMISSION_REQUEST_ANSWERED.ordinal());
-            }
-            if (requestCode == REQUEST_CODE_DATASET_PERMISSION) {
-                mTangoServiceClientNode.publishTangoStatus(TangoStatus.DATASET_PERMISSION_REQUEST_ANSWERED.ordinal());
+                mTangoServiceClientNode.onRequestPermissionAnswered(false);
+            } else {
+                mTangoServiceClientNode.onRequestPermissionAnswered(true);
             }
         }
     }

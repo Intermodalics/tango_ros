@@ -17,6 +17,7 @@
 package eu.intermodalics.tango_ros_common;
 
 import android.app.Activity;
+import android.os.SystemClock;
 
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
@@ -27,11 +28,13 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
-import org.ros.node.topic.Publisher;
+import org.ros.node.service.ServiceServer;
+import org.ros.node.service.ServiceResponseBuilder;
 import org.ros.node.topic.Subscriber;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import tango_ros_messages.GetMapUuids;
 import tango_ros_messages.GetMapUuidsRequest;
@@ -54,12 +57,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String SAVE_MAP_SRV_NAME = "save_map";
     private static final String GET_MAP_UUIDS_SRV_NAME = "get_map_uuids";
     private static final String TANGO_CONNECT_SRV_NAME = "connect";
+    private static final String REQUEST_PERMISSION_SRV_NAME = "request_permission";
     private static final String TANGO_STATUS_TOPIC_NAME = "status";
 
     ConnectedNode mConnectedNode;
     private Log mLog;
     CallbackListener mCallbackListener;
-    Publisher<Int8> mStatusPublisher;
+
+    AtomicBoolean mRequestPermissionAnswered = new AtomicBoolean(false);
+    AtomicBoolean mRequestPermissionGranted = new AtomicBoolean(false);
 
     public interface CallbackListener {
         void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
@@ -68,6 +74,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
+        void onRequestPermissionServiceCalled(tango_ros_messages.RequestPermissionRequest request,
+                                              tango_ros_messages.RequestPermissionResponse response);
     }
 
     public TangoServiceClientNode(Activity activity) {
@@ -83,7 +91,6 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
 
-        mStatusPublisher = mConnectedNode.newPublisher(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
         Subscriber<Int8> statusSubscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
         statusSubscriber.addMessageListener(new MessageListener<Int8>() {
             @Override
@@ -91,13 +98,28 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                 mCallbackListener.onTangoStatus(status.getData());
             }
         });
+
+        ServiceServer<tango_ros_messages.RequestPermissionRequest, tango_ros_messages.RequestPermissionResponse> server =
+                mConnectedNode.newServiceServer(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(REQUEST_PERMISSION_SRV_NAME),
+                        tango_ros_messages.RequestPermission._TYPE,
+                        new ServiceResponseBuilder<tango_ros_messages.RequestPermissionRequest, tango_ros_messages.RequestPermissionResponse>() {
+                    @Override
+                    public void build(tango_ros_messages.RequestPermissionRequest request, tango_ros_messages.RequestPermissionResponse response) {
+                        mRequestPermissionAnswered.set(false);
+                        mRequestPermissionGranted.set(false);
+                        mCallbackListener.onRequestPermissionServiceCalled(request, response);
+                        while (!mRequestPermissionAnswered.get()) {
+                            mLog.info("Waiting for user to answer permission request.");
+                            SystemClock.sleep(100);
+                        }
+                        response.setGranted(mRequestPermissionGranted.get());
+                    }
+                });
     }
 
-    public void publishTangoStatus(int status) {
-        if (mStatusPublisher == null) return;
-        Int8 statusMessage = mStatusPublisher.newMessage();
-        statusMessage.setData((byte) status);
-        mStatusPublisher.publish(statusMessage);
+    public void onRequestPermissionAnswered(boolean granted) {
+        mRequestPermissionGranted.set(granted);
+        mRequestPermissionAnswered.set(true);
     }
 
     /**
