@@ -229,6 +229,10 @@ void TangoRosNode::onInit() {
   if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
   }
+  if (!node_handle_.hasParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
+                          TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
   } else {
@@ -417,7 +421,10 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
       Tango3DR_Config_create(TANGO_3DR_CONFIG_CONTEXT);
   Tango3DR_Status result;
   const char* resolution = "resolution";
-  result = Tango3DR_Config_setDouble(t3dr_config, resolution, 0.05);
+  double t3dr_resolution;
+  node_handle_.param(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
+                     t3dr_resolution, TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  result = Tango3DR_Config_setDouble(t3dr_config, resolution, t3dr_resolution);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
         << resolution << " error: " << result;
