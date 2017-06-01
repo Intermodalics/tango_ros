@@ -70,7 +70,7 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.MasterConnectionChecker;
-import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
+import eu.intermodalics.tango_ros_common.TangoServiceHelperNode;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
 import eu.intermodalics.tango_ros_common.ParameterNode;
 import eu.intermodalics.tango_ros_streamer.R;
@@ -79,7 +79,7 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
+        SaveMapDialog.CallbackListener, TangoServiceHelperNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -120,7 +120,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private String mMasterUri = "";
     private CountDownLatch mRosConnectionLatch;
     private ParameterNode mParameterNode;
-    private TangoServiceClientNode mTangoServiceClientNode;
+    private TangoServiceHelperNode mTangoServiceHelperNode;
     private ImuNode mImuNode;
     private RosStatus mRosStatus = RosStatus.UNKNOWN;
     private TangoStatus mTangoStatus = TangoStatus.UNKNOWN;
@@ -328,7 +328,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                mTangoServiceClientNode.callSaveMapService(mapName);
+                mTangoServiceHelperNode.callSaveMapService(mapName);
                 return null;
             }
         }.execute();
@@ -430,7 +430,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     private void saveUuidsNamestoHashMap() {
-        mTangoServiceClientNode.callGetMapUuidsService();
+        mTangoServiceHelperNode.callGetMapUuidsService();
     }
 
     @Override
@@ -557,9 +557,9 @@ public class RunningActivity extends AppCompatRosActivity implements
             if (resultCode == RESULT_CANCELED) {
                 // No Tango permissions granted by the user.
                 displayToastMessage(R.string.tango_permission_denied);
-                mTangoServiceClientNode.onRequestPermissionAnswered(false);
+                mTangoServiceHelperNode.onRequestPermissionAnswered(false);
             } else {
-                mTangoServiceClientNode.onRequestPermissionAnswered(true);
+                mTangoServiceHelperNode.onRequestPermissionAnswered(true);
             }
         }
     }
@@ -594,7 +594,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private void restartTango() {
         mParameterNode.uploadPreferencesToParameterServer();
         updateSaveMapButton();
-        mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
+        mTangoServiceHelperNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 
     @Override
@@ -621,11 +621,9 @@ public class RunningActivity extends AppCompatRosActivity implements
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-        // ServiceClient node which is responsible for calling ros services.
-        mTangoServiceClientNode = new TangoServiceClientNode(this);
-        nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
-        nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);
-        // Create node publishing IMU data.
+        mTangoServiceHelperNode = new TangoServiceHelperNode(this);
+        nodeConfiguration.setNodeName(mTangoServiceHelperNode.getDefaultNodeName());
+        nodeMainExecutor.execute(mTangoServiceHelperNode, nodeConfiguration);
         mImuNode = new ImuNode(this);
         nodeConfiguration.setNodeName(mImuNode.getDefaultNodeName());
         nodeMainExecutor.execute(mImuNode, nodeConfiguration);
@@ -644,7 +642,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                         public void onStart(ConnectedNode connectedNode) {
                             int count = 0;
                             while (count < MAX_TANGO_CONNECTION_TRY &&
-                                    !mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
+                                    !mTangoServiceHelperNode.callTangoConnectService(TangoConnectRequest.CONNECT)) {
                                 try {
                                     count++;
                                     Log.e(TAG, "Trying to connect to Tango, attempt " + count);

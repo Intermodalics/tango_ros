@@ -49,11 +49,11 @@ import tango_ros_messages.TangoConnectResponse;
 import std_msgs.Int8;
 
 /**
- * Rosjava node that implements a service client.
+ * Rosjava node that implements a service client and server to handle Tango services.
  */
-public class TangoServiceClientNode extends AbstractNodeMain {
-    private static final String TAG = TangoServiceClientNode.class.getSimpleName();
-    private static final String NODE_NAME = "tango_service_client_node";
+public class TangoServiceHelperNode extends AbstractNodeMain {
+    private static final String TAG = TangoServiceHelperNode.class.getSimpleName();
+    private static final String NODE_NAME = "tango_service_helper_node";
     private static final String SAVE_MAP_SRV_NAME = "save_map";
     private static final String GET_MAP_UUIDS_SRV_NAME = "get_map_uuids";
     private static final String TANGO_CONNECT_SRV_NAME = "connect";
@@ -78,7 +78,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                                               tango_ros_messages.RequestPermissionResponse response);
     }
 
-    public TangoServiceClientNode(Activity activity) {
+    public TangoServiceHelperNode(Activity activity) {
         mCallbackListener = (CallbackListener) activity;
     }
 
