@@ -26,6 +26,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Int8.h>
 
 PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
 
@@ -159,9 +160,6 @@ void TangoRosNode::onInit() {
   tango_status_publisher_ =
       node_handle_.advertise<std_msgs::Int8>(TANGO_STATUS_TOPIC_NAME,
                                              queue_size, latching);
-  tango_status_subscriber_ = node_handle_.subscribe<std_msgs::Int8>(
-      TANGO_STATUS_TOPIC_NAME, queue_size, &TangoRosNode::TangoStatusCallback, this);
-
   start_of_service_T_device_publisher_ =
       node_handle_.advertise<geometry_msgs::TransformStamped>(
           START_OF_SERVICE_T_DEVICE_TOPIC_NAME, queue_size, latching);
@@ -541,10 +539,6 @@ void TangoRosNode::UpdateAndPublishTangoStatus(const TangoStatus& status) {
   std_msgs::Int8 tango_status_msg;
   tango_status_msg.data = static_cast<int>(tango_status_);
   tango_status_publisher_.publish(tango_status_msg);
-}
-
-void TangoRosNode::TangoStatusCallback(const std_msgs::Int8::ConstPtr& msg) {
-  tango_status_ = static_cast<TangoStatus>(msg->data);
 }
 
 TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {

@@ -112,7 +112,6 @@ public class RunningActivity extends AppCompatRosActivity implements
         SERVICE_CONNECTED
     }
 
-
     private SharedPreferences mSharedPref;
     private TangoNodeletManager mTangoNodeletManager;
     private boolean mRunLocalMaster = false;

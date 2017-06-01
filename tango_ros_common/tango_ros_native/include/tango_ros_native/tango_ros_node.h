@@ -38,7 +38,6 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <std_msgs/Int8.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
 #include <tango_ros_messages/RequestPermission.h>
@@ -195,11 +194,9 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool TangoConnectServiceCallback(
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);
-  // ROS subscriber callback from tango status topic.
-  void TangoStatusCallback(const std_msgs::Int8::ConstPtr& msg);
-  // Request ADF permision via tango status topic and wait until user answers the request.
+  // Request ADF permision via ros service call.
   void RequestADFPermission();
-  // Request dataset permision via tango status topic and wait until user answers the request.
+  // Request dataset permision via ros service call.
   void RequestDatasetPermission();
 
   TangoConfig tango_config_;
@@ -240,7 +237,6 @@ class TangoRosNode : public ::nodelet::Nodelet {
   double laser_scan_min_height_ = -1.0;
 
   ros::Publisher tango_status_publisher_;
-  ros::Subscriber tango_status_subscriber_;
   TangoStatus tango_status_;
   bool tango_data_available_ = true;
 
