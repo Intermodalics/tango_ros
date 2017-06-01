@@ -60,7 +60,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
+        syncLocalPreferencesWithParameterServer();
+    }
+
+    /**
+     * First download ROS parameters from parameter server, then upload local settings to parameter
+     * server.
+     */
+    public void syncLocalPreferencesWithParameterServer() {
         setPreferencesFromParameterServer();
+        uploadPreferencesToParameterServer();
     }
 
     public Boolean getBoolParam(String paramName) {
@@ -92,37 +101,53 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
+        mLog.info("Upload preferences to parameter server.");
         for (String paramName : mParamNames.keySet()) {
-            if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
-                setBoolParam(paramName, booleanValue);
-            }
-            if (mParamNames.get(paramName) == "int_as_string") {
-                String stringValue = mSharedPreferences.getString(paramName, "0");
-                setIntParam(paramName, Integer.parseInt(stringValue));
-            }
-            if (mParamNames.get(paramName) == "string") {
-                String stringValue = mSharedPreferences.getString(paramName, "");
-                setStringParam(paramName, stringValue);
-            }
+            uploadPreferenceToParameterServer(paramName);
+        }
+    }
+
+    public void uploadPreferenceToParameterServer(String paramName) {
+        if (mSharedPreferences == null) {
+            // Cannot use mLog here because it is null.
+            System.out.println("Shared preferences are null, failed to edit.");
+            return;
+        }
+        String valueType = mParamNames.get(paramName);
+        if (valueType == "boolean") {
+            Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
+            setBoolParam(paramName, booleanValue);
+        } else if (valueType == "int_as_string") {
+            String stringValue = mSharedPreferences.getString(paramName, "0");
+            setIntParam(paramName, Integer.parseInt(stringValue));
+        } else if (valueType == "string") {
+            String stringValue = mSharedPreferences.getString(paramName, "");
+            setStringParam(paramName, stringValue);
         }
     }
 
     // Set app preferences according to ROS params.
     public void setPreferencesFromParameterServer() {
+        if (mSharedPreferences == null) {
+            // Cannot use mLog here because it is null.
+            System.out.println("Shared preferences are null, failed to edit.");
+            return;
+        }
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
-            if (mParamNames.get(paramName) == "boolean") {
-                Boolean booleanValue = getBoolParam(paramName);
-                editor.putBoolean(paramName, booleanValue);
-            }
-            if (mParamNames.get(paramName) == "int_as_string") {
-                Integer intValue = getIntParam(paramName);
-                editor.putString(paramName, intValue.toString());
-            }
-            if (mParamNames.get(paramName) == "string") {
-                String stringValue = getStringParam(paramName);
-                editor.putString(paramName, stringValue);
+            if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
+                if (mParamNames.get(paramName) == "boolean") {
+                    Boolean booleanValue = getBoolParam(paramName);
+                    editor.putBoolean(paramName, booleanValue);
+                }
+                if (mParamNames.get(paramName) == "int_as_string") {
+                    Integer intValue = getIntParam(paramName);
+                    editor.putString(paramName, intValue.toString());
+                }
+                if (mParamNames.get(paramName) == "string") {
+                    String stringValue = getStringParam(paramName);
+                    editor.putString(paramName, stringValue);
+                }
             }
         }
         editor.commit();

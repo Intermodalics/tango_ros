@@ -67,6 +67,10 @@
     <string name="pref_enable_depth_key">enable_depth</string>
     <string name="pref_enable_depth_summary">Enable depth camera when connecting to Tango.</string>
 
+    <string name="pref_enable_color_camera">Enable color camera</string>
+    <string name="pref_enable_color_camera_key">enable_color_camera</string>
+    <string name="pref_enable_color_camera_summary">Enable color camera when connecting to Tango. (Requires API > 23.)</string>
+
     <string name="pref_localization_mode_key">localization_mode</string>
     <string name="pref_localization_map_uuid_key">localization_map_uuid</string>
 
