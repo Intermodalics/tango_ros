@@ -88,7 +88,7 @@ const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
-const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05;
+const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
