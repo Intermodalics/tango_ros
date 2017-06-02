@@ -80,7 +80,7 @@ const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
-const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "3d_reconstruction_resolution";
+const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
