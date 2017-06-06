@@ -268,6 +268,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   TangoSupportImageBufferManager* image_buffer_manager_;
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
+  double t3dr_resolution_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;

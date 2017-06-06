@@ -259,18 +259,18 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,
-                     double time_offset,
+                     double time_offset, double resolution,
                      nav_msgs::OccupancyGrid* occupancy_grid) {
   occupancy_grid->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
   occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
   occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
   occupancy_grid->info.width = image_grid.width;
   occupancy_grid->info.height = image_grid.height;
-  occupancy_grid->info.resolution = OCCUPANCY_GRID_RESOLUTION;
+  occupancy_grid->info.resolution = resolution;
   occupancy_grid->info.origin.position.x = origin[0];
   // We have the position of the top left pixel, instead we want the position
   // of the bottom left pixel.
-  occupancy_grid->info.origin.position.y = origin[1] - image_grid.height * OCCUPANCY_GRID_RESOLUTION;
+  occupancy_grid->info.origin.position.y = origin[1] - image_grid.height * resolution;
 
   occupancy_grid->data.reserve(image_grid.height * image_grid.width);
   for (size_t i = 0; i < image_grid.height; ++i) {

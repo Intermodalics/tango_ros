@@ -28,7 +28,6 @@
 
 namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
-const float OCCUPANCY_GRID_RESOLUTION = 0.05; // in meter.
 constexpr int FREE_CELL = 0;
 constexpr int OCCUPIED_CELL = 100;
 constexpr int UNKNOWN_CELL = -1;
@@ -127,10 +126,11 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // @param image_grid, Tango3DR_ImageBuffer to convert.
 // @param origin, position of the top left pixel in
 /// world coordinates (x: right, y: up).
+// @param resolution the grid resolution (m/cell).
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,
-                     double time_offset,
+                     double time_offset, double resolution,
                      nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.
