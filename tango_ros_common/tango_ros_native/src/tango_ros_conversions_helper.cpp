@@ -235,8 +235,9 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
   mesh_marker->id *= 37;
   mesh_marker->id += grid_index[2];
 
-  mesh_marker->points.reserve(tango_mesh.num_faces * 3);
-  mesh_marker->colors.reserve(tango_mesh.num_faces * 3);
+
+  mesh_marker->points.resize(tango_mesh.num_faces * 3);
+  mesh_marker->colors.resize(tango_mesh.num_faces * 3);
   for (size_t i = 0; i < tango_mesh.num_faces; ++i) {
     // Add the 3 points of the triangle face and the corresponding colors.
     geometry_msgs::Point point;
