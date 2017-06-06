@@ -77,7 +77,7 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
+        SaveMapDialog.CallbackListener, TangoServiceClientNode.TangoServiceCallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -635,7 +635,8 @@ public class RunningActivity extends AppCompatRosActivity implements
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
         // ServiceClient node which is responsible for calling ros services.
-        mTangoServiceClientNode = new TangoServiceClientNode(this);
+        mTangoServiceClientNode = new TangoServiceClientNode();
+        mTangoServiceClientNode.seCallbackListener(this);
         nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
         nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);
         // Create node publishing IMU data.
