@@ -77,7 +77,7 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, TangoServiceClientNode.TangoServiceCallbackListener {
+        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;

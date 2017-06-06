@@ -16,8 +16,6 @@
 
 package eu.intermodalics.tango_ros_common;
 
-import android.app.Activity;
-
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -57,9 +55,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     ConnectedNode mConnectedNode;
     private Log mLog;
-    TangoServiceCallbackListener mCallbackListener = null;
+    CallbackListener mCallbackListener = null;
 
-    public interface TangoServiceCallbackListener {
+    public interface CallbackListener {
         void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
@@ -70,7 +68,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     public TangoServiceClientNode() {}
 
-    public void seCallbackListener (TangoServiceCallbackListener callbackListener) {
+    public void seCallbackListener (CallbackListener callbackListener) {
         mCallbackListener = callbackListener;
     }
 
