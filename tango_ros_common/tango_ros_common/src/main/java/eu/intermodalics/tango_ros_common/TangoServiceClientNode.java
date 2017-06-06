@@ -55,7 +55,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     ConnectedNode mConnectedNode;
     private Log mLog;
-    CallbackListener mCallbackListener = null;
+    CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     public interface CallbackListener {
         void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
@@ -64,6 +64,29 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
+    }
+
+    public class DefaultCallbackListener implements CallbackListener {
+
+        public DefaultCallbackListener() {}
+
+        @Override
+        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid) {}
+
+        @Override
+        public void onTangoConnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onTangoDisconnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onTangoReconnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames) {}
+
+        @Override
+        public void onTangoStatus(int status) {}
     }
 
     public TangoServiceClientNode() {}
@@ -85,10 +108,6 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         subscriber.addMessageListener(new MessageListener<Int8>() {
             @Override
             public void onNewMessage(Int8 status) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                  mCallbackListener.onTangoStatus(status.getData());
             }
         });
@@ -129,10 +148,6 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         tangoConnectService.call(tangoConnectRequest, new ServiceResponseListener<TangoConnectResponse>() {
             @Override
             public void onSuccess(TangoConnectResponse tangoConnectResponse) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 if (connectRequest == TangoConnectRequest.CONNECT) {
                     mCallbackListener.onTangoConnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
@@ -146,10 +161,6 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
             @Override
             public void onFailure(RemoteException e) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 if (connectRequest == TangoConnectRequest.CONNECT) {
                     mCallbackListener.onTangoConnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
                 } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
@@ -176,19 +187,11 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
                         saveMapResponse.getMessage(), saveMapResponse.getMapName(), saveMapResponse.getMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage(), null, null);
             }
         });
@@ -206,19 +209,11 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         getMapUuidsService.call(request, new ServiceResponseListener<GetMapUuidsResponse>() {
             @Override
             public void onSuccess(GetMapUuidsResponse getMapUuidsResponse) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 mCallbackListener.onGetMapUuidsFinish(getMapUuidsResponse.getMapUuids(),
                         getMapUuidsResponse.getMapNames());
             }
             @Override
             public void onFailure(RemoteException e) {
-                if (mCallbackListener == null) {
-                    mLog.warn("No callback listener was set.");
-                    return;
-                }
                 mCallbackListener.onGetMapUuidsFinish(null, null);
             }
         });
