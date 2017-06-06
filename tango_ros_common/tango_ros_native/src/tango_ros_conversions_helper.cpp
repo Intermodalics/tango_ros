@@ -234,8 +234,6 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
   mesh_marker->id += grid_index[1];
   mesh_marker->id *= 37;
   mesh_marker->id += grid_index[2];
-
-
   mesh_marker->points.resize(tango_mesh.num_faces * 3);
   mesh_marker->colors.resize(tango_mesh.num_faces * 3);
   for (size_t i = 0; i < tango_mesh.num_faces; ++i) {
