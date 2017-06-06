@@ -48,6 +48,7 @@
             android:title="@string/pref_enable_color_camera"
             android:key="@string/pref_enable_color_camera_key"
             android:defaultValue="true"
+            android:enabled="false"
             android:summary="@string/pref_enable_color_camera_summary" />
     </PreferenceCategory>
 

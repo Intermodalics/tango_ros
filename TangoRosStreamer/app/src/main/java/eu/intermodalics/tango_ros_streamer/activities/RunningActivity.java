@@ -28,6 +28,7 @@ import android.content.res.Configuration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.Toolbar;
@@ -442,6 +443,12 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // The following piece of code allows networking in main thread.
+        // e.g. Restart Tango button calls a ROS service in UI thread.
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
         mSharedPref = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
         mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),

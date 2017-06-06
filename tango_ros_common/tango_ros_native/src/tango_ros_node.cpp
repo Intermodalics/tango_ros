@@ -232,15 +232,14 @@ void TangoRosNode::onInit() {
   if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
   }
+  if (!node_handle_.hasParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
+                          TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
   } else {
     node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
-  }
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME)) {
-    node_handle_.getParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, publish_pose_on_topic_);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TOPIC_PARAM_NAME, false);
   }
   if (node_handle_.hasParam(ENABLE_DEPTH)) {
     node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
@@ -425,8 +424,10 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
       Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
   Tango3DR_Status result;
   const char* resolution = "resolution";
-  result = Tango3DR_Config_setDouble(t3dr_config, resolution,
-                                     tango_ros_conversions_helper::OCCUPANCY_GRID_RESOLUTION);
+  double t3dr_resolution;
+  node_handle_.param(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
+                     t3dr_resolution, TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  result = Tango3DR_Config_setDouble(t3dr_config, resolution, t3dr_resolution);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
         << resolution << " error: " << result;
@@ -622,7 +623,9 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  if (publish_pose_on_tf_ || publish_pose_on_topic_) {
+  if (publish_pose_on_tf_ ||
+      start_of_service_T_device_publisher_.getNumSubscribers() > 0 ||
+      area_description_T_start_of_service_publisher_.getNumSubscribers() > 0) {
     if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
         pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       if (pose->status_code == TANGO_POSE_VALID &&
@@ -777,42 +780,43 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ || (!publish_pose_on_tf_
-          && !publish_pose_on_topic_)) {
+      if (!tango_data_available_ || (!publish_pose_on_tf_ &&
+          start_of_service_T_device_publisher_.getNumSubscribers() <= 0 &&
+          area_description_T_start_of_service_publisher_.getNumSubscribers() <= 0)) {
         device_pose_thread_.data_available.notify_all();
       }
       device_pose_thread_.publish_thread.join();
     }
     if (point_cloud_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !enable_depth_ ||
           point_cloud_publisher_.getNumSubscribers() <= 0) {
         point_cloud_thread_.data_available.notify_all();
       }
       point_cloud_thread_.publish_thread.join();
     }
     if (laser_scan_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !enable_depth_ ||
           laser_scan_publisher_.getNumSubscribers() <= 0) {
         laser_scan_thread_.data_available.notify_all();
       }
       laser_scan_thread_.publish_thread.join();
     }
     if (fisheye_image_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_
-          || fisheye_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ ||
+          fisheye_camera_publisher_.getNumSubscribers() <= 0) {
         fisheye_image_thread_.data_available.notify_all();
       }
       fisheye_image_thread_.publish_thread.join();
     }
     if (color_image_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_
-          || color_camera_publisher_.getNumSubscribers() <= 0) {
+      if (!tango_data_available_ || !enable_color_camera_ ||
+          color_camera_publisher_.getNumSubscribers() <= 0) {
         color_image_thread_.data_available.notify_all();
       }
       color_image_thread_.publish_thread.join();
     }
     if (mesh_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !enable_depth_ || !enable_color_camera_ ||
           (mesh_marker_publisher_.getNumSubscribers() <= 0 &&
               occupancy_grid_publisher_.getNumSubscribers() <= 0)) {
         mesh_thread_.data_available.notify_all();
@@ -838,12 +842,13 @@ void TangoRosNode::PublishDevicePose() {
           tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
         }
       }
-      if (publish_pose_on_topic_) {
+      if (start_of_service_T_device_publisher_.getNumSubscribers() > 0) {
         start_of_service_T_device_publisher_.publish(start_of_service_T_device_);
-        if (area_description_T_start_of_service_.child_frame_id != "") {
-          // This transform can be empty. Don't publish it in this case.
-          area_description_T_start_of_service_publisher_.publish(area_description_T_start_of_service_);
-        }
+      }
+      if (area_description_T_start_of_service_publisher_.getNumSubscribers() > 0 &&
+          area_description_T_start_of_service_.child_frame_id != "") {
+        // This transform can be empty. Don't publish it in this case.
+        area_description_T_start_of_service_publisher_.publish(area_description_T_start_of_service_);
       }
     }
   }
@@ -973,20 +978,22 @@ void TangoRosNode::PublishMesh() {
         t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud->points);
         // Get latest image.
         TangoImageBuffer* last_color_image_buffer;
-        TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
-        Tango3DR_ImageBuffer t3dr_image;
-        t3dr_image.width = last_color_image_buffer->width;
-        t3dr_image.height = last_color_image_buffer->height;
-        t3dr_image.stride = last_color_image_buffer->stride;
-        t3dr_image.timestamp = last_color_image_buffer->timestamp;
-        t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
-        t3dr_image.data = last_color_image_buffer->data;
-        // Get updated mesh segment indices.
-        Tango3DR_Status result =
-            Tango3DR_updateFromPointCloud(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
-                            &last_camera_color_pose_, &t3dr_updated_indices);
-        if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_updateFromPointCloud failed with error code: " << result;
+        if (image_buffer_manager_ != nullptr) {
+          TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
+          Tango3DR_ImageBuffer t3dr_image;
+          t3dr_image.width = last_color_image_buffer->width;
+          t3dr_image.height = last_color_image_buffer->height;
+          t3dr_image.stride = last_color_image_buffer->stride;
+          t3dr_image.timestamp = last_color_image_buffer->timestamp;
+          t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
+          t3dr_image.data = last_color_image_buffer->data;
+          // Get updated mesh segment indices.
+          Tango3DR_Status result =
+              Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
+                              &last_camera_color_pose_, &t3dr_updated_indices);
+          if (result != TANGO_3DR_SUCCESS) {
+            LOG(ERROR) << "Tango3DR_update failed with error code " << result;
+          }
         }
       }
       // Publish Tango mesh as visualization marker.
@@ -1094,7 +1101,7 @@ bool TangoRosNode::TangoConnectServiceCallback(
       response.response = ConnectToTangoAndSetUpNode();
       break;
     default:
-      LOG(ERROR) << "Did not understand request " << request.request
+      LOG(ERROR) << "Did not understand request " << static_cast<int>(request.request)
                  << ", valid requests are (CONNECT: "
                  << tango_ros_messages::TangoConnect::Request::CONNECT
                  << ", DISCONNECT: "

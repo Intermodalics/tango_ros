@@ -204,6 +204,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements
             });
             snackbar.show();
         }
+        Preference enableColorCameraPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_enable_color_camera_key));
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+            enableColorCameraPref.setEnabled(true);
+        }
         Preference aboutPref = mSettingsPreferenceFragment.findPreference(getString(R.string.pref_about_app_key));
         aboutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
