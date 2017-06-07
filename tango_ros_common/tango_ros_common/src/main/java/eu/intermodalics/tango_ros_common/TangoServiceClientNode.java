@@ -16,8 +16,6 @@
 
 package eu.intermodalics.tango_ros_common;
 
-import android.app.Activity;
-
 import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
@@ -45,7 +43,7 @@ import tango_ros_messages.TangoConnectResponse;
 import std_msgs.Int8;
 
 /**
- * Rosjava node that implements a service client.
+ * Rosjava node that implements a client for tango ROS services.
  */
 public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String TAG = TangoServiceClientNode.class.getSimpleName();
@@ -57,7 +55,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     ConnectedNode mConnectedNode;
     private Log mLog;
-    CallbackListener mCallbackListener;
+    CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     public interface CallbackListener {
         void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
@@ -68,8 +66,33 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onTangoStatus(int status);
     }
 
-    public TangoServiceClientNode(Activity activity) {
-        mCallbackListener = (CallbackListener) activity;
+    public class DefaultCallbackListener implements CallbackListener {
+
+        public DefaultCallbackListener() {}
+
+        @Override
+        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid) {}
+
+        @Override
+        public void onTangoConnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onTangoDisconnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onTangoReconnectServiceFinish(int response, String message) {}
+
+        @Override
+        public void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames) {}
+
+        @Override
+        public void onTangoStatus(int status) {}
+    }
+
+    public TangoServiceClientNode() {}
+
+    public void setCallbackListener(CallbackListener callbackListener) {
+        mCallbackListener = callbackListener;
     }
 
     @Override
@@ -138,7 +161,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
             @Override
             public void onFailure(RemoteException e) {
-                mCallbackListener.onTangoConnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
+                if (connectRequest == TangoConnectRequest.CONNECT) {
+                    mCallbackListener.onTangoConnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
+                } else if (connectRequest == TangoConnectRequest.DISCONNECT) {
+                    mCallbackListener.onTangoDisconnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
+                } else if (connectRequest == TangoConnectRequest.RECONNECT) {
+                    mCallbackListener.onTangoReconnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
+                } else {
+                    mLog.error("Request not recognized: " + connectRequest);
+                }
             }
         });
 
