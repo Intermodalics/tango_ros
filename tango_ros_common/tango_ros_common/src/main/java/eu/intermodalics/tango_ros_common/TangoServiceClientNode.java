@@ -91,7 +91,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     public TangoServiceClientNode() {}
 
-    public void seCallbackListener (CallbackListener callbackListener) {
+    public void setCallbackListener(CallbackListener callbackListener) {
         mCallbackListener = callbackListener;
     }
 
@@ -108,7 +108,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         subscriber.addMessageListener(new MessageListener<Int8>() {
             @Override
             public void onNewMessage(Int8 status) {
-                 mCallbackListener.onTangoStatus(status.getData());
+                mCallbackListener.onTangoStatus(status.getData());
             }
         });
     }
