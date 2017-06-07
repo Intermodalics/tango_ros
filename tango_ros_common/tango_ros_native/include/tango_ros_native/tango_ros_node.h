@@ -68,6 +68,7 @@ const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_r
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
+const std::string OCCUPANCY_GRID_TOPIC_NAME = "occupancy_grid";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
@@ -173,7 +174,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void PublishLaserScan();
   void PublishFisheyeImage();
   void PublishColorImage();
-  void PublishMeshMarker();
+  void PublishMesh();
   // Runs ros::spinOnce() in a loop to trigger subscribers callbacks (e.g. dynamic reconfigure).
   void RunRosSpin();
   // Function called when one of the dynamic reconfigure parameter is changed.
@@ -203,7 +204,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   PublishThread laser_scan_thread_;
   PublishThread fisheye_image_thread_;
   PublishThread color_image_thread_;
-  PublishThread mesh_marker_thread_;
+  PublishThread mesh_thread_;
   std::thread ros_spin_thread_;
   std::atomic_bool run_threads_;
   std::atomic_bool new_point_cloud_available_for_t3dr_;
@@ -258,15 +259,16 @@ class TangoRosNode : public ::nodelet::Nodelet {
   cv::Mat color_image_rect_;
 
   ros::Publisher mesh_marker_publisher_;
+  ros::Publisher occupancy_grid_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
-  Tango3DR_Context t3dr_context_;
+  Tango3DR_ReconstructionContext t3dr_context_;
   TangoSupportPointCloudManager* point_cloud_manager_;
   Tango3DR_Pose last_camera_depth_pose_;
   TangoSupportImageBufferManager* image_buffer_manager_;
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
-  bool use_floor_plan_ = false;
+  double t3dr_resolution_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;

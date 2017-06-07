@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 
+#include <glog/logging.h>
+
 #include <ros/ros.h>
 #include <sensor_msgs/distortion_models.h>
 #include <sensor_msgs/PointField.h>
@@ -209,11 +211,11 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 }
 
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
-                  Tango3DR_Mesh* tango_mesh,
+                  const Tango3DR_Mesh& tango_mesh,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker) {
   mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-  mesh_marker->header.stamp.fromSec(tango_mesh->timestamp + time_offset);
+  mesh_marker->header.stamp.fromSec(tango_mesh.timestamp + time_offset);
   mesh_marker->ns = "tango";
   mesh_marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
   mesh_marker->action = visualization_msgs::Marker::ADD;
@@ -232,23 +234,60 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
   mesh_marker->id += grid_index[1];
   mesh_marker->id *= 37;
   mesh_marker->id += grid_index[2];
-  for (size_t j = 0; j < tango_mesh->num_faces; ++j) {
+  mesh_marker->points.resize(tango_mesh.num_faces * 3);
+  mesh_marker->colors.resize(tango_mesh.num_faces * 3);
+  for (size_t i = 0; i < tango_mesh.num_faces; ++i) {
     // Add the 3 points of the triangle face and the corresponding colors.
     geometry_msgs::Point point;
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][0]], &point);
-    mesh_marker->points.push_back(point);
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][1]], &point);
-    mesh_marker->points.push_back(point);
-    toPoint(tango_mesh->vertices[tango_mesh->faces[j][2]], &point);
-    mesh_marker->points.push_back(point);
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][0]], &point);
+    mesh_marker->points[i * 3] = point;
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][1]], &point);
+    mesh_marker->points[i * 3 + 1] = point;
+    toPoint(tango_mesh.vertices[tango_mesh.faces[i][2]], &point);
+    mesh_marker->points[i * 3 + 2] = point;
 
     std_msgs::ColorRGBA color;
-    toColor(tango_mesh->colors[tango_mesh->faces[j][0]], &color);
-    mesh_marker->colors.push_back(color);
-    toColor(tango_mesh->colors[tango_mesh->faces[j][1]], &color);
-    mesh_marker->colors.push_back(color);
-    toColor(tango_mesh->colors[tango_mesh->faces[j][2]], &color);
-    mesh_marker->colors.push_back(color);
+    toColor(tango_mesh.colors[tango_mesh.faces[i][0]], &color);
+    mesh_marker->colors[i * 3] = color;
+    toColor(tango_mesh.colors[tango_mesh.faces[i][1]], &color);
+    mesh_marker->colors[i * 3 + 1] = color;
+    toColor(tango_mesh.colors[tango_mesh.faces[i][2]], &color);
+    mesh_marker->colors[i * 3 + 2] = color;
+  }
+}
+
+void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
+                     const Tango3DR_Vector2& origin,
+                     double time_offset, double resolution,
+                     nav_msgs::OccupancyGrid* occupancy_grid) {
+  occupancy_grid->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
+  occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
+  occupancy_grid->info.width = image_grid.width;
+  occupancy_grid->info.height = image_grid.height;
+  occupancy_grid->info.resolution = resolution;
+  occupancy_grid->info.origin.position.x = origin[0];
+  // We have the position of the top left pixel, instead we want the position
+  // of the bottom left pixel.
+  occupancy_grid->info.origin.position.y = origin[1] - image_grid.height * resolution;
+
+  occupancy_grid->data.reserve(image_grid.height * image_grid.width);
+  for (size_t i = 0; i < image_grid.height; ++i) {
+    for (size_t j = 0; j < image_grid.width; ++j) {
+      // The image uses a coordinate system with (x: right, y: down), while
+      // the occupancy grid is using (x: right, y: up). The image is therefore
+      // flipped around the x axis.
+      int value = static_cast<int>(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
+      if (value == 1) {
+        occupancy_grid->data.push_back(OCCUPIED_CELL);
+      } else if (value == 255) {
+        occupancy_grid->data.push_back(FREE_CELL);
+      } else if (value == 128) {
+        occupancy_grid->data.push_back(UNKNOWN_CELL);
+      } else {
+        LOG(WARNING) << "Unknown value: " << static_cast<int>(value);
+      }
+    }
   }
 }
 
