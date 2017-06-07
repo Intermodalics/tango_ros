@@ -72,6 +72,33 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         uploadPreferencesToParameterServer();
     }
 
+    public Boolean getBoolParam(String paramName) {
+        Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+        return booleanValue;
+    }
+
+    public Integer getIntParam(String paramName) {
+        Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+        return intValue;
+    }
+
+    public String getStringParam(String paramName) {
+        String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+        return stringValue;
+    }
+
+    public void setBoolParam(String paramName, Boolean booleanValue) {
+        mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+    }
+
+    public void setIntParam(String paramName, Integer intValue) {
+        mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), intValue);
+    }
+
+    public void setStringParam(String paramName, String stringValue) {
+        mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
+    }
+
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
         mLog.info("Upload preferences to parameter server.");
@@ -89,13 +116,13 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         String valueType = mParamNames.get(paramName);
         if (valueType == "boolean") {
             Boolean booleanValue = mSharedPreferences.getBoolean(paramName, false);
-            mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), booleanValue);
+            setBoolParam(paramName, booleanValue);
         } else if (valueType == "int_as_string") {
             String stringValue = mSharedPreferences.getString(paramName, "0");
-            mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), Integer.parseInt(stringValue));
+            setIntParam(paramName, Integer.parseInt(stringValue));
         } else if (valueType == "string") {
             String stringValue = mSharedPreferences.getString(paramName, "");
-            mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), stringValue);
+            setStringParam(paramName, stringValue);
         }
     }
 
@@ -110,15 +137,15 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         for (String paramName : mParamNames.keySet()) {
             if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
                 if (mParamNames.get(paramName) == "boolean") {
-                    Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+                    Boolean booleanValue = getBoolParam(paramName);
                     editor.putBoolean(paramName, booleanValue);
                 }
                 if (mParamNames.get(paramName) == "int_as_string") {
-                    Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                    Integer intValue = getIntParam(paramName);
                     editor.putString(paramName, intValue.toString());
                 }
                 if (mParamNames.get(paramName) == "string") {
-                    String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+                    String stringValue = getStringParam(paramName);
                     editor.putString(paramName, stringValue);
                 }
             }

@@ -104,8 +104,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         mConnectedNode = connectedNode;
         mLog = connectedNode.getLog();
 
-        Subscriber<Int8> subscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
-        subscriber.addMessageListener(new MessageListener<Int8>() {
+        Subscriber<Int8> statusSubscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
+        statusSubscriber.addMessageListener(new MessageListener<Int8>() {
             @Override
             public void onNewMessage(Int8 status) {
                 mCallbackListener.onTangoStatus(status.getData());

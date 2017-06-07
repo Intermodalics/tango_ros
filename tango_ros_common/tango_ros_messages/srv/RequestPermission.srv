@@ -1,0 +1,6 @@
+int8 ADF_PERMISSION=0
+int8 DATASET_PERMISSION=1
+int8 permission
+---
+bool granted
+

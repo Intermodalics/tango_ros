@@ -40,6 +40,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
+#include <tango_ros_messages/RequestPermission.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -87,6 +88,7 @@ const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
+const std::string REQUEST_PERMISSION_SERVICE_NAME = "request_permission";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
@@ -195,6 +197,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool TangoConnectServiceCallback(
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);
+  // Request ADF permision via ros service call.
+  void RequestADFPermission();
+  // Request dataset permision via ros service call.
+  void RequestDatasetPermission();
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -274,6 +280,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
   ros::ServiceServer tango_connect_service_;
+  ros::ServiceClient request_permission_service_;
 };
 }  // namespace tango_ros_native
 #endif  // TANGO_ROS_NODE_H_

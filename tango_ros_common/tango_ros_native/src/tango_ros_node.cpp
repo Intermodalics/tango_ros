@@ -215,6 +215,8 @@ void TangoRosNode::onInit() {
               CONNECT_SERVICE_NAME, boost::bind(
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 
+  request_permission_service_ = node_handle_.serviceClient<tango_ros_messages::RequestPermission>(REQUEST_PERMISSION_SERVICE_NAME);
+
   tango_status_ = TangoStatus::UNKNOWN;
 
   if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
@@ -298,6 +300,34 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   return TANGO_SUCCESS;
 }
 
+void TangoRosNode::RequestADFPermission() {
+  tango_ros_messages::RequestPermission srv;
+  srv.request.permission = tango_ros_messages::RequestPermission::Request::ADF_PERMISSION;
+  if (request_permission_service_.call(srv)) {
+    if (srv.response.granted) {
+      LOG(INFO) << "ADF permission has been requested and granted by the user.";
+    } else {
+      LOG(WARNING) << "ADF permission has been requested but not granted by the user.";
+    }
+  } else {
+    LOG(ERROR) << "Failed to call service to request ADF permission";
+  }
+}
+
+void TangoRosNode::RequestDatasetPermission() {
+  tango_ros_messages::RequestPermission srv;
+  srv.request.permission = tango_ros_messages::RequestPermission::Request::DATASET_PERMISSION;
+  if (request_permission_service_.call(srv)) {
+    if (srv.response.granted) {
+      LOG(INFO) << "Dataset permission has been requested and granted by the user.";
+    } else {
+      LOG(WARNING) << "Dataset permission has been requested but not granted by the user.";
+    }
+  } else {
+    LOG(ERROR) << "Failed to call service to request dataset permission";
+  }
+}
+
 TangoErrorType TangoRosNode::TangoSetupConfig() {
   const char* function_name = "TangoRosNode::TangoSetupConfig()";
 
@@ -317,6 +347,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
   bool create_new_map;
   node_handle_.param(CREATE_NEW_MAP_PARAM_NAME, create_new_map, false);
+  if (create_new_map)
+    RequestADFPermission();
   const char* config_enable_learning_mode = "config_enable_learning_mode";
   result = TangoConfig_setBool(tango_config_, config_enable_learning_mode, create_new_map);
   if (result != TANGO_SUCCESS) {
@@ -340,6 +372,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
       return result;
     }
     if (localization_mode == LocalizationMode::LOCALIZATION) {
+      RequestADFPermission();
       std::string map_uuid_to_load = "";
       node_handle_.param<std::string>(LOCALIZATION_MAP_UUID_PARAM_NAME, map_uuid_to_load, "");
       const char* config_load_area_description_UUID = "config_load_area_description_UUID";
@@ -392,12 +425,15 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
   std::string dataset_uuid;
   node_handle_.param(DATASET_UUID_PARAM_NAME, dataset_uuid, std::string(""));
-  const char* config_experimental_load_dataset_UUID = "config_experimental_load_dataset_UUID";
-  result = TangoConfig_setString(tango_config_, config_experimental_load_dataset_UUID, dataset_uuid.c_str());
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << function_name << ", TangoConfig_setString "
-               << config_experimental_load_dataset_UUID << " error: " << result;
-    return result;
+  if (dataset_uuid != "") {
+    RequestDatasetPermission();
+    const char* config_experimental_load_dataset_UUID = "config_experimental_load_dataset_UUID";
+    result = TangoConfig_setString(tango_config_, config_experimental_load_dataset_UUID, dataset_uuid.c_str());
+    if (result != TANGO_SUCCESS) {
+      LOG(ERROR) << function_name << ", TangoConfig_setString "
+                 << config_experimental_load_dataset_UUID << " error: " << result;
+      return result;
+    }
   }
   if (point_cloud_manager_ == nullptr) {
     int32_t max_point_cloud_elements;
@@ -552,7 +588,6 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   tango_data_available_ = true;
   return success;
 }
-
 
 void TangoRosNode::TangoDisconnect() {
   StopPublishing();
@@ -1184,6 +1219,7 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
 }
 
 std::string TangoRosNode::GetAvailableMapUuidsList() {
+  RequestADFPermission();
   char* uuid_list;
   TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
   if (result != TANGO_SUCCESS) {
@@ -1200,6 +1236,7 @@ std::string TangoRosNode::GetAvailableMapUuidsList() {
 }
 
 std::string TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid) {
+  RequestADFPermission();
   size_t size = 0;
   char* value;
   TangoAreaDescriptionMetadata metadata;
