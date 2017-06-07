@@ -24,7 +24,6 @@ namespace tango_ros_conversions_helper {
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
                         geometry_msgs::TransformStamped* transform) {
-  //transform->header.stamp.fromSec(pose.timestamp + time_offset);
   transform->header.stamp = ros::Time::now();
   transform->header.frame_id = toFrameId(pose.frame.base);
   transform->child_frame_id = toFrameId(pose.frame.target);
@@ -66,7 +65,6 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
     *iter_z = tango_point_cloud.points[i][2];
     *iter_c = tango_point_cloud.points[i][3];
   }
-  //point_cloud->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
   point_cloud->header.stamp = ros::Time::now();
 }
 
@@ -115,7 +113,6 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
     toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
                      min_height, max_height, laser_scan);
   }
-  //laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
   laser_scan->header.stamp = ros::Time::now();
 }
 
@@ -218,7 +215,7 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
                   double time_offset,
                   visualization_msgs::Marker* mesh_marker) {
   mesh_marker->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-  mesh_marker->header.stamp.fromSec(tango_mesh.timestamp + time_offset);
+  mesh_marker->header.stamp = ros::time::now();
   mesh_marker->ns = "tango";
   mesh_marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
   mesh_marker->action = visualization_msgs::Marker::ADD;
@@ -264,7 +261,7 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      double time_offset, double resolution,
                      nav_msgs::OccupancyGrid* occupancy_grid) {
   occupancy_grid->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-  occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
+  occupancy_grid->header.stamp = ros::Time::now();
   occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
   occupancy_grid->info.width = image_grid.width;
   occupancy_grid->info.height = image_grid.height;

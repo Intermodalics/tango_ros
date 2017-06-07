@@ -272,7 +272,12 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ =  0.0; //ros::Time::now().toSec() - pose.timestamp;
+  // TODO(PerrineAguiar): Find a proper way to convert tango time to ros time.
+  // For now, as a workaround, the time offset is set to 0 and message stamps are set
+  // to ros::Time::now (instead of tango timestamp) in each tango callback.
+  // This is slightly inaccurate but allows this node to work with other ros nodes.
+  // In particular, this fixes /tf issues when using this node with the navigation stack.
+  time_offset_ =  0.0;
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -706,7 +711,6 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_thread_.data_available_mutex.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    //fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.stamp = ros::Time::now();
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id =
@@ -719,7 +723,6 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_thread_.data_available_mutex.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    //color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.stamp = ros::Time::now();
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id =
