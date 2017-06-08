@@ -226,7 +226,7 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(LOCALIZATION_MAP_UUID_PARAM_NAME, "");
   }
   if (!node_handle_.hasParam(DATASET_PATH_PARAM_NAME)) {
-    node_handle_.setParam(DATASET_PATH_PARAM_NAME, "");
+    node_handle_.setParam(DATASET_PATH_PARAM_NAME, DEFAULT_DATASETS_PATH);
   }
   if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
@@ -405,7 +405,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   std::string datasets_path;
-  node_handle_.param(DATASET_PATH_PARAM_NAME, datasets_path, DATASETS_PATH);
+  node_handle_.param(DATASET_PATH_PARAM_NAME, datasets_path, DEFAULT_DATASETS_PATH);
   const char* config_datasets_path = "config_datasets_path";
   result = TangoConfig_setString(tango_config_, config_datasets_path, datasets_path.c_str());
   if (result != TANGO_SUCCESS) {
