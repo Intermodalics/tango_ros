@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tango_ros_common;
 
-import android.app.Activity;
 import android.os.SystemClock;
 
 import org.apache.commons.logging.Log;
@@ -29,7 +28,7 @@ import org.ros.node.service.ServiceServer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Rosjava node that implements a service server.
+ * Rosjava node that implements a server for tango ROS services.
  */
 public class TangoServiceServerNode extends AbstractNodeMain {
     private static final String TAG = TangoServiceServerNode.class.getSimpleName();
@@ -38,7 +37,7 @@ public class TangoServiceServerNode extends AbstractNodeMain {
 
     ConnectedNode mConnectedNode;
     private Log mLog;
-    CallbackListener mCallbackListener;
+    CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     AtomicBoolean mRequestPermissionAnswered = new AtomicBoolean(false);
     AtomicBoolean mRequestPermissionGranted = new AtomicBoolean(false);
@@ -48,8 +47,19 @@ public class TangoServiceServerNode extends AbstractNodeMain {
                                               tango_ros_messages.RequestPermissionResponse response);
     }
 
-    public TangoServiceServerNode(Activity activity) {
-        mCallbackListener = (CallbackListener) activity;
+    public class DefaultCallbackListener implements CallbackListener{
+
+        public DefaultCallbackListener() {}
+
+        @Override
+        public void onRequestPermissionServiceCalled(tango_ros_messages.RequestPermissionRequest request,
+                                                     tango_ros_messages.RequestPermissionResponse response) {}
+    }
+
+    public TangoServiceServerNode() {}
+
+    public void setCallbackListener(CallbackListener callbackListener) {
+        mCallbackListener = callbackListener;
     }
 
     @Override

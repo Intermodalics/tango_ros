@@ -631,7 +631,8 @@ public class RunningActivity extends AppCompatRosActivity implements
         nodeConfiguration.setNodeName(mTangoServiceClientNode.getDefaultNodeName());
         nodeMainExecutor.execute(mTangoServiceClientNode, nodeConfiguration);
         // ServiceServer node which is responsible for providing ros services.
-        mTangoServiceServerNode = new TangoServiceServerNode(this);
+        mTangoServiceServerNode = new TangoServiceServerNode();
+        mTangoServiceServerNode.setCallbackListener(this);
         nodeConfiguration.setNodeName(mTangoServiceServerNode.getDefaultNodeName());
         nodeMainExecutor.execute(mTangoServiceServerNode, nodeConfiguration);
         // Create node publishing IMU data.
