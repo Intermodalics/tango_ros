@@ -340,8 +340,6 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   }
   bool create_new_map;
   node_handle_.param(CREATE_NEW_MAP_PARAM_NAME, create_new_map, false);
-  if (create_new_map)
-    RequestADFPermission();
   const char* config_enable_learning_mode = "config_enable_learning_mode";
   result = TangoConfig_setBool(tango_config_, config_enable_learning_mode, create_new_map);
   if (result != TANGO_SUCCESS) {
@@ -365,7 +363,6 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
       return result;
     }
     if (localization_mode == LocalizationMode::LOCALIZATION) {
-      RequestADFPermission();
       std::string map_uuid_to_load = "";
       node_handle_.param<std::string>(LOCALIZATION_MAP_UUID_PARAM_NAME, map_uuid_to_load, "");
       const char* config_load_area_description_UUID = "config_load_area_description_UUID";
@@ -1137,6 +1134,7 @@ bool TangoRosNode::GetMapUuids(
 
 bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
                            tango_ros_messages::SaveMap::Response &res) {
+  RequestADFPermission();
   TangoErrorType result;
   TangoUUID map_uuid;
   result = TangoService_saveAreaDescription(&map_uuid);
