@@ -236,6 +236,9 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
                           TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
   }
+  if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
+      node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
   } else {
@@ -540,6 +543,7 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     return success;
   }
   // Publish static transforms.
+  node_handle_.param(USE_TF_STATIC_PARAM_NAME, use_tf_static_, true);
   PublishStaticTransforms();
   success = OnTangoServiceConnected();
   if (success != TANGO_SUCCESS) {
@@ -578,6 +582,7 @@ void TangoRosNode::TangoDisconnect() {
 }
 
 void TangoRosNode::PublishStaticTransforms() {
+  std::vector<geometry_msgs::TransformStamped> tf_transforms;
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
 
@@ -586,13 +591,13 @@ void TangoRosNode::PublishStaticTransforms() {
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
-  tf_static_broadcaster_.sendTransform(device_T_imu);
+  tf_transforms.push_back(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
+  tf_transforms.push_back(device_T_camera_depth_);
 
   // According to the ROS documentation, laser scan angles are measured around
   // the Z-axis in the laser scan frame. To follow this convention the laser
@@ -604,21 +609,27 @@ void TangoRosNode::PublishStaticTransforms() {
       LASER_SCAN_FRAME_ID);
   geometry_msgs::TransformStamped camera_depth_T_laser_message;
   tf::transformStampedTFToMsg(camera_depth_T_laser_, camera_depth_T_laser_message);
-  tf_static_broadcaster_.sendTransform(camera_depth_T_laser_message);
+  tf_transforms.push_back(camera_depth_T_laser_message);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_fisheye_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
+  tf_transforms.push_back(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_color_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_color_);
+  tf_transforms.push_back(device_T_camera_color_);
+
+  if (use_tf_static_) {
+    tf_static_broadcaster_.sendTransform(tf_transforms);
+  } else {
+    tf_broadcaster_.sendTransform(tf_transforms);
+  }
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
@@ -834,6 +845,9 @@ void TangoRosNode::PublishDevicePose() {
     {
       std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
       device_pose_thread_.data_available.wait(lock);
+      if (!use_tf_static_) {
+        PublishStaticTransforms();
+      }
       if (publish_pose_on_tf_) {
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
