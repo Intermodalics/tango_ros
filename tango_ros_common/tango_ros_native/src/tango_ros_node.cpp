@@ -835,10 +835,10 @@ void TangoRosNode::PublishDevicePose() {
       std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
       device_pose_thread_.data_available.wait(lock);
       if (publish_pose_on_tf_) {
-        tf_broadcaster_.sendTransform(start_of_service_T_device_);
+        tf_static_broadcaster_.sendTransform(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
           // This transform can be empty. Don't publish it in this case.
-          tf_broadcaster_.sendTransform(area_description_T_start_of_service_);
+          tf_static_broadcaster_.sendTransform(area_description_T_start_of_service_);
         }
       }
       if (start_of_service_T_device_publisher_.getNumSubscribers() > 0) {
