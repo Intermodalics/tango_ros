@@ -146,6 +146,12 @@ std::string getCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
+
+double getBootTimeInSecond() {
+  struct timespec res_boot;
+  clock_gettime(CLOCK_BOOTTIME, &res_boot);
+  return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
+}
 }  // namespace
 
 namespace tango_ros_native {
@@ -272,10 +278,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  struct timespec res_boot;
-  clock_gettime(CLOCK_BOOTTIME, &res_boot);
-  time_offset_ = ros::Time::now().toSec() -
-      (res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9);
+  time_offset_ = ros::Time::now().toSec() - getBootTimeInSecond();
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
