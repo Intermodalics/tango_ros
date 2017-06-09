@@ -16,7 +16,6 @@
 
 #include <cmath>
 #include <ctime>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -273,27 +272,10 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  // TODO(PerrineAguiar): Find a proper way to convert tango time to ros time.
-  // For now, as a workaround, the time offset is set to 0 and message stamps are set
-  // to ros::Time::now (instead of tango timestamp) in each tango callback.
-  // This is slightly inaccurate but allows this node to work with other ros nodes.
-  // In particular, this fixes /tf issues when using this node with the navigation stack.
-  //time_offset_ =  0.0;
-  /*time_offset_ = ros::Time::now().toSec() - pose.timestamp;
-  LOG(INFO) << "time_offset (from pose): " << std::fixed << std::setprecision( 15 ) << time_offset_;*/
-
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
-  struct timespec res_real;
-  //double time_ros_now = ros::Time::now().toSec();
-  clock_gettime(CLOCK_REALTIME, &res_real);
   time_offset_ = ros::Time::now().toSec() -
       (res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9);
-
-  /*LOG(INFO) << "time_offset (from boottime): " << std::fixed << std::setprecision( 15 ) << time_offset_;
-  LOG(INFO) << "boottime: " << std::fixed << std::setprecision( 15 ) << res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
-  LOG(INFO) << "realtime: " << std::fixed << std::setprecision( 15 ) << res_real.tv_sec + (double) res_real.tv_nsec / 1e9;
-  LOG(INFO) << "ros time now: " << std::fixed << std::setprecision( 15 ) << time_ros_now;*/
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
