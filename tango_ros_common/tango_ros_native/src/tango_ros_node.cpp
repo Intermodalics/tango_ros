@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -277,7 +278,22 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   // to ros::Time::now (instead of tango timestamp) in each tango callback.
   // This is slightly inaccurate but allows this node to work with other ros nodes.
   // In particular, this fixes /tf issues when using this node with the navigation stack.
-  time_offset_ =  0.0;
+  //time_offset_ =  0.0;
+  /*time_offset_ = ros::Time::now().toSec() - pose.timestamp;
+  LOG(INFO) << "time_offset (from pose): " << std::fixed << std::setprecision( 15 ) << time_offset_;*/
+
+  struct timespec res_boot;
+  clock_gettime(CLOCK_BOOTTIME, &res_boot);
+  struct timespec res_real;
+  //double time_ros_now = ros::Time::now().toSec();
+  clock_gettime(CLOCK_REALTIME, &res_real);
+  time_offset_ = ros::Time::now().toSec() -
+      (res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9);
+
+  /*LOG(INFO) << "time_offset (from boottime): " << std::fixed << std::setprecision( 15 ) << time_offset_;
+  LOG(INFO) << "boottime: " << std::fixed << std::setprecision( 15 ) << res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
+  LOG(INFO) << "realtime: " << std::fixed << std::setprecision( 15 ) << res_real.tv_sec + (double) res_real.tv_nsec / 1e9;
+  LOG(INFO) << "ros time now: " << std::fixed << std::setprecision( 15 ) << time_ros_now;*/
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -711,7 +727,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        fisheye_image_thread_.data_available_mutex.try_lock()) {
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    fisheye_image_header_.stamp = ros::Time::now();
+    fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     fisheye_image_header_.seq = buffer->frame_number;
     fisheye_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE);
@@ -723,7 +739,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
        color_image_thread_.data_available_mutex.try_lock()) {
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
-    color_image_header_.stamp = ros::Time::now();
+    color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
     color_image_header_.seq = buffer->frame_number;
     color_image_header_.frame_id =
         tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR);
