@@ -97,7 +97,12 @@ const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
-const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
+const double TANGO_3DR_DEFAULT_RESOLUTION = 0.05; // meter
+const double TANGO_3DR_DEFAULT_USE_SPACE_CLEARING = false;
+const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1;
+const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
+const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // roughly number of observations
+const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
