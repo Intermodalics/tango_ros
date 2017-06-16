@@ -1109,7 +1109,7 @@ void TangoRosNode::PublishMesh() {
         }
         mesh_marker_publisher_.publish(mesh_marker_array);
       }
-      auto get_and_publish_occupancy_grid = [&] (ros::Publisher& publisher,
+      auto get_and_publish_occupancy_grid = [&] (const ros::Publisher& publisher,
           Tango3DR_FloorplanLayer layer) {
         // Publish Tango mesh as occupancy grid.
         if (publisher.getNumSubscribers() > 0) {
