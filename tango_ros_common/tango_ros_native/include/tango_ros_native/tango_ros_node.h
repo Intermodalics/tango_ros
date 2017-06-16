@@ -68,7 +68,10 @@ const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_r
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
-const std::string OCCUPANCY_GRID_TOPIC_NAME = "occupancy_grid";
+const std::string OCCUPANCY_GRID_SPACE_TOPIC_NAME = "occupancy_grid/space";
+const std::string OCCUPANCY_GRID_WALLS_TOPIC_NAME = "occupancy_grid/walls";
+const std::string OCCUPANCY_GRID_FURNITURE_TOPIC_NAME = "occupancy_grid/furniture";
+const std::string OCCUPANCY_GRID_OBSTACLES_TOPIC_NAME = "occupancy_grid/obstacles";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
@@ -81,7 +84,12 @@ const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
-const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
+const std::string TANGO_3DR_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
+const std::string TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME = "reconstruction_use_space_clearing";
+const std::string TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME = "reconstruction_min_num_vertices";
+const std::string TANGO_3DR_UPDATE_METHOD_PARAM_NAME = "reconstruction_update_method";
+const std::string TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME = "reconstruction_max_voxel_weight";
+const std::string TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME = "reconstruction_floorplan_max_error";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -196,6 +204,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
           const tango_ros_messages::TangoConnect::Request &request,
           tango_ros_messages::TangoConnect::Response& response);
 
+  bool ReconstructionDataRequired() const;
+
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
 
@@ -259,7 +269,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   cv::Mat color_image_rect_;
 
   ros::Publisher mesh_marker_publisher_;
-  ros::Publisher occupancy_grid_publisher_;
+  ros::Publisher occupancy_grid_space_publisher_;
+  ros::Publisher occupancy_grid_walls_publisher_;
+  ros::Publisher occupancy_grid_furniture_publisher_;
+  ros::Publisher occupancy_grid_obstacles_publisher_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_ReconstructionContext t3dr_context_;
