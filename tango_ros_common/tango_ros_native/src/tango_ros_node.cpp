@@ -200,15 +200,15 @@ void TangoRosNode::onInit() {
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
+                                             boost::bind(&TangoRosNode::GetMapNameServiceCallback, this, _1, _2));
 
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
       tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
+                                             boost::bind(&TangoRosNode::GetMapUuidsServiceCallback, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
+                                             boost::bind(&TangoRosNode::SaveMapServiceCallback, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
@@ -1114,23 +1114,28 @@ bool TangoRosNode::TangoConnectServiceCallback(
     return true;
 }
 
-bool TangoRosNode::GetMapName(
+bool TangoRosNode::GetMapNameServiceCallback(
     const tango_ros_messages::GetMapName::Request &req,
     tango_ros_messages::GetMapName::Response &res) {
-  res.map_name = GetMapNameFromUuid(req.map_uuid);
+  return GetMapNameFromUuid(req.map_uuid, res.map_name);
 }
 
-bool TangoRosNode::GetMapUuids(
+bool TangoRosNode::GetMapUuidsServiceCallback(
     const tango_ros_messages::GetMapUuids::Request &req,
     tango_ros_messages::GetMapUuids::Response &res) {
-  res.map_uuids = splitCommaSeparatedString(GetAvailableMapUuidsList());
+  if (!GetAvailableMapUuidsList(res.map_uuids) ) return false;
 
-  for (const std::string uuid : res.map_uuids) {
-    res.map_names.push_back(GetMapNameFromUuid(uuid));
+  res.map_names.resize(res.map_uuids.size());
+  auto map_uuids_it = res.map_uuids.begin();
+  auto map_names_it = res.map_names.begin();
+  for (; map_uuids_it != res.map_uuids.end() && map_names_it != res.map_names.end();
+       ++map_uuids_it, ++map_names_it) {
+    if (!GetMapNameFromUuid(*map_uuids_it, *map_names_it)) return false;
   }
+  return true;
 }
 
-bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
+bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
                            tango_ros_messages::SaveMap::Response &res) {
   TangoErrorType result;
   TangoUUID map_uuid;
@@ -1183,40 +1188,42 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
   return true;
 }
 
-std::string TangoRosNode::GetAvailableMapUuidsList() {
-  char* uuid_list;
-  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
+bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list) {
+  char* c_uuid_list;
+  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&c_uuid_list);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while retrieving all available map UUIDs, error: " << result;
-    return "";
+    return false;
   }
-  if (uuid_list != NULL && uuid_list[0] != '\0') {
-    LOG(INFO) << "UUID list: " << uuid_list;
-  } else {
+  if (c_uuid_list == NULL || c_uuid_list[0] == '\0') {
     LOG(WARNING) << "No area description file available.";
-    return "";
+    return false;
   }
-  return std::string(uuid_list);
+  LOG(INFO) << "UUID list: " << c_uuid_list;
+  uuid_list = splitCommaSeparatedString(std::string(c_uuid_list));
+  return true;
 }
 
-std::string TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid) {
+bool TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid, std::string& map_name) {
   size_t size = 0;
   char* value;
   TangoAreaDescriptionMetadata metadata;
   TangoErrorType result = TangoService_getAreaDescriptionMetadata(map_uuid.c_str(), &metadata);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    return false;
   }
   result = TangoAreaDescriptionMetadata_get(metadata, "name", &size, &value);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to get area description metadata, error: " << result;
+    return false;
   }
-  std::string map_name = std::string(value);
+  map_name = std::string(value);
   result = TangoAreaDescriptionMetadata_free(metadata);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
   }
   LOG(INFO) << "Successfully retrieved map name: " << map_name << " from uuid " << map_uuid;
-  return map_name;
+  return true;
 }
 } // namespace tango_ros_native
