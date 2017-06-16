@@ -1143,11 +1143,11 @@ void TangoRosNode::PublishMesh() {
       get_and_publish_occupancy_grid(occupancy_grid_space_publisher_,
                                      TANGO_3DR_LAYER_SPACE);
       get_and_publish_occupancy_grid(occupancy_grid_walls_publisher_,
-                                           TANGO_3DR_LAYER_WALLS);
+                                     TANGO_3DR_LAYER_WALLS);
       get_and_publish_occupancy_grid(occupancy_grid_furniture_publisher_,
-                                           TANGO_3DR_LAYER_FURNITURE);
+                                     TANGO_3DR_LAYER_FURNITURE);
       get_and_publish_occupancy_grid(occupancy_grid_obstacles_publisher_,
-                                                 TANGO_3DR_LAYER_OBSTACLES);
+                                     TANGO_3DR_LAYER_OBSTACLES);
     }
   }
 }
