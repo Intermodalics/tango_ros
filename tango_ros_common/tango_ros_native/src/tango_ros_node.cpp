@@ -1118,6 +1118,7 @@ bool TangoRosNode::GetMapName(
     const tango_ros_messages::GetMapName::Request &req,
     tango_ros_messages::GetMapName::Response &res) {
   res.map_name = GetMapNameFromUuid(req.map_uuid);
+  return res.map_name.empty();
 }
 
 bool TangoRosNode::GetMapUuids(
@@ -1128,6 +1129,7 @@ bool TangoRosNode::GetMapUuids(
   for (const std::string uuid : res.map_uuids) {
     res.map_names.push_back(GetMapNameFromUuid(uuid));
   }
+  return res.map_uuids.empty();
 }
 
 bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
