@@ -583,6 +583,7 @@ void TangoRosNode::TangoDisconnect() {
 
 void TangoRosNode::PublishStaticTransforms() {
   std::vector<geometry_msgs::TransformStamped> tf_transforms;
+  tf_transforms.reserve(NUMBER_OF_STATIC_TRANSFORMS);
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
 

@@ -91,6 +91,7 @@ const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
+const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
