@@ -354,6 +354,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                             editor.putString(getString(R.string.pref_localization_mode_key), "3");
                             editor.putString(getString(R.string.pref_localization_map_uuid_key), mapUuid);
                             editor.commit();
+                            mParameterNode.uploadPreferencesToParameterServer();
                             restartTango();
                         }
                     });
