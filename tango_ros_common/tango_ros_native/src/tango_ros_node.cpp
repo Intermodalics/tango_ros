@@ -508,46 +508,60 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
     return result;
   }
 
+  bool t3dr_use_space_clearing;
   node_handle_.param(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+                     t3dr_use_space_clearing, TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
   const char* use_space_clearing = "use_space_clearing";
-  result = Tango3DR_Config_setBool(t3dr_config, use_space_clearing, true);
+  result = Tango3DR_Config_setBool(t3dr_config, use_space_clearing,
+                                   t3dr_use_space_clearing);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
         << use_space_clearing << " error: " << result;
     return result;
   }
-  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
+
+  int t3dr_min_num_vertices;
+  node_handle_.param(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+                     t3dr_min_num_vertices, TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
   const char* min_num_vertices = "min_num_vertices";
-  result = Tango3DR_Config_setInt32(t3dr_config, min_num_vertices, 20);
+  result = Tango3DR_Config_setInt32(t3dr_config, min_num_vertices,
+                                    t3dr_min_num_vertices);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
         << min_num_vertices << " error: " << result;
     return result;
   }
-  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
+
+  int t3dr_update_method;
+  node_handle_.param(TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+                     t3dr_update_method, TANGO_3DR_DEFAULT_UPDATE_METHOD);
   const char* update_method = "update_method";
-  result = Tango3DR_Config_setInt32(t3dr_config, update_method, TANGO_3DR_TRAVERSAL_UPDATE);
+  result = Tango3DR_Config_setInt32(t3dr_config, update_method,
+                                    t3dr_update_method);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
         << update_method << " error: " << result;
     return result;
   }
-  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
+
+  int t3dr_max_voxel_weight;
+  node_handle_.param(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+                     t3dr_max_voxel_weight, TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
   const char* max_voxel_weight = "max_voxel_weight";
-  result = Tango3DR_Config_setInt32(t3dr_config, max_voxel_weight, 1000);
+  result = Tango3DR_Config_setInt32(t3dr_config, max_voxel_weight,
+                                    t3dr_max_voxel_weight);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
         << max_voxel_weight << " error: " << result;
     return result;
   }
-  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
+
+  double t3dr_floorplan_max_error;
+  node_handle_.param(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+                     t3dr_floorplan_max_error, TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
   const char* floorplan_max_error = "floorplan_max_error";
-  result = Tango3DR_Config_setDouble(t3dr_config, floorplan_max_error, 0.1);
+  result = Tango3DR_Config_setDouble(t3dr_config, floorplan_max_error,
+                                     t3dr_floorplan_max_error);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
         << floorplan_max_error << " error: " << result;
