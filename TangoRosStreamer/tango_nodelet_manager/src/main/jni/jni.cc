@@ -43,7 +43,7 @@ JNIEXPORT jint JNICALL
 Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
         JNIEnv* env, jobject /*obj*/, jstring master_uri_value,
         jstring host_ip_value, jstring node_name_value,
-        /* unused */ jobjectArray remapping_objects_value) {
+        jobjectArray remapping_objects_value) {
     const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
     const char* host_ip = env->GetStringUTFChars(host_ip_value, NULL);
     const char* node_name = env->GetStringUTFChars(node_name_value, NULL);
@@ -57,9 +57,31 @@ Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
     env->ReleaseStringUTFChars(host_ip_value, host_ip);
     env->ReleaseStringUTFChars(node_name_value, node_name);
 
+    std::map<std::string, std::string> remappings;
+    if (remapping_objects_value != NULL) {
+      int remappingStringCount = env->GetArrayLength(remapping_objects_value);
+      if (remappingStringCount % 2 == 0) {
+        for (int i = 0; i < remappingStringCount / 2; ++i) {
+          jstring remap_from_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i * 2));
+          const char* remap_from = env->GetStringUTFChars(remap_from_value, NULL);
+          jstring remap_to_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i * 2 + 1));
+          const char* remap_to = env->GetStringUTFChars(remap_to_value, NULL);
+
+          remappings.insert(std::pair<std::string, std::string>(std::string(remap_from), std::string(remap_to)));
+
+          env->ReleaseStringUTFChars(remap_from_value, remap_from);
+          env->ReleaseStringUTFChars(remap_to_value, remap_to);
+        }
+      } else {
+        LOG(WARNING) << "Wrong remapping arguments array, its size should be an even number but is "
+          << remappingStringCount << ". Remapping will not be apply.";
+      }
+    } else {
+      LOG(WARNING) << "Remapping arguments array is null. Remapping will not be apply.";
+    }
+
     ros::init(argc, argv, node_name_string.c_str());
     nodelet::Loader loader;
-    std::map<std::string, std::string> remappings;
     std::vector<std::string> nodelet_argv;
 
     LOG(INFO) << "Start loading nodelets.";

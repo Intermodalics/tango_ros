@@ -15,6 +15,10 @@ public class TangoNodeletManager extends NativeNodeMain {
     public static final String NODE_NAME = "tango";
     public static final String DEFAULT_LIB_NAME = "nodelet_manager";
 
+    public TangoNodeletManager(String[] remappingArguments) {
+        super(DEFAULT_LIB_NAME, remappingArguments);
+    }
+
     public TangoNodeletManager() {
         super(DEFAULT_LIB_NAME);
     }
