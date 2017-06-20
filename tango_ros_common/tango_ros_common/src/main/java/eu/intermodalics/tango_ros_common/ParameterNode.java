@@ -20,8 +20,6 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import eu.intermodalics.tango_ros_common.NodeNamespaceHelper;
-
 import org.apache.commons.logging.Log;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -124,5 +122,15 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
             }
         }
         editor.commit();
+    }
+
+    public void changeSettingsToLocalizeInMap(final String mapUuid, final String prefCreateNewMapKey,
+                                              final String prefLocalizationModeKey, final String prefLocalizationMapUuidKey) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putBoolean(prefCreateNewMapKey, false);
+        editor.putString(prefLocalizationModeKey, "3");
+        editor.putString(prefLocalizationMapUuidKey, mapUuid);
+        editor.commit();
+        uploadPreferencesToParameterServer();
     }
 }
