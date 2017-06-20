@@ -349,11 +349,8 @@ public class RunningActivity extends AppCompatRosActivity implements
                     mSnackbarLoadNewMap.setAction(getString(R.string.snackbar_action_text_load_new_map), new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            SharedPreferences.Editor editor = mSharedPref.edit();
-                            editor.putBoolean(getString(R.string.pref_create_new_map_key), false);
-                            editor.putString(getString(R.string.pref_localization_mode_key), "3");
-                            editor.putString(getString(R.string.pref_localization_map_uuid_key), mapUuid);
-                            editor.commit();
+                            mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
+                                    getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
                             restartTango();
                         }
                     });
