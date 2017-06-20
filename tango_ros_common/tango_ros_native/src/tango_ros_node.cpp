@@ -147,6 +147,11 @@ std::string getCurrentDateAndTime() {
   return oss.str();
 }
 
+double getBootTimeInSecond() {
+  struct timespec res_boot;
+  clock_gettime(CLOCK_BOOTTIME, &res_boot);
+  return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
+}
 }  // namespace
 
 namespace tango_ros_native {
@@ -167,12 +172,6 @@ void TangoRosNode::onInit() {
   area_description_T_start_of_service_publisher_ =
       node_handle_.advertise<geometry_msgs::TransformStamped>(
           AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME, queue_size, latching);
-  point_cloud_publisher_ =
-      node_handle_.advertise<sensor_msgs::PointCloud2>(
-          POINT_CLOUD_TOPIC_NAME, queue_size, latching);
-  laser_scan_publisher_ =
-      node_handle_.advertise<sensor_msgs::LaserScan>(
-          LASER_SCAN_TOPIC_NAME, queue_size, latching);
 
   image_transport_.reset(new image_transport::ImageTransport(node_handle_));
   try {
@@ -182,40 +181,21 @@ void TangoRosNode::onInit() {
     fisheye_rectified_image_publisher_ =
         image_transport_->advertise(FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME,
                                    queue_size, latching);
-    color_camera_publisher_ =
-        image_transport_->advertiseCamera(COLOR_IMAGE_TOPIC_NAME,
-                                          queue_size, latching);
-    color_rectified_image_publisher_ =
-        image_transport_->advertise(COLOR_RECTIFIED_IMAGE_TOPIC_NAME,
-                                   queue_size, latching);
   } catch (const image_transport::Exception& e) {
-    LOG(ERROR) << "Error while creating image transport publishers" << e.what();
+    LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
   }
-
-  mesh_marker_publisher_ =
-      node_handle_.advertise<visualization_msgs::MarkerArray>(
-          COLOR_MESH_TOPIC_NAME, queue_size, latching);
-
-  occupancy_grid_space_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
-        OCCUPANCY_GRID_SPACE_TOPIC_NAME, queue_size, latching);
-  occupancy_grid_walls_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
-        OCCUPANCY_GRID_WALLS_TOPIC_NAME, queue_size, latching);
-  occupancy_grid_furniture_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
-        OCCUPANCY_GRID_FURNITURE_TOPIC_NAME, queue_size, latching);
-  occupancy_grid_obstacles_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
-      OCCUPANCY_GRID_OBSTACLES_TOPIC_NAME, queue_size, latching);
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapName, this, _1, _2));
+                                             boost::bind(&TangoRosNode::GetMapNameServiceCallback, this, _1, _2));
 
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
       tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapUuids, this, _1, _2));
+                                             boost::bind(&TangoRosNode::GetMapUuidsServiceCallback, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::SaveMap, this, _1, _2));
+                                             boost::bind(&TangoRosNode::SaveMapServiceCallback, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
@@ -263,6 +243,9 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
                           TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
   }
+  if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
+      node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
   } else {
@@ -281,6 +264,57 @@ TangoRosNode::~TangoRosNode() {
 }
 
 TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+  const  uint32_t queue_size = 1;
+  const bool latching = true;
+  // Advertise topics that need depth camera and/or color camera only if cameras are enable.
+  if (enable_depth_) {
+    point_cloud_publisher_ =
+        node_handle_.advertise<sensor_msgs::PointCloud2>(
+            POINT_CLOUD_TOPIC_NAME, queue_size, latching);
+    laser_scan_publisher_ =
+        node_handle_.advertise<sensor_msgs::LaserScan>(
+            LASER_SCAN_TOPIC_NAME, queue_size, latching);
+  } else {
+    point_cloud_publisher_.shutdown();
+    laser_scan_publisher_.shutdown();
+  }
+  if (enable_color_camera_) {
+    try {
+      color_camera_publisher_ =
+          image_transport_->advertiseCamera(COLOR_IMAGE_TOPIC_NAME,
+                                            queue_size, latching);
+      color_rectified_image_publisher_ =
+          image_transport_->advertise(COLOR_RECTIFIED_IMAGE_TOPIC_NAME,
+                                      queue_size, latching);
+      } catch (const image_transport::Exception& e) {
+        LOG(ERROR) << "Error while creating color image transport publishers" << e.what();
+      }
+  } else {
+    color_camera_publisher_.shutdown();
+    color_rectified_image_publisher_.shutdown();
+  }
+  if (enable_depth_ && enable_color_camera_) {
+    mesh_marker_publisher_ =
+        node_handle_.advertise<visualization_msgs::MarkerArray>(
+            COLOR_MESH_TOPIC_NAME, queue_size, latching);
+
+    occupancy_grid_space_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_SPACE_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_walls_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_WALLS_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_furniture_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_FURNITURE_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_obstacles_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_OBSTACLES_TOPIC_NAME, queue_size, latching);
+
+  } else {
+    mesh_marker_publisher_.shutdown();
+    occupancy_grid_space_publisher_.shutdown();
+    occupancy_grid_walls_publisher_.shutdown();
+    occupancy_grid_furniture_publisher_.shutdown();
+    occupancy_grid_obstacles_publisher_.shutdown();
+  }
+
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
@@ -299,7 +333,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ =  ros::Time::now().toSec() - pose.timestamp;
+  time_offset_ = ros::Time::now().toSec() - getBootTimeInSecond();
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -614,6 +648,7 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     return success;
   }
   // Publish static transforms.
+  node_handle_.param(USE_TF_STATIC_PARAM_NAME, use_tf_static_, true);
   PublishStaticTransforms();
   success = OnTangoServiceConnected();
   if (success != TANGO_SUCCESS) {
@@ -652,6 +687,8 @@ void TangoRosNode::TangoDisconnect() {
 }
 
 void TangoRosNode::PublishStaticTransforms() {
+  std::vector<geometry_msgs::TransformStamped> tf_transforms;
+  tf_transforms.reserve(NUMBER_OF_STATIC_TRANSFORMS);
   TangoCoordinateFramePair pair;
   TangoPoseData pose;
 
@@ -660,13 +697,13 @@ void TangoRosNode::PublishStaticTransforms() {
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
-  tf_static_broadcaster_.sendTransform(device_T_imu);
+  tf_transforms.push_back(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_depth_);
+  tf_transforms.push_back(device_T_camera_depth_);
 
   // According to the ROS documentation, laser scan angles are measured around
   // the Z-axis in the laser scan frame. To follow this convention the laser
@@ -678,21 +715,27 @@ void TangoRosNode::PublishStaticTransforms() {
       LASER_SCAN_FRAME_ID);
   geometry_msgs::TransformStamped camera_depth_T_laser_message;
   tf::transformStampedTFToMsg(camera_depth_T_laser_, camera_depth_T_laser_message);
-  tf_static_broadcaster_.sendTransform(camera_depth_T_laser_message);
+  tf_transforms.push_back(camera_depth_T_laser_message);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_fisheye_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_fisheye_);
+  tf_transforms.push_back(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
                                            &device_T_camera_color_);
-  tf_static_broadcaster_.sendTransform(device_T_camera_color_);
+  tf_transforms.push_back(device_T_camera_color_);
+
+  if (use_tf_static_) {
+    tf_static_broadcaster_.sendTransform(tf_transforms);
+  } else {
+    tf_broadcaster_.sendTransform(tf_transforms);
+  }
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
@@ -905,6 +948,9 @@ void TangoRosNode::PublishDevicePose() {
     {
       std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
       device_pose_thread_.data_available.wait(lock);
+      if (!use_tf_static_) {
+        PublishStaticTransforms();
+      }
       if (publish_pose_on_tf_) {
         tf_broadcaster_.sendTransform(start_of_service_T_device_);
         if (area_description_T_start_of_service_.child_frame_id != "") {
@@ -1203,23 +1249,28 @@ bool TangoRosNode::TangoConnectServiceCallback(
     return true;
 }
 
-bool TangoRosNode::GetMapName(
+bool TangoRosNode::GetMapNameServiceCallback(
     const tango_ros_messages::GetMapName::Request &req,
     tango_ros_messages::GetMapName::Response &res) {
-  res.map_name = GetMapNameFromUuid(req.map_uuid);
+  return GetMapNameFromUuid(req.map_uuid, res.map_name);
 }
 
-bool TangoRosNode::GetMapUuids(
+bool TangoRosNode::GetMapUuidsServiceCallback(
     const tango_ros_messages::GetMapUuids::Request &req,
     tango_ros_messages::GetMapUuids::Response &res) {
-  res.map_uuids = splitCommaSeparatedString(GetAvailableMapUuidsList());
+  if (!GetAvailableMapUuidsList(res.map_uuids) ) return false;
 
-  for (const std::string uuid : res.map_uuids) {
-    res.map_names.push_back(GetMapNameFromUuid(uuid));
+  res.map_names.resize(res.map_uuids.size());
+  auto map_uuids_it = res.map_uuids.begin();
+  auto map_names_it = res.map_names.begin();
+  for (; map_uuids_it != res.map_uuids.end() && map_names_it != res.map_names.end();
+       ++map_uuids_it, ++map_names_it) {
+    if (!GetMapNameFromUuid(*map_uuids_it, *map_names_it)) return false;
   }
+  return true;
 }
 
-bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
+bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
                            tango_ros_messages::SaveMap::Response &res) {
   TangoErrorType result;
   TangoUUID map_uuid;
@@ -1272,41 +1323,43 @@ bool TangoRosNode::SaveMap(tango_ros_messages::SaveMap::Request &req,
   return true;
 }
 
-std::string TangoRosNode::GetAvailableMapUuidsList() {
-  char* uuid_list;
-  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&uuid_list);
+bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list) {
+  char* c_uuid_list;
+  TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&c_uuid_list);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while retrieving all available map UUIDs, error: " << result;
-    return "";
+    return false;
   }
-  if (uuid_list != NULL && uuid_list[0] != '\0') {
-    LOG(INFO) << "UUID list: " << uuid_list;
-  } else {
+  if (c_uuid_list == NULL || c_uuid_list[0] == '\0') {
     LOG(WARNING) << "No area description file available.";
-    return "";
+    return false;
   }
-  return std::string(uuid_list);
+  LOG(INFO) << "UUID list: " << c_uuid_list;
+  uuid_list = splitCommaSeparatedString(std::string(c_uuid_list));
+  return true;
 }
 
-std::string TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid) {
+bool TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid, std::string& map_name) {
   size_t size = 0;
   char* value;
   TangoAreaDescriptionMetadata metadata;
   TangoErrorType result = TangoService_getAreaDescriptionMetadata(map_uuid.c_str(), &metadata);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    return false;
   }
   result = TangoAreaDescriptionMetadata_get(metadata, "name", &size, &value);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to get area description metadata, error: " << result;
+    return false;
   }
-  std::string map_name = std::string(value);
+  map_name = std::string(value);
   result = TangoAreaDescriptionMetadata_free(metadata);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
   }
   LOG(INFO) << "Successfully retrieved map name: " << map_name << " from uuid " << map_uuid;
-  return map_name;
+  return true;
 }
 
 bool TangoRosNode::ReconstructionDataRequired() const {

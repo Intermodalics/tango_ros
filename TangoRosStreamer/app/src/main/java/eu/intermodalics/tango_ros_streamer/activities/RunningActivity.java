@@ -209,6 +209,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                             new View.OnClickListener() {
                                 @Override
                                 public void onClick(View view) {
+                                    mRunLocalMaster = mSharedPref.getBoolean(getString(R.string.pref_master_is_local_key), false);
                                     mMasterUri = mSharedPref.getString(getString(R.string.pref_master_uri_key),
                                             getResources().getString(R.string.pref_master_uri_default));
                                     mUriTextView.setText(mMasterUri);
@@ -349,11 +350,8 @@ public class RunningActivity extends AppCompatRosActivity implements
                     mSnackbarLoadNewMap.setAction(getString(R.string.snackbar_action_text_load_new_map), new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            SharedPreferences.Editor editor = mSharedPref.edit();
-                            editor.putBoolean(getString(R.string.pref_create_new_map_key), false);
-                            editor.putString(getString(R.string.pref_localization_mode_key), "3");
-                            editor.putString(getString(R.string.pref_localization_map_uuid_key), mapUuid);
-                            editor.commit();
+                            mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
+                                    getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
                             restartTango();
                         }
                     });
@@ -724,7 +722,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             // e.g. 'http://android-c90553518bc67cf5:1131'.
             // Instead of showing this to the user, we show the IP address of the device,
             // which is also correct and less confusing.
-            WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
             mUriTextView = (TextView) findViewById(R.id.master_uri);
             mUriTextView.setText("http://" + deviceIP + ":11311");

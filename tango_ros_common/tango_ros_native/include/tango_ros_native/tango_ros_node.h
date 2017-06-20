@@ -90,6 +90,7 @@ const std::string TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME = "reconstruction_min_nu
 const std::string TANGO_3DR_UPDATE_METHOD_PARAM_NAME = "reconstruction_update_method";
 const std::string TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME = "reconstruction_max_voxel_weight";
 const std::string TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME = "reconstruction_floorplan_max_error";
+const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -103,6 +104,7 @@ const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1;
 const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
 const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // roughly number of observations
 const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
+const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
@@ -139,11 +141,14 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void onInit();
   // Gets the full list of map Uuids (Universally Unique IDentifier)
   // available on the device.
-  // @return a list as a string: uuids are comma-separated.
-  std::string GetAvailableMapUuidsList();
+  // @param uuid_list to fill in
+  // @return false if list could not be requested.
+  bool GetAvailableMapUuidsList(std::vector<std::string>& uuid_list);
   // Gets the map name corresponding to a given map uuid.
-  std::string GetMapNameFromUuid(const std::string& map_uuid);
-
+  // @param map_uuid UUID to lookup
+  // @param map_name to fill in
+  // @return false if the uuid was not found
+  bool GetMapNameFromUuid(const std::string& map_uuid, std::string& map_name);
 
   // Tries to get a first valid pose and sets the camera intrinsics.
   // @return returns success if it ended successfully.
@@ -194,15 +199,15 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // Updates the publisher configuration consequently.
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   // ROS service callback to get the user readable name from a given UUID.
-  bool GetMapName(const tango_ros_messages::GetMapName::Request& req,
-                  tango_ros_messages::GetMapName::Response &res);
+  bool GetMapNameServiceCallback(const tango_ros_messages::GetMapName::Request& req,
+                                 tango_ros_messages::GetMapName::Response &res);
   // ROS service callback to get a list of available ADF UUIDs and corresponding
   // user readable map names.
-  bool GetMapUuids(const tango_ros_messages::GetMapUuids::Request &req,
-                   tango_ros_messages::GetMapUuids::Response &res);
+  bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request &req,
+                                  tango_ros_messages::GetMapUuids::Response &res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMap(tango_ros_messages::SaveMap::Request &req,
+  bool SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
                tango_ros_messages::SaveMap::Response &res);
   // ROS service callback to connect or disconnect from Tango Service.
   bool TangoConnectServiceCallback(
@@ -226,6 +231,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
 
   double time_offset_ = 0.; // Offset between tango time and ros time in s.
   bool publish_pose_on_tf_ = true;
+  bool use_tf_static_ = true;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
 
