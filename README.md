@@ -78,7 +78,7 @@ In this file, write the path to your Android SDK and NDK in the following way e.
 ndk.dir=/opt/android-ndk-r10b
 sdk.dir=/opt/android-sdk-linux
 ```
-If you haven't installed the SDK and NDK already, follow the instructions in section 'Building the app with Android Studio'.
+If you haven't installed the SDK and NDK already, follow the instructions in section [Developing with Android Studio](#developing-with-android-studio).
 
 Install catkin tools if necessary.
 ```
@@ -89,7 +89,6 @@ Build the app and generate its .apk file.
 ```
 catkin build --no-jobserver
 ``` 
-or use Android Studio to build (and install).
 
 Plug your device to your desktop and install the app on your device using [adb](http://developer.android.com/studio/command-line/adb.html).
 ```
