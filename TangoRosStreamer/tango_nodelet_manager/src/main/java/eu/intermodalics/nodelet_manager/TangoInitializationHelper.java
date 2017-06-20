@@ -129,6 +129,7 @@ public class TangoInitializationHelper {
             loadedSoId = ARCH_ARM64;
             Log.i("TangoInitializationHelp", "Success! Using arm64-v8a/libtango_client_api.");
         } catch (UnsatisfiedLinkError e) {
+            Log.e("TangoInitializationHelp", e.toString());
         }
         if (loadedSoId < ARCH_DEFAULT) {
             try {
@@ -136,6 +137,7 @@ public class TangoInitializationHelper {
                 loadedSoId = ARCH_ARM32;
                 Log.i("TangoInitializationHelp", "Success! Using armeabi-v7a/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
+                Log.e("TangoInitializationHelp", e.toString());
             }
         }
         if (loadedSoId < ARCH_DEFAULT) {
@@ -144,6 +146,7 @@ public class TangoInitializationHelper {
                 loadedSoId = ARCH_X86_64;
                 Log.i("TangoInitializationHelp", "Success! Using x86_64/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
+                Log.e("TangoInitializationHelp", e.toString());
             }
         }
         if (loadedSoId < ARCH_DEFAULT) {
@@ -152,6 +155,7 @@ public class TangoInitializationHelper {
                 loadedSoId = ARCH_X86;
                 Log.i("TangoInitializationHelp", "Success! Using x86/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
+                Log.e("TangoInitializationHelp", e.toString());
             }
         }
         if (loadedSoId < ARCH_DEFAULT) {
@@ -160,6 +164,7 @@ public class TangoInitializationHelper {
                 loadedSoId = ARCH_DEFAULT;
                 Log.i("TangoInitializationHelp", "Success! Using default/libtango_client_api.");
             } catch (UnsatisfiedLinkError e) {
+                Log.e("TangoInitializationHelp", e.toString());
             }
         }
         if (loadedSoId < ARCH_DEFAULT) {
@@ -168,6 +173,7 @@ public class TangoInitializationHelper {
                 loadedSoId = ARCH_FALLBACK;
                 Log.i("TangoInitializationHelp", "Falling back to libtango_client_api.so symlink.");
             } catch (UnsatisfiedLinkError e) {
+                Log.e("TangoInitializationHelp", e.toString());
             }
         }
         return loadedSoId;

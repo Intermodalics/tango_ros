@@ -7,3 +7,6 @@
 [submodule "third_party/catkin_simple"]
 	path = third_party/catkin_simple
 	url = https://github.com/catkin/catkin_simple
+[submodule "third_party/tango_api/tango-examples-c"]
+	path = third_party/tango_api/tango-examples-c
+	url = https://github.com/Intermodalics/tango-examples-c
