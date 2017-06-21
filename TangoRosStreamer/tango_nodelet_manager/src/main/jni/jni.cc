@@ -58,26 +58,30 @@ Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
     env->ReleaseStringUTFChars(node_name_value, node_name);
 
     std::map<std::string, std::string> remappings;
-    if (remapping_objects_value != NULL) {
-      int remappingStringCount = env->GetArrayLength(remapping_objects_value);
-      if (remappingStringCount % 2 == 0) {
-        for (int i = 0; i < remappingStringCount / 2; ++i) {
-          jstring remap_from_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i * 2));
-          const char* remap_from = env->GetStringUTFChars(remap_from_value, NULL);
-          jstring remap_to_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i * 2 + 1));
-          const char* remap_to = env->GetStringUTFChars(remap_to_value, NULL);
-
-          remappings.insert(std::pair<std::string, std::string>(std::string(remap_from), std::string(remap_to)));
-
-          env->ReleaseStringUTFChars(remap_from_value, remap_from);
-          env->ReleaseStringUTFChars(remap_to_value, remap_to);
-        }
-      } else {
-        LOG(WARNING) << "Wrong remapping arguments array, its size should be an even number but is "
-          << remappingStringCount << ". Remapping will not be apply.";
-      }
+    if (remapping_objects_value == NULL || env->GetArrayLength(remapping_objects_value) == 0) {
+      LOG(INFO) << "No remapping to be done.";
     } else {
-      LOG(WARNING) << "Remapping arguments array is null. Remapping will not be apply.";
+      int remappingStringCount = env->GetArrayLength(remapping_objects_value);
+      for (int i = 0; i < remappingStringCount; ++i) {
+        jstring remap_arg_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i));
+        const char* remap_arg = env->GetStringUTFChars(remap_arg_value, NULL);
+        // Parse remapping argument to extract old and new names.
+        // According to ROS doc, the syntax for remapping arguments is: old_name:=new_name.
+        // See http://wiki.ros.org/Remapping%20Arguments.
+        std::string remap_arg_string = std::string(remap_arg);
+        std::string delimiter = ":=";
+        size_t delimiter_position = remap_arg_string.find(delimiter);
+        if (delimiter_position == std::string::npos) {
+          LOG(ERROR) << "Invalid remapping argument: " << remap_arg << ". The correct syntax is old_name:=new_name.";
+          return 1;
+        }
+        std::string remap_old_name = remap_arg_string.substr(0, delimiter_position);
+        remap_arg_string.erase(0, delimiter_position + delimiter.length());
+        std::string remap_new_name = remap_arg_string;
+        remappings.insert(std::pair<std::string, std::string>(remap_old_name, remap_new_name));
+        LOG(INFO) << "Remapping " << remap_old_name << " to " << remap_new_name;
+        env->ReleaseStringUTFChars(remap_arg_value, remap_arg);
+      }
     }
 
     ros::init(argc, argv, node_name_string.c_str());
