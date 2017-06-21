@@ -122,7 +122,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                         editor.putString(paramName, stringValue);
                     }
                 } catch (ParameterClassCastException e) {
-                    mLog.error("Preference " + paramName + " can not be set from parameter server. " + e.getMessage());
+                    if (mParamNames.get(paramName) == "boolean") {
+                        try {
+                            Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                            editor.putBoolean(paramName, !intValue.equals(0));
+                        } catch (ParameterClassCastException e2) {
+                            mLog.error("Preference " + paramName + " can not be set from parameter server.", e2);
+                        }
+                    } else {
+                        mLog.error("Preference " + paramName + " can not be set from parameter server.", e);
+                    }
                 }
             }
         }
