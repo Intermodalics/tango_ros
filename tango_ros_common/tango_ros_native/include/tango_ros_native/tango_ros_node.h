@@ -67,15 +67,16 @@ const std::string FISHEYE_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
-const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
-const std::string OCCUPANCY_GRID_TOPIC_NAME = "occupancy_grid";
+const std::string COLOR_MESH_TOPIC_NAME = "reconstruction/mesh";
+const std::string OCCUPANCY_GRID_TOPIC_NAME = "reconstruction/occupancy_grid";
+const std::string NAV_MAP_TOPIC_NAME = "nav_map";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
 const std::string CREATE_NEW_MAP_PARAM_NAME = "create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
-const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
+const std::string DATASET_DIRECTORY_PARAM_NAME = "datasets_directory";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
@@ -83,13 +84,15 @@ const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
+const std::string NAV_MAP_DIRECTORY_PARAM_NAME = "nav_maps_directory";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
-const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
+const std::string DATASETS_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
+const std::string NAV_MAPS_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/nav_maps/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
@@ -266,6 +269,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
 
   ros::Publisher mesh_marker_publisher_;
   ros::Publisher occupancy_grid_publisher_;
+  nav_msgs::OccupancyGrid occupancy_grid_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_ReconstructionContext t3dr_context_;
