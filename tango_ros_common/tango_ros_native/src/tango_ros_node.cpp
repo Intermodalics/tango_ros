@@ -298,6 +298,8 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
         node_handle_.advertise<visualization_msgs::MarkerArray>(
             COLOR_MESH_TOPIC_NAME, queue_size, latching);
 
+    map_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_MAP_TOPIC_NAME, queue_size, latching);
     occupancy_grid_space_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
         OCCUPANCY_GRID_SPACE_TOPIC_NAME, queue_size, latching);
     occupancy_grid_walls_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
@@ -309,6 +311,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
 
   } else {
     mesh_marker_publisher_.shutdown();
+    map_publisher_.shutdown();
     occupancy_grid_space_publisher_.shutdown();
     occupancy_grid_walls_publisher_.shutdown();
     occupancy_grid_furniture_publisher_.shutdown();
@@ -1169,6 +1172,13 @@ void TangoRosNode::PublishMesh() {
         }
         mesh_marker_publisher_.publish(mesh_marker_array);
       }
+
+      if (map_publisher_.getNumSubscribers() > 0) {
+
+      }
+
+
+
       auto get_and_publish_occupancy_grid = [&] (const ros::Publisher& publisher,
           Tango3DR_FloorplanLayer layer) {
         // Publish Tango mesh as occupancy grid.
@@ -1208,6 +1218,8 @@ void TangoRosNode::PublishMesh() {
                                      TANGO_3DR_LAYER_FURNITURE);
       get_and_publish_occupancy_grid(occupancy_grid_obstacles_publisher_,
                                      TANGO_3DR_LAYER_OBSTACLES);
+      //We combine the space layer and
+
     }
   }
 }
@@ -1378,9 +1390,14 @@ bool TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid, std::string& 
 
 bool TangoRosNode::ReconstructionDataRequired() const {
   return (mesh_marker_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_space_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_walls_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_furniture_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_obstacles_publisher_.getNumSubscribers() > 0);
+     FloorplanDataRequired() )
+}
+
+bool TangoRosNode::FloorplanDataRequired() const {
+    return (map_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_space_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_walls_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_furniture_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_obstacles_publisher_.getNumSubscribers() > 0);
 }
 } // namespace tango_ros_native

@@ -68,6 +68,7 @@ const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_r
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
+const std::string OCCUPANCY_GRID_MAP_TOPIC_NAME = "map";
 const std::string OCCUPANCY_GRID_SPACE_TOPIC_NAME = "occupancy_grid/space";
 const std::string OCCUPANCY_GRID_WALLS_TOPIC_NAME = "occupancy_grid/walls";
 const std::string OCCUPANCY_GRID_FURNITURE_TOPIC_NAME = "occupancy_grid/furniture";
@@ -215,6 +216,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
           tango_ros_messages::TangoConnect::Response& response);
 
   bool ReconstructionDataRequired() const;
+  bool FloorplanDataRequired() const;
 
   TangoConfig tango_config_;
   ros::NodeHandle node_handle_;
@@ -280,6 +282,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   cv::Mat color_image_rect_;
 
   ros::Publisher mesh_marker_publisher_;
+  ros::Publisher map_publisher_;
   ros::Publisher occupancy_grid_space_publisher_;
   ros::Publisher occupancy_grid_walls_publisher_;
   ros::Publisher occupancy_grid_furniture_publisher_;
