@@ -219,9 +219,29 @@ void TangoRosNode::onInit() {
   if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
   }
-  if (!node_handle_.hasParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
-                          TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  if (!node_handle_.hasParam(TANGO_3DR_RESOLUTION_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_RESOLUTION_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_RESOLUTION);
+  }
+  if (!node_handle_.hasParam(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+  }
+  if (!node_handle_.hasParam(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
+  }
+  if (!node_handle_.hasParam(TANGO_3DR_UPDATE_METHOD_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_UPDATE_METHOD);
+  }
+  if (!node_handle_.hasParam(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
+  }
+  if (!node_handle_.hasParam(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME)) {
+    node_handle_.setParam(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+                          TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
   }
   if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
       node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
@@ -231,11 +251,11 @@ void TangoRosNode::onInit() {
   } else {
     node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
   }
-  if (node_handle_.hasParam(ENABLE_DEPTH)) {
-    node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
+  if (node_handle_.hasParam(ENABLE_DEPTH_PARAM_NAME)) {
+    node_handle_.param(ENABLE_DEPTH_PARAM_NAME, enable_depth_, true);
   }
-  if (node_handle_.hasParam(ENABLE_COLOR_CAMERA)) {
-    node_handle_.param(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
+  if (node_handle_.hasParam(ENABLE_COLOR_CAMERA_PARAM_NAME)) {
+    node_handle_.param(ENABLE_COLOR_CAMERA_PARAM_NAME, enable_color_camera_, true);
   }
 }
 
@@ -277,11 +297,25 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     mesh_marker_publisher_ =
         node_handle_.advertise<visualization_msgs::MarkerArray>(
             COLOR_MESH_TOPIC_NAME, queue_size, latching);
-    occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
-        OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
+
+    map_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_MAP_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_space_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_SPACE_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_walls_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_WALLS_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_furniture_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_FURNITURE_TOPIC_NAME, queue_size, latching);
+    occupancy_grid_obstacles_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+        OCCUPANCY_GRID_OBSTACLES_TOPIC_NAME, queue_size, latching);
+
   } else {
     mesh_marker_publisher_.shutdown();
-    occupancy_grid_publisher_.shutdown();
+    map_publisher_.shutdown();
+    occupancy_grid_space_publisher_.shutdown();
+    occupancy_grid_walls_publisher_.shutdown();
+    occupancy_grid_furniture_publisher_.shutdown();
+    occupancy_grid_obstacles_publisher_.shutdown();
   }
 
   TangoCoordinateFramePair pair;
@@ -389,7 +423,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
-  node_handle_.param<bool>(ENABLE_DEPTH, enable_depth_, true);
+  node_handle_.param<bool>(ENABLE_DEPTH_PARAM_NAME, enable_depth_, true);
   result = TangoConfig_setBool(tango_config_, config_enable_depth, enable_depth_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
@@ -404,7 +438,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
-  node_handle_.param<bool>(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
+  node_handle_.param<bool>(ENABLE_COLOR_CAMERA_PARAM_NAME, enable_color_camera_, true);
   result = TangoConfig_setBool(tango_config_, config_enable_color_camera, enable_color_camera_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
@@ -454,8 +488,8 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
       Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
   Tango3DR_Status result;
   const char* resolution = "resolution";
-  node_handle_.param(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
+  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
+                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
   result = Tango3DR_Config_setDouble(t3dr_config, resolution, t3dr_resolution_);
   if (result != TANGO_3DR_SUCCESS) {
     LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
@@ -476,6 +510,67 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
         << use_floorplan << " error: " << result;
     return result;
   }
+
+  bool t3dr_use_space_clearing;
+  node_handle_.param(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
+                     t3dr_use_space_clearing, TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+  const char* use_space_clearing = "use_space_clearing";
+  result = Tango3DR_Config_setBool(t3dr_config, use_space_clearing,
+                                   t3dr_use_space_clearing);
+  if (result != TANGO_3DR_SUCCESS) {
+    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
+        << use_space_clearing << " error: " << result;
+    return result;
+  }
+
+  int t3dr_min_num_vertices;
+  node_handle_.param(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+                     t3dr_min_num_vertices, TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
+  const char* min_num_vertices = "min_num_vertices";
+  result = Tango3DR_Config_setInt32(t3dr_config, min_num_vertices,
+                                    t3dr_min_num_vertices);
+  if (result != TANGO_3DR_SUCCESS) {
+    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
+        << min_num_vertices << " error: " << result;
+    return result;
+  }
+
+  int t3dr_update_method;
+  node_handle_.param(TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+                     t3dr_update_method, TANGO_3DR_DEFAULT_UPDATE_METHOD);
+  const char* update_method = "update_method";
+  result = Tango3DR_Config_setInt32(t3dr_config, update_method,
+                                    t3dr_update_method);
+  if (result != TANGO_3DR_SUCCESS) {
+    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
+        << update_method << " error: " << result;
+    return result;
+  }
+
+  int t3dr_max_voxel_weight;
+  node_handle_.param(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+                     t3dr_max_voxel_weight, TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
+  const char* max_voxel_weight = "max_voxel_weight";
+  result = Tango3DR_Config_setInt32(t3dr_config, max_voxel_weight,
+                                    t3dr_max_voxel_weight);
+  if (result != TANGO_3DR_SUCCESS) {
+    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
+        << max_voxel_weight << " error: " << result;
+    return result;
+  }
+
+  double t3dr_floorplan_max_error;
+  node_handle_.param(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+                     t3dr_floorplan_max_error, TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
+  const char* floorplan_max_error = "floorplan_max_error";
+  result = Tango3DR_Config_setDouble(t3dr_config, floorplan_max_error,
+                                     t3dr_floorplan_max_error);
+  if (result != TANGO_3DR_SUCCESS) {
+    LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
+        << floorplan_max_error << " error: " << result;
+    return result;
+  }
+
   t3dr_context_ = Tango3DR_ReconstructionContext_create(t3dr_config);
   if (t3dr_context_ == nullptr) {
     LOG(ERROR) << function_name << ", Tango3DR_ReconstructionContext_create error: "
@@ -719,8 +814,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       laser_scan_thread_.data_available.notify_all();
     }
 
-    if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
-        occupancy_grid_publisher_.getNumSubscribers() > 0) {
+    if (ReconstructionDataRequired()) {
       TangoCoordinateFramePair pair;
       pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
       pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
@@ -765,8 +859,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_thread_.data_available.notify_all();
   }
 
-  if ((mesh_marker_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_publisher_.getNumSubscribers() > 0) &&
+  if (ReconstructionDataRequired() &&
       camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
       new_point_cloud_available_for_t3dr_ &&
       mesh_thread_.data_available_mutex.try_lock()) {
@@ -855,8 +948,7 @@ void TangoRosNode::StopPublishing() {
     }
     if (mesh_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ || !enable_depth_ || !enable_color_camera_ ||
-          (mesh_marker_publisher_.getNumSubscribers() <= 0 &&
-              occupancy_grid_publisher_.getNumSubscribers() <= 0)) {
+          !ReconstructionDataRequired()) {
         mesh_thread_.data_available.notify_all();
       }
       mesh_thread_.publish_thread.join();
@@ -1003,8 +1095,7 @@ void TangoRosNode::PublishMesh() {
     if (!run_threads_) {
       break;
     }
-    if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
-        occupancy_grid_publisher_.getNumSubscribers() > 0) {
+    if (ReconstructionDataRequired()) {
       Tango3DR_GridIndexArray t3dr_updated_indices;
       // Update Tango mesh with latest point cloud.
       {
@@ -1055,12 +1146,14 @@ void TangoRosNode::PublishMesh() {
           }
           // Make mesh marker from tango mesh.
           visualization_msgs::Marker mesh_marker;
-          tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices.indices[i],
-                                             tango_mesh, time_offset_, &mesh_marker);
+          tango_ros_conversions_helper::toMeshMarker(
+              t3dr_updated_indices.indices[i],
+              tango_mesh, time_offset_, &mesh_marker);
           // Free tango mesh once we are finished with it.
           result = Tango3DR_Mesh_destroy(&tango_mesh);
           if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_Mesh_destroy failed with error code: " << result;
+            LOG(ERROR) << "Tango3DR_Mesh_destroy failed with error code: "
+                << result;
           }
           if (mesh_marker.points.empty()) {
             LOG(INFO) << "Empty mesh marker.";
@@ -1068,39 +1161,65 @@ void TangoRosNode::PublishMesh() {
           }
           mesh_marker_array.markers.push_back(mesh_marker);
         }
-        Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(&t3dr_updated_indices);
+        Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
+            &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with error code: " << result;
+          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with error code"
+              ": "<< result;
         }
         if (mesh_marker_array.markers.empty()) {
           LOG(INFO) << "Empty mesh array!";
         }
         mesh_marker_publisher_.publish(mesh_marker_array);
       }
-      // Publish Tango mesh as occupancy grid.
-      if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
-        Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context_);
-        if (result == TANGO_3DR_SUCCESS) {
-          Tango3DR_Vector2 origin;
-          Tango3DR_ImageBuffer image_grid;
-          result = Tango3DR_extractFullFloorplanImage(
-              t3dr_context_, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
-          if (result == TANGO_3DR_SUCCESS) {
-            nav_msgs::OccupancyGrid occupancy_grid;
-            tango_ros_conversions_helper::toOccupancyGrid(
-                image_grid, origin, time_offset_, t3dr_resolution_, &occupancy_grid);
-            occupancy_grid_publisher_.publish(occupancy_grid);
-          } else {
-            LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error code: " << result;
-          }
-          result = Tango3DR_ImageBuffer_destroy(&image_grid);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_ImageBuffer_destroy failed with error code: " << result;
-          }
-        } else {
-          LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with error code: " << result;
-        }
+
+      if (map_publisher_.getNumSubscribers() > 0) {
+
       }
+
+
+
+      auto get_and_publish_occupancy_grid = [&] (const ros::Publisher& publisher,
+          Tango3DR_FloorplanLayer layer) {
+        // Publish Tango mesh as occupancy grid.
+        if (publisher.getNumSubscribers() > 0) {
+          Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context_);
+          if (result == TANGO_3DR_SUCCESS) {
+            Tango3DR_Vector2 origin;
+            Tango3DR_ImageBuffer image_grid;
+            result = Tango3DR_extractFullFloorplanImage(
+                t3dr_context_, layer, &origin, &image_grid);
+            if (result == TANGO_3DR_SUCCESS) {
+              nav_msgs::OccupancyGrid occupancy_grid;
+              tango_ros_conversions_helper::toOccupancyGrid(
+                  image_grid, origin, time_offset_, t3dr_resolution_,
+                  &occupancy_grid);
+              publisher.publish(occupancy_grid);
+            } else {
+              LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with"
+                  " error code: " << result;
+            }
+            result = Tango3DR_ImageBuffer_destroy(&image_grid);
+            if (result != TANGO_3DR_SUCCESS) {
+              LOG(ERROR) << "Tango3DR_ImageBuffer_destroy failed with error"
+                  " code: " << result;
+            }
+          } else {
+            LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with error"
+                " code: " << result;
+          }
+        }
+      };
+      get_and_publish_occupancy_grid(occupancy_grid_space_publisher_,
+                                     TANGO_3DR_LAYER_SPACE);
+      get_and_publish_occupancy_grid(occupancy_grid_walls_publisher_,
+                                     TANGO_3DR_LAYER_WALLS);
+      get_and_publish_occupancy_grid(occupancy_grid_furniture_publisher_,
+                                     TANGO_3DR_LAYER_FURNITURE);
+      get_and_publish_occupancy_grid(occupancy_grid_obstacles_publisher_,
+                                     TANGO_3DR_LAYER_OBSTACLES);
+      //We combine the space layer and
+
     }
   }
 }
@@ -1267,5 +1386,18 @@ bool TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid, std::string& 
   }
   LOG(INFO) << "Successfully retrieved map name: " << map_name << " from uuid " << map_uuid;
   return true;
+}
+
+bool TangoRosNode::ReconstructionDataRequired() const {
+  return (mesh_marker_publisher_.getNumSubscribers() > 0 ||
+     FloorplanDataRequired() )
+}
+
+bool TangoRosNode::FloorplanDataRequired() const {
+    return (map_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_space_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_walls_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_furniture_publisher_.getNumSubscribers() > 0 ||
+       occupancy_grid_obstacles_publisher_.getNumSubscribers() > 0);
 }
 } // namespace tango_ros_native
