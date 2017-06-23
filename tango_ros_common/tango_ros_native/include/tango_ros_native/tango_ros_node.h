@@ -40,6 +40,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
+#include <tango_ros_messages/LoadNavMap.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -69,14 +70,14 @@ const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "reconstruction/mesh";
 const std::string OCCUPANCY_GRID_TOPIC_NAME = "reconstruction/occupancy_grid";
-const std::string NAV_MAP_TOPIC_NAME = "nav_map";
+const std::string NAV_MAP_TOPIC_NAME = "static_nav_map";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
 const std::string CREATE_NEW_MAP_PARAM_NAME = "create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
-const std::string DATASET_DIRECTORY_PARAM_NAME = "datasets_directory";
+const std::string DATASET_DIRECTORY_PARAM_NAME = "dataset_directory";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
 const std::string ENABLE_DEPTH = "enable_depth";
@@ -84,15 +85,16 @@ const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
-const std::string NAV_MAP_DIRECTORY_PARAM_NAME = "nav_maps_directory";
+const std::string NAV_MAP_DIRECTORY_PARAM_NAME = "nav_map_directory";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
+const std::string LOAD_NAV_MAP_SERVICE_NAME = "load_nav_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
-const std::string DATASETS_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
-const std::string NAV_MAPS_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/nav_maps/";
+const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
+const std::string NAV_MAP_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/nav_maps/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
@@ -190,18 +192,21 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   // ROS service callback to get the user readable name from a given UUID.
   bool GetMapNameServiceCallback(const tango_ros_messages::GetMapName::Request& req,
-                                 tango_ros_messages::GetMapName::Response &res);
+                                 tango_ros_messages::GetMapName::Response& res);
   // ROS service callback to get a list of available ADF UUIDs and corresponding
   // user readable map names.
-  bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request &req,
-                                  tango_ros_messages::GetMapUuids::Response &res);
+  bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request& req,
+                                  tango_ros_messages::GetMapUuids::Response& res);
+  //
+  bool LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMap::Request& req,
+                             tango_ros_messages::LoadNavMap::Response& res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
-               tango_ros_messages::SaveMap::Response &res);
+  bool SaveMapServiceCallback(const tango_ros_messages::SaveMap::Request& req,
+               tango_ros_messages::SaveMap::Response& res);
   // ROS service callback to connect or disconnect from Tango Service.
   bool TangoConnectServiceCallback(
-          const tango_ros_messages::TangoConnect::Request &request,
+          const tango_ros_messages::TangoConnect::Request& request,
           tango_ros_messages::TangoConnect::Response& response);
 
   TangoConfig tango_config_;
@@ -280,9 +285,12 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;
 
+  ros::Publisher nav_map_publisher_;
+
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
+  ros::ServiceServer load_nav_map_service_;
   ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native
