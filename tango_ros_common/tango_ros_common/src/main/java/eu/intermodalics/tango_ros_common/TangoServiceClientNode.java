@@ -188,7 +188,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
                 mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
-                        saveMapResponse.getMessage(), saveMapResponse.getMapName(), saveMapResponse.getMapUuid());
+                        saveMapResponse.getMessage(), saveMapResponse.getLocalizationMapName(), saveMapResponse.getLocalizationMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {

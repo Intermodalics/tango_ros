@@ -91,7 +91,7 @@ const std::string NAV_MAP_DIRECTORY_PARAM_NAME = "nav_map_directory";
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
-const std::string LOAD_NAV_MAP_SERVICE_NAME = "load_nav_map";
+const std::string LOAD_NAV_MAP_SERVICE_NAME = "load_navigation_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";

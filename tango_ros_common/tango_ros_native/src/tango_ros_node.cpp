@@ -131,7 +131,8 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
-//
+// Returns a string corresponding to current date and time.
+// The format is as follow: year-month-day_hour-min-sec.
 std::string getCurrentDateAndTime() {
   std::time_t currentTime;
   struct tm* currentDateTime;
@@ -147,13 +148,17 @@ std::string getCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
-//
+// Returns device boottime in second.
 double getBootTimeInSecond() {
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
   return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
 }
-//
+// Save an Area Description File (ADF) and set its name.
+// @param map_name Name of the ADF
+// @param[out] map_uuid Uuid of the ADF.
+// @param[out] message Contains an error message in case of failure.
+// Returns true if the ADF was successfully saved and named, false otherwise.
 bool SaveTangoAreaDescription(const std::string& map_name,
                               std::string& map_uuid, std::string& message) {
   TangoErrorType result;
@@ -1225,61 +1230,78 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
   return true;
 }
 
-bool TangoRosNode::SaveMapServiceCallback(const tango_ros_messages::SaveMap::Request& req,
-                           tango_ros_messages::SaveMap::Response& res) {
-  bool create_new_map;
-  const char* config_enable_learning_mode = "config_enable_learning_mode";
-  TangoErrorType result = TangoConfig_getBool(tango_config_, config_enable_learning_mode, &create_new_map);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "TangoConfig_getBool "
-        << config_enable_learning_mode << " error: " << result;
-    res.success = false;
-    return true;
+bool TangoRosNode::SaveMapServiceCallback(
+    const tango_ros_messages::SaveMap::Request& req,
+    tango_ros_messages::SaveMap::Response& res) {
+  bool save_localization_map = false;
+  bool save_navigation_map = false;
+  switch (req.request) {
+    case tango_ros_messages::SaveMap::Request::LOC_AND_NAV_MAPS:
+      save_localization_map = true;
+      save_navigation_map = true;
+      break;
+    case tango_ros_messages::SaveMap::Request::ONLY_LOC_MAP:
+      save_localization_map = true;
+      save_navigation_map = false;
+      break;
+    case tango_ros_messages::SaveMap::Request::ONLY_NAV_MAP:
+      save_localization_map = false;
+      save_navigation_map = true;
+      break;
+    default:
+      LOG(ERROR) << "Did not understand request " << static_cast<int>(req.request)
+                 << ", valid requests are (LOC_AND_NAV_MAPS: "
+                 << tango_ros_messages::SaveMap::Request::LOC_AND_NAV_MAPS
+                 << ", ONLY_LOC_MAP: "
+                 << tango_ros_messages::SaveMap::Request::ONLY_LOC_MAP
+                 << ", ONLY_NAV_MAP: "
+                 << tango_ros_messages::SaveMap::Request::ONLY_NAV_MAP
+                 << ")";
+      return false;
   }
-  std::string nav_map_directory;
-  node_handle_.param(NAV_MAP_DIRECTORY_PARAM_NAME, nav_map_directory, NAV_MAP_DEFAULT_DIRECTORY);
-  if (create_new_map) {
-    // A new map is created, both ADF and navigation map are being saved.
-    res.map_name = getCurrentDateAndTime() + " " + req.map_name;
-    if (!SaveTangoAreaDescription(res.map_name, res.map_uuid, res.message)) {
+  res.message = "";
+  if (save_localization_map) {
+    res.localization_map_name = getCurrentDateAndTime() + " " + req.map_name;
+    if (!SaveTangoAreaDescription(res.localization_map_name, res.localization_map_uuid, res.message)) {
       res.success = false;
       return true;
     }
     tango_data_available_ = false;
-    if (!navigation_map_file_io::SaveOccupancyGridToNavigationMap(
-        req.map_name, res.map_uuid, nav_map_directory, occupancy_grid_)) {
-      LOG(ERROR) << "Error while trying to save occupancy grid to file.";
-      res.message =  "Could not save occupancy grid to file " + res.map_name
-          + " in directory " + nav_map_directory;
-      res.success = false;
-      return true;
-    }
-  } else {
+    res.message += "\nLocalization map " + res.localization_map_uuid +
+        " successfully saved with the following name: " + res.localization_map_name;
+  }
+  if (save_navigation_map && !save_localization_map) {
     char loaded_map_uuid[TANGO_UUID_LEN];
     const char* config_load_area_description_UUID = "config_load_area_description_UUID";
-    result = TangoConfig_getString(
+    TangoErrorType result = TangoConfig_getString(
         tango_config_, config_load_area_description_UUID, loaded_map_uuid,
         TANGO_UUID_LEN);
     if (result != TANGO_SUCCESS) {
       LOG(ERROR) << "TangoConfig_getString "
           << config_load_area_description_UUID << " error: " << result;
+      res.message += "\nCould not get current localization map uuid.";
       res.success = false;
       return true;
     }
-    res.map_uuid = std::string(loaded_map_uuid);
+    res.localization_map_uuid = std::string(loaded_map_uuid);
+  }
+  if (save_navigation_map) {
+    std::string nav_map_directory;
+    node_handle_.param(NAV_MAP_DIRECTORY_PARAM_NAME, nav_map_directory, NAV_MAP_DEFAULT_DIRECTORY);
+    res.navigation_map_name = req.map_name;
     if (!navigation_map_file_io::SaveOccupancyGridToNavigationMap(
-        req.map_name, res.map_uuid, nav_map_directory, occupancy_grid_)) {
-      LOG(ERROR) << "Error while trying to save occupancy grid to file.";
-      res.message =  "Could not save occupancy grid to file " + res.map_name
+        res.navigation_map_name, res.localization_map_uuid, nav_map_directory, occupancy_grid_)) {
+      res.message += "\Could not save navigation map " + res.navigation_map_name
           + " in directory " + nav_map_directory;
       res.success = false;
       return true;
     }
-  }
-  res.message += "Map " + res.map_uuid + " successfully saved with the following name: " + res.map_name;
-  if (res.map_uuid.empty()) {
-    res.message += "\nThe occupancy grid has been saved without uuid. This means no localization...";
-    LOG(WARNING) << res.message;
+    res.message += "\nNavigation map successfully saved with the following name: "
+        + res.navigation_map_name + " in  directory " + nav_map_directory;
+    if (res.localization_map_uuid.empty()) {
+      res.message += "\nThe navigation map has been saved without localization map uuid. "
+          "This means the navigation map will not be aligned when loaded.";
+    }
   }
   res.success = true;
   return true;

@@ -1,6 +1,11 @@
+int8 LOC_AND_NAV_MAPS=0
+int8 ONLY_LOC_MAP=1
+int8 ONLY_NAV_MAP=2
+int8 request
 string map_name
 ---
 string message
-string map_name
-string map_uuid
+string localization_map_name
+string localization_map_uuid
+string navigation_map_name
 bool success

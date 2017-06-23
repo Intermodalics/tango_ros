@@ -148,6 +148,9 @@ bool LoadOccupancyGridDataFromPgmFile(
   occupancy_grid->info.width = width;
   occupancy_grid->info.height = height;
   LOG(INFO) << "Image size is " << occupancy_grid->info.width << "x" << occupancy_grid->info.height;
+  // Fourth line contains the maximum gray value.
+  int max_val = 0;
+  ss >> max_val;
   // Following lines contain data.
   int pixel_array[occupancy_grid->info.height * occupancy_grid->info.width];
   for (size_t i = 0; i < occupancy_grid->info.height * occupancy_grid->info.width; ++i) {
@@ -160,8 +163,8 @@ bool LoadOccupancyGridDataFromPgmFile(
     for (size_t j = 0; j < occupancy_grid->info.width; ++j) {
       int value = pixel_array[j + (occupancy_grid->info.height - i - 1) * occupancy_grid->info.width];
       if (negate)
-        value = 255 - value;
-      double occupancy = (255 - value) / 255.0;
+        value = max_val - value;
+      double occupancy = (max_val - value) / static_cast<double>(max_val);
       if (occupancy < free_threshold) {
         occupancy_grid->data.push_back(0);
       } else if (occupancy > occupied_threshold) {
