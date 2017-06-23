@@ -32,6 +32,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
