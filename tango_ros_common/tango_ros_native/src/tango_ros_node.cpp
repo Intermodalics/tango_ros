@@ -198,6 +198,21 @@ bool SaveTangoAreaDescription(const std::string& map_name,
   map_uuid = static_cast<std::string>(map_tango_uuid);
   return true;
 }
+//
+bool GetCurrentADFUuid(const TangoConfig& tango_config, std::string& adf_uuid) {
+  char loaded_map_uuid[TANGO_UUID_LEN];
+  const char* config_load_area_description_UUID = "config_load_area_description_UUID";
+  TangoErrorType result = TangoConfig_getString(
+      tango_config, config_load_area_description_UUID, loaded_map_uuid,
+      TANGO_UUID_LEN);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "TangoConfig_getString "
+        << config_load_area_description_UUID << " error: " << result;
+    return false;
+  }
+  adf_uuid = std::string(loaded_map_uuid);
+  return true;
+}
 }  // namespace
 
 namespace tango_ros_native {
@@ -1204,7 +1219,8 @@ bool TangoRosNode::TangoConnectServiceCallback(
                  << ", RECONNECT: "
                  << tango_ros_messages::TangoConnect::Request::RECONNECT
                  << ")";
-      return false;
+      response.message = "Did not understand request";
+      return true;
     }
     return true;
 }
@@ -1257,7 +1273,8 @@ bool TangoRosNode::SaveMapServiceCallback(
                  << ", ONLY_NAV_MAP: "
                  << tango_ros_messages::SaveMap::Request::ONLY_NAV_MAP
                  << ")";
-      return false;
+      res.message = "Did not understand request";
+      return true;
   }
   res.message = "";
   if (save_localization_map) {
@@ -1268,22 +1285,14 @@ bool TangoRosNode::SaveMapServiceCallback(
     }
     tango_data_available_ = false;
     res.message += "\nLocalization map " + res.localization_map_uuid +
-        " successfully saved with the following name: " + res.localization_map_name;
+        " successfully saved with name " + res.localization_map_name;
   }
   if (save_navigation_map && !save_localization_map) {
-    char loaded_map_uuid[TANGO_UUID_LEN];
-    const char* config_load_area_description_UUID = "config_load_area_description_UUID";
-    TangoErrorType result = TangoConfig_getString(
-        tango_config_, config_load_area_description_UUID, loaded_map_uuid,
-        TANGO_UUID_LEN);
-    if (result != TANGO_SUCCESS) {
-      LOG(ERROR) << "TangoConfig_getString "
-          << config_load_area_description_UUID << " error: " << result;
+    if (!GetCurrentADFUuid(tango_config_, res.localization_map_uuid)) {
       res.message += "\nCould not get current localization map uuid.";
       res.success = false;
       return true;
     }
-    res.localization_map_uuid = std::string(loaded_map_uuid);
   }
   if (save_navigation_map) {
     std::string nav_map_directory;
@@ -1291,12 +1300,12 @@ bool TangoRosNode::SaveMapServiceCallback(
     res.navigation_map_name = req.map_name;
     if (!navigation_map_file_io::SaveOccupancyGridToNavigationMap(
         res.navigation_map_name, res.localization_map_uuid, nav_map_directory, occupancy_grid_)) {
-      res.message += "\Could not save navigation map " + res.navigation_map_name
+      res.message += "\nCould not save navigation map " + res.navigation_map_name
           + " in directory " + nav_map_directory;
       res.success = false;
       return true;
     }
-    res.message += "\nNavigation map successfully saved with the following name: "
+    res.message += "\nNavigation map successfully saved with name "
         + res.navigation_map_name + " in  directory " + nav_map_directory;
     if (res.localization_map_uuid.empty()) {
       res.message += "\nThe navigation map has been saved without localization map uuid. "
@@ -1312,22 +1321,29 @@ bool TangoRosNode::LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMa
   nav_msgs::OccupancyGrid nav_map;
   std::string nav_map_directory;
   node_handle_.param(NAV_MAP_DIRECTORY_PARAM_NAME, nav_map_directory, NAV_MAP_DEFAULT_DIRECTORY);
-  std::string map_uuid;
-  node_handle_.param(LOCALIZATION_MAP_UUID_PARAM_NAME, map_uuid, std::string(""));
 
   nav_map.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
   nav_map.header.stamp = ros::Time::now();
   nav_map.info.map_load_time = nav_map.header.stamp;
 
+  std::string map_uuid;
+  if (!GetCurrentADFUuid(tango_config_, map_uuid)) {
+    res.message += "\nCould not get current localization map uuid.";
+    res.success = false;
+    return true;
+  }
   if(!navigation_map_file_io::LoadOccupancyGridFromNavigationMap(
       req.map_name, map_uuid, nav_map_directory, &nav_map)) {
-    LOG(ERROR) << "Error while trying to load occupancy grid from file.";
+    LOG(ERROR) << "Error while loading occupancy grid from file.";
     res.message =  "Could not load occupancy grid from file " + req.map_name
               + " in directory " + nav_map_directory;
     res.success = false;
     return true;
   }
   res.message = "Map " + req.map_name + " successfully loaded from " + nav_map_directory;
+  if (map_uuid.empty()) {
+    res.message += "\nNo localization map loaded currently. This means the navigation map is not aligned.";
+  }
   res.success = true;
   nav_map_publisher_.publish(nav_map);
   return true;

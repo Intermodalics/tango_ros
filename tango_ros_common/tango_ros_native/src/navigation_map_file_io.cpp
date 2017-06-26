@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "tango_ros_native/navigation_map_file_io.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
@@ -47,7 +48,6 @@ bool SaveOccupancyGridDataToPgmFile(
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
 
   std::string map_pgm_file_path = map_directory_with_trailing_slash + map_name + ".pgm";
-  LOG(INFO) << "Writing occupancy grid data to " << map_pgm_file_path;
   FILE* pgm_file = fopen(map_pgm_file_path.c_str(), "w");
   if (!pgm_file) {
     LOG(ERROR) << "Could no open file " << map_pgm_file_path;
@@ -79,24 +79,34 @@ bool SaveOccupancyGridMetadataToYamlFile(
     const std::string& map_directory, const nav_msgs::MapMetaData& map_metadata) {
   std::string map_directory_with_trailing_slash = map_directory;
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+  std::string image_name = map_name;
+  if (image_name.empty())
+    image_name = "\"\"";
+  std::string uuid = map_uuid;
+  if (uuid.empty())
+    uuid = "\"\"";
 
   std::string map_yaml_file_path = map_directory_with_trailing_slash + map_name + ".yaml";
-  LOG(INFO) << "Writing occupancy grid metadata to " << map_yaml_file_path;
   FILE* yaml_file = fopen(map_yaml_file_path.c_str(), "w");
   if (!yaml_file) {
     LOG(ERROR) << "Could no open file " << map_yaml_file_path;
     return false;
   }
 
-  geometry_msgs::Quaternion orientation = map_metadata.origin.orientation;
-  tf::Matrix3x3 mat(tf::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
+  tf::Matrix3x3 mat(tf::Quaternion(map_metadata.origin.orientation.x,
+                                   map_metadata.origin.orientation.y,
+                                   map_metadata.origin.orientation.z,
+                                   map_metadata.origin.orientation.w));
   double yaw, pitch, roll;
   mat.getEulerYPR(yaw, pitch, roll);
+  if (std::isnan(yaw))
+    yaw = 0.0;
 
-  fprintf(yaml_file, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\n"
+  fprintf(yaml_file, "image: %s.pgm\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\n"
       "occupied_thresh: 0.65\nfree_thresh: 0.196\nuuid: %s\n\n",
       map_name.c_str(), map_metadata.resolution, map_metadata.origin.position.x,
-      map_metadata.origin.position.y, yaw, map_uuid.c_str());
+      map_metadata.origin.position.y, yaw, uuid.c_str());
+
   fclose(yaml_file);
   return true;
 }
@@ -123,38 +133,41 @@ bool LoadOccupancyGridDataFromPgmFile(
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
 
   std::string map_pgm_file_path = map_directory_with_trailing_slash + map_name + ".pgm";
-  std::ifstream pgm_file(map_pgm_file_path);
+  std::ifstream pgm_file(map_pgm_file_path, std::ios::binary);
   if (pgm_file.fail()) {
     LOG(ERROR) << "Could no open file " << map_pgm_file_path;
     return false;
   }
-  std::string inputLine = "";
-  // First line contains the file type.
-  getline(pgm_file, inputLine);
-  if (inputLine.compare("P5") != 0) {
-    LOG(ERROR) << "Pgm file type error. Type is " << inputLine
+  // First line contains file type.
+  std::string file_type;
+  getline(pgm_file, file_type);
+  LOG(INFO) << file_type;
+  if (file_type.compare("P5") != 0) {
+    LOG(ERROR) << "Pgm file type error. Type is " << file_type
         << " while supported type is P5.";
     return false;
   }
-  // Second line contains some comments.
-  getline(pgm_file, inputLine);
-  LOG(INFO) << "Comment : " << inputLine;
-  // Third line contains the image size.
-  int height = 0;
-  int width = 0;
-  std::stringstream ss;
-  ss << pgm_file.rdbuf();
-  ss >> width >> height;
-  occupancy_grid->info.width = width;
-  occupancy_grid->info.height = height;
+  // Second line contains comment.
+  std::string comment;
+  getline(pgm_file, comment);
+  LOG(INFO) << comment;
+  // Third line contains size.
+  std::string image_size;
+  getline(pgm_file, image_size);
+  std::stringstream size_stream(image_size);
+  size_stream >> occupancy_grid->info.width >> occupancy_grid->info.height;
   LOG(INFO) << "Image size is " << occupancy_grid->info.width << "x" << occupancy_grid->info.height;
-  // Fourth line contains the maximum gray value.
-  int max_val = 0;
-  ss >> max_val;
-  // Following lines contain data.
+  // Fourth line contains max value.
+  std::string max_value_string;
+  getline(pgm_file, max_value_string);
+  std::stringstream max_val_stream(max_value_string);
+  int max_value = 0;
+  max_val_stream >> max_value;
+  // Following lines contain binary data.
   int pixel_array[occupancy_grid->info.height * occupancy_grid->info.width];
   for (size_t i = 0; i < occupancy_grid->info.height * occupancy_grid->info.width; ++i) {
-      ss >> pixel_array[i];
+    char pixel = pgm_file.get();
+    pixel_array[i] = static_cast<int>(pixel);
   }
   // Need to invert the ordering of the pixels to
   // produce a map with cell (0,0) in the lower-left corner.
@@ -163,8 +176,8 @@ bool LoadOccupancyGridDataFromPgmFile(
     for (size_t j = 0; j < occupancy_grid->info.width; ++j) {
       int value = pixel_array[j + (occupancy_grid->info.height - i - 1) * occupancy_grid->info.width];
       if (negate)
-        value = max_val - value;
-      double occupancy = (max_val - value) / static_cast<double>(max_val);
+        value = max_value - value;
+      double occupancy = (max_value - value) / static_cast<double>(max_value);
       if (occupancy < free_threshold) {
         occupancy_grid->data.push_back(0);
       } else if (occupancy > occupied_threshold) {
@@ -186,62 +199,65 @@ bool LoadOccupancyGridMetadataFromYamlFile(
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
 
   std::string map_yam_file_path = map_directory + map_name + ".yaml";
-  std::ifstream yaml(map_yam_file_path.c_str());
-  if (yaml.fail()) {
+  std::ifstream yaml_file(map_yam_file_path.c_str());
+  if (yaml_file.fail()) {
     LOG(ERROR) << "Could no open file " << map_yam_file_path;
     return false;
   }
 
-  YAML::Node doc = YAML::Load(yaml);
+  YAML::Node node = YAML::Load(yaml_file);
   try {
-    map_metadata->resolution = doc["resolution"].as<double>();
-  } catch (YAML::InvalidScalar) {
-    LOG(ERROR) << "The map does not contain a resolution tag or it is invalid.";
+    map_metadata->resolution = node["resolution"].as<double>();
+  } catch (YAML::RepresentationException& e) {
+    LOG(ERROR) << "The map does not contain a resolution tag or it is invalid. " << e.msg;
     return false;
   }
   try {
-    *negate = doc["negate"].as<int>();
-  } catch (YAML::InvalidScalar) {
-    LOG(ERROR) << "The map does not contain a negate tag or it is invalid.";
+    *negate = node["negate"].as<int>();
+  } catch (YAML::RepresentationException& e) {
+    LOG(ERROR) << "The map does not contain a negate tag or it is invalid. " << e.msg;
     return false;
   }
   try {
-    *occupied_threshold = doc["occupied_thresh"].as<double>();
-  } catch (YAML::InvalidScalar) {
-    LOG(ERROR) << "The map does not contain an occupied_thresh tag or it is invalid.";
+    *occupied_threshold = node["occupied_thresh"].as<double>();
+  } catch (YAML::RepresentationException& e) {
+    LOG(ERROR) << "The map does not contain an occupied_thresh tag or it is invalid. " << e.msg;
     return false;
   }
   try {
-    *free_threshold = doc["free_thresh"].as<double>();
-  } catch (YAML::InvalidScalar) {
-    LOG(ERROR) << "The map does not contain a free_thresh tag or it is invalid.";
+    *free_threshold = node["free_thresh"].as<double>();
+  } catch (YAML::RepresentationException& e) {
+    LOG(ERROR) << "The map does not contain a free_thresh tag or it is invalid. " << e.msg;
     return false;
   }
   try {
-    map_metadata->origin.position.x = doc["origin"][0].as<double>();
-    map_metadata->origin.position.y = doc["origin"][1].as<double>();
+    map_metadata->origin.position.x = node["origin"][0].as<double>();
+    map_metadata->origin.position.y = node["origin"][1].as<double>();
     map_metadata->origin.position.z = 0.0;
     tf::Quaternion quaternion;
-    double yaw = doc["origin"][2].as<double>();
-    quaternion.setRPY(0,0, yaw);
+    double yaw = node["origin"][2].as<double>();
+    quaternion.setRPY(0., 0., yaw);
     map_metadata->origin.orientation.x = quaternion.x();
     map_metadata->origin.orientation.y = quaternion.y();
     map_metadata->origin.orientation.z = quaternion.z();
     map_metadata->origin.orientation.w = quaternion.w();
-  } catch (YAML::InvalidScalar) {
-    LOG(ERROR) << "The map does not contain an origin tag or it is invalid.";
+  } catch (YAML::RepresentationException& e) {
+    LOG(ERROR) << "The map does not contain an origin tag or it is invalid. " << e.msg;
     return false;
   }
   try {
-    std::string uuid = doc["uuid"].as<std::string>();
-    if (uuid.compare(map_uuid) != 0) {
+    std::string uuid = node["uuid"].as<std::string>();
+    if (uuid.empty()) {
+      LOG(WARNING) << "The localization map uuid is empty. The map will not be aligned.";
+    } else if (uuid.compare(map_uuid) != 0) {
       LOG(WARNING) << "The navigation map does not correspond to the localization map uuid."
-          "Maps will not be aligned";
+          " The maps will not be aligned.";
     }
-  } catch (YAML::InvalidScalar) {
-    LOG(WARNING) << "The map does not contain a uuid tag or it is invalid. "
-    "The map will not be aligned.";
+  } catch (YAML::RepresentationException& e) {
+    LOG(WARNING) << "The map does not contain a uuid tag or it is invalid. " << e.msg <<
+    " The map will not be aligned.";
   }
+  yaml_file.close();
   return true;
 }
 } // namespace navigation_map_file_io
