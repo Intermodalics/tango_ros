@@ -16,10 +16,9 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <stdio.h>
 
 #include <geometry_msgs/Quaternion.h>
-#include "tf/LinearMath/Matrix3x3.h"
+#include <tf/LinearMath/Matrix3x3.h>
 
 #include <glog/logging.h>
 
@@ -53,6 +52,7 @@ bool SaveOccupancyGridDataToPgmFile(
     LOG(ERROR) << "Could no open file " << map_pgm_file_path;
     return false;
   }
+
   fprintf(pgm_file, "P5\n# CREATOR: TangoRosStreamer %.3f m/pix\n%d %d\n255\n",
           occupancy_grid.info.resolution,
           occupancy_grid.info.width, occupancy_grid.info.height);
@@ -79,6 +79,7 @@ bool SaveOccupancyGridMetadataToYamlFile(
     const std::string& map_directory, const nav_msgs::MapMetaData& map_metadata) {
   std::string map_directory_with_trailing_slash = map_directory;
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+
   std::string image_name = map_name;
   if (image_name.empty())
     image_name = "\"\"";
@@ -138,6 +139,7 @@ bool LoadOccupancyGridDataFromPgmFile(
     LOG(ERROR) << "Could no open file " << map_pgm_file_path;
     return false;
   }
+
   // First line contains file type.
   std::string file_type;
   getline(pgm_file, file_type);

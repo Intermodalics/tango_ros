@@ -70,9 +70,12 @@ bool LoadOccupancyGridFromNavigationMap(
 // Load an occupancy grid data from a pgm file.
 // @param map_name Name of the map, i.e. of the file.
 // @param map_directory Directory where the file is located.
-// @param negate
-// @param occupied_threshold
-// @param free_threshold
+// @param negate true if blacker pixels should be considered free, and whiter
+// pixels occupied.
+// @param occupied_threshold Threshold between 0 and 1. Greater values are
+// considered as occupied.
+// @param free_threshold Threshold between 0 and 1. Smaller values are
+// considered as free.
 // @param occupancy_grid Loaded occupancy grid.
 bool LoadOccupancyGridDataFromPgmFile(
     const std::string&  map_name, const std::string& map_directory,

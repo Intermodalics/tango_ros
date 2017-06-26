@@ -198,7 +198,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // user readable map names.
   bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request& req,
                                   tango_ros_messages::GetMapUuids::Response& res);
-  //
+  // Function called when the LoadNavMap service is called.
+  // Load the requested navigation map and publish it as an occupancy grid.
   bool LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMap::Request& req,
                              tango_ros_messages::LoadNavMap::Response& res);
   // Function called when the SaveMap service is called.
@@ -286,7 +287,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;
 
-  ros::Publisher nav_map_publisher_;
+  ros::Publisher static_nav_map_publisher_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
