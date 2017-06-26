@@ -183,6 +183,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                         SaveMap._TYPE);
 
         SaveMapRequest saveMapRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(SaveMap._TYPE);
+        saveMapRequest.setRequest((byte)0); // Save loc and nav maps.
         saveMapRequest.setMapName(mapName);
         saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
             @Override
