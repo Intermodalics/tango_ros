@@ -112,14 +112,14 @@ bool SaveOccupancyGridMetadataToYamlFile(
 }
 
 bool LoadOccupancyGridFromNavigationMap(
-    const std::string&  map_name, const std::string& map_uuid,
-    const std::string& map_directory, nav_msgs::OccupancyGrid* occupancy_grid) {
+    const std::string&  map_name, const std::string& map_directory,
+    nav_msgs::OccupancyGrid* occupancy_grid, std::string* map_uuid) {
   int negate;
   double occupied_threshold;
   double free_threshold;
   bool result = LoadOccupancyGridMetadataFromYamlFile(
-      map_name, map_uuid, map_directory, &(occupancy_grid->info), &negate,
-      &occupied_threshold, &free_threshold);
+      map_name, map_directory, &(occupancy_grid->info), &negate,
+      &occupied_threshold, &free_threshold, map_uuid);
   return result && LoadOccupancyGridDataFromPgmFile(
       map_name, map_directory, negate, occupied_threshold, free_threshold,
       occupancy_grid);
@@ -192,9 +192,9 @@ bool LoadOccupancyGridDataFromPgmFile(
 }
 
 bool LoadOccupancyGridMetadataFromYamlFile(
-    const std::string&  map_name, const std::string& map_uuid,
-    const std::string& map_directory, nav_msgs::MapMetaData* map_metadata,
-    int* negate, double* occupied_threshold, double* free_threshold) {
+    const std::string&  map_name, const std::string& map_directory,
+    nav_msgs::MapMetaData* map_metadata, int* negate,
+    double* occupied_threshold, double* free_threshold, std::string* map_uuid) {
   std::string map_directory_with_trailing_slash = map_directory;
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
 
@@ -246,16 +246,9 @@ bool LoadOccupancyGridMetadataFromYamlFile(
     return false;
   }
   try {
-    std::string uuid = node["uuid"].as<std::string>();
-    if (uuid.empty()) {
-      LOG(WARNING) << "The localization map uuid is empty. The map will not be aligned.";
-    } else if (uuid.compare(map_uuid) != 0) {
-      LOG(WARNING) << "The navigation map does not correspond to the localization map uuid."
-          " The maps will not be aligned.";
-    }
+    *map_uuid = node["uuid"].as<std::string>();
   } catch (YAML::RepresentationException& e) {
-    LOG(WARNING) << "The map does not contain a uuid tag or it is invalid. " << e.msg <<
-    " The map will not be aligned.";
+    LOG(WARNING) << "The map does not contain a uuid tag or it is invalid. " << e.msg;
   }
   yaml_file.close();
   return true;

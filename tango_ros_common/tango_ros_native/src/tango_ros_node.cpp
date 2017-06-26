@@ -200,17 +200,17 @@ bool SaveTangoAreaDescription(const std::string& map_name,
 }
 //
 bool GetCurrentADFUuid(const TangoConfig& tango_config, std::string& adf_uuid) {
-  char loaded_map_uuid[TANGO_UUID_LEN];
+  char current_adf_uuid[TANGO_UUID_LEN];
   const char* config_load_area_description_UUID = "config_load_area_description_UUID";
   TangoErrorType result = TangoConfig_getString(
-      tango_config, config_load_area_description_UUID, loaded_map_uuid,
+      tango_config, config_load_area_description_UUID, current_adf_uuid,
       TANGO_UUID_LEN);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "TangoConfig_getString "
         << config_load_area_description_UUID << " error: " << result;
     return false;
   }
-  adf_uuid = std::string(loaded_map_uuid);
+  adf_uuid = std::string(current_adf_uuid);
   return true;
 }
 }  // namespace
@@ -1326,14 +1326,15 @@ bool TangoRosNode::LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMa
   nav_map.header.stamp = ros::Time::now();
   nav_map.info.map_load_time = nav_map.header.stamp;
 
-  std::string map_uuid;
-  if (!GetCurrentADFUuid(tango_config_, map_uuid)) {
+  std::string current_map_uuid;
+  if (!GetCurrentADFUuid(tango_config_, current_map_uuid)) {
     res.message += "\nCould not get current localization map uuid.";
     res.success = false;
     return true;
   }
+  std::string map_uuid;
   if(!navigation_map_file_io::LoadOccupancyGridFromNavigationMap(
-      req.map_name, map_uuid, nav_map_directory, &nav_map)) {
+      req.map_name, nav_map_directory, &nav_map, &map_uuid)) {
     LOG(ERROR) << "Error while loading occupancy grid from file.";
     res.message =  "Could not load occupancy grid from file " + req.map_name
               + " in directory " + nav_map_directory;
@@ -1341,8 +1342,18 @@ bool TangoRosNode::LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMa
     return true;
   }
   res.message = "Map " + req.map_name + " successfully loaded from " + nav_map_directory;
+
+  if (current_map_uuid.empty()) {
+    res.message += "\nThe navigation map is not aligned because "
+        "no localization map is currently used.";
+  }
   if (map_uuid.empty()) {
-    res.message += "\nNo localization map loaded currently. This means the navigation map is not aligned.";
+    res.message += "\nThe navigation map is not aligned because "
+        "its localization map uuid is empty.";
+  }
+  if (map_uuid.compare(current_map_uuid) != 0) {
+    res.message += "The navigation map is not aligned because "
+        "it does not correspond to the localization map currently used.";
   }
   res.success = true;
   nav_map_publisher_.publish(nav_map);

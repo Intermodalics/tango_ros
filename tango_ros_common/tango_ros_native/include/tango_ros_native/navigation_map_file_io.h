@@ -59,15 +59,13 @@ bool SaveOccupancyGridMetadataToYamlFile(
 // one pgm file contains the cells data and one yaml file which contains
 // the map metadata.
 // @param map_name Name of the map, i.e. of both files.
-// @param map_uuid Uuid of the localization map corresponding to the
-// navigation map. Can be empty if not used. In this case or if the given uuid
-// does not correspond to the uuid of the yaml file, the loaded occupancy grid
-// will not be aligned.
 // @param map_directory Directory where both pgm and yaml files are located.
 // @param occupancy_grid Loaded occupancy grid.
+// @param map_uuid Uuid of the localization map corresponding to the
+// navigation map.
 bool LoadOccupancyGridFromNavigationMap(
-    const std::string&  map_name, const std::string& map_uuid,
-    const std::string& map_directory, nav_msgs::OccupancyGrid* occupancy_grid);
+    const std::string&  map_name, const std::string& map_directory,
+    nav_msgs::OccupancyGrid* occupancy_grid, std::string* map_uuid);
 
 // Load an occupancy grid data from a pgm file.
 // @param map_name Name of the map, i.e. of the file.
@@ -83,19 +81,19 @@ bool LoadOccupancyGridDataFromPgmFile(
 
 // Load an occupancy grid metadata from a yaml file.
 // @param map_name Name of the map, i.e. of the file.
-// @param map_uuid Uuid of the localization map corresponding to the
-// navigation map. Can be empty if not used. In this case or if the given uuid
-// does not correspond to the uuid of the yaml file, the loaded occupancy grid
-// will not be aligned.
 // @param map_directory Directory where the file is located.
 // @param map_metadata Loaded occupancy grid metadata.
 // @param negate true if blacker pixels should be considered free, and whiter
 // pixels occupied.
-// @param occupied_threshold Threshold between 0 and 1. Greater values are considered as occupied.
-// @param free_threshold Threshold between 0 and 1. Smaller values are considered as free.
+// @param occupied_threshold Threshold between 0 and 1. Greater values are
+// considered as occupied.
+// @param free_threshold Threshold between 0 and 1. Smaller values are
+// considered as free.
+// @param map_uuid Uuid of the localization map corresponding to the
+// navigation map.
 bool LoadOccupancyGridMetadataFromYamlFile(
-    const std::string&  map_name, const std::string& map_uuid,
-    const std::string& map_directory, nav_msgs::MapMetaData* map_metadata,
-    int* negate, double* occupied_threshold, double* free_threshold);
+    const std::string&  map_name, const std::string& map_directory,
+    nav_msgs::MapMetaData* map_metadata, int* negate,
+    double* occupied_threshold, double* free_threshold, std::string* map_uuid);
 } // namespace navigation_map_file_io
 #endif  // NAVIGATION_MAP_FILE_IO_H_
