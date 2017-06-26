@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
-        - /Map1/Status1
+        - /OccupancyGrid1/Status1
       Splitter Ratio: 0.350101
     Tree Height: 292
   - Class: rviz/Selection
@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -64,9 +64,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 6.8464
+      Max Intensity: 7.23697
       Min Color: 0; 0; 0
-      Min Intensity: 0.00782554
+      Min Intensity: 0.0504424
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -114,40 +114,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        area_description:
-          Value: true
-        camera_color:
-          Value: false
-        camera_depth:
-          Value: false
-        camera_fisheye:
-          Value: true
-        device:
-          Value: true
-        imu:
-          Value: false
-        laser:
-          Value: false
-        start_of_service:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        area_description:
-          start_of_service:
-            device:
-              camera_color:
-                {}
-              camera_depth:
-                laser:
-                  {}
-              camera_fisheye:
-                {}
-              imu:
-                {}
+        {}
       Update Interval: 0
       Value: true
     - Class: rviz/Camera
@@ -164,9 +137,10 @@ Visualization Manager:
         ColorCamera: true
         Grid: true
         LaserScan: true
-        Map: true
         MarkerArray: true
+        OccupancyGrid: true
         PointCloud2: true
+        StaticMap: true
         TF: true
         Value: false
       Zoom Factor: 1
@@ -184,15 +158,16 @@ Visualization Manager:
         FisheyeCamera: true
         Grid: true
         LaserScan: true
-        Map: true
         MarkerArray: true
+        OccupancyGrid: true
         PointCloud2: true
+        StaticMap: true
         TF: true
         Value: true
       Zoom Factor: 1
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /tango/mesh_marker
+      Marker Topic: /tango/reconstruction/mesh
       Name: MarkerArray
       Namespaces:
         {}
@@ -203,8 +178,17 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: Map
-      Topic: /tango/occupancy_grid
+      Name: OccupancyGrid
+      Topic: /tango/reconstruction/occupancy_grid
+      Unreliable: false
+      Value: true
+    - Alpha: 0.7
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: StaticMap
+      Topic: /tango/static_nav_map
       Unreliable: false
       Value: true
   Enabled: true
@@ -231,7 +215,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.1679
+      Distance: 7.90521
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -243,10 +227,10 @@ Visualization Manager:
         Z: 1.49698
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.1748
+      Pitch: 1.0398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.54235
+      Yaw: 3.29735
     Saved: ~
 Window Geometry:
   ColorCamera:
