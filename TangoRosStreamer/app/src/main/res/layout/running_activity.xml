@@ -75,11 +75,19 @@
                     android:text="Save map"
                     android:visibility="gone"/>
 
+                <Button
+                    android:id="@+id/load_nav_map_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/save_map_button"
+                    android:text="Load navigation map"
+                    android:visibility="gone"/>
+
                 <Switch
                     android:id="@+id/log_switch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/save_map_button"
+                    android:layout_below="@+id/load_nav_map_button"
                     android:text="Display log"
                     android:checked="false" />
 

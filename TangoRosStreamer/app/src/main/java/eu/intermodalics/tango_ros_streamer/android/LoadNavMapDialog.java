@@ -32,14 +32,14 @@ import eu.intermodalics.tango_ros_streamer.R;
 /**
  * Displays dialog requesting name of the map before saving.
  */
-public class SaveMapDialog extends DialogFragment implements View.OnClickListener {
-    private static final String TAG = SaveMapDialog.class.getSimpleName();
+public class LoadNavMapDialog extends DialogFragment implements View.OnClickListener {
+    private static final String TAG = LoadNavMapDialog.class.getSimpleName();
 
     EditText mNameEditText;
     CallbackListener mCallbackListener;
 
     public interface CallbackListener {
-        void onClickOkSaveMapDialog(String name);
+        void onClickOkLoadNavMapDialog(String name);
     }
 
     @Override
@@ -51,11 +51,11 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     @Override
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflator.inflate(R.layout.dialog_save_map, null);
-        getDialog().setTitle("Enter the name of the map");
+        View dialogView = inflator.inflate(R.layout.dialog_load_nav_map, null);
+        getDialog().setTitle("Enter name of navigation map to load");
         mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
-        dialogView.findViewById(R.id.save_map_ok).setOnClickListener(this);
-        dialogView.findViewById(R.id.save_map_cancel).setOnClickListener(this);
+        dialogView.findViewById(R.id.load_nav_map_ok).setOnClickListener(this);
+        dialogView.findViewById(R.id.load_nav_map_cancel).setOnClickListener(this);
         setCancelable(false);
         return dialogView;
     }
@@ -63,13 +63,13 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.save_map_ok:
+            case R.id.load_nav_map_ok:
                 Log.w(TAG, "OK");
-                mCallbackListener.onClickOkSaveMapDialog(
+                mCallbackListener.onClickOkLoadNavMapDialog(
                         mNameEditText.getText().toString());
                 dismiss();
                 break;
-            case R.id.save_map_cancel:
+            case R.id.load_nav_map_cancel:
                 Log.w(TAG, "CANCEL");
                 dismiss();
                 break;

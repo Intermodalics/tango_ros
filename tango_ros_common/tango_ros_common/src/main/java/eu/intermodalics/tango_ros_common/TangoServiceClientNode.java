@@ -33,6 +33,9 @@ import java.util.concurrent.Callable;
 import tango_ros_messages.GetMapUuids;
 import tango_ros_messages.GetMapUuidsRequest;
 import tango_ros_messages.GetMapUuidsResponse;
+import tango_ros_messages.LoadNavMap;
+import tango_ros_messages.LoadNavMapRequest;
+import tango_ros_messages.LoadNavMapResponse;
 import tango_ros_messages.SaveMap;
 import tango_ros_messages.SaveMapRequest;
 import tango_ros_messages.SaveMapResponse;
@@ -49,6 +52,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String TAG = TangoServiceClientNode.class.getSimpleName();
     private static final String NODE_NAME = "tango_service_client_node";
     private static final String SAVE_MAP_SRV_NAME = "save_map";
+    private static final String LOAD_NAV_MAP_SRV_NAME = "load_navigation_map";
     private static final String GET_MAP_UUIDS_SRV_NAME = "get_map_uuids";
     private static final String TANGO_CONNECT_SRV_NAME = "connect";
     private static final String TANGO_STATUS_TOPIC_NAME = "status";
@@ -64,6 +68,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
+        void onLoadNavMapServiceCallFinish(boolean success, String message);
     }
 
     public class DefaultCallbackListener implements CallbackListener {
@@ -87,6 +92,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
         @Override
         public void onTangoStatus(int status) {}
+
+        @Override
+        public void onLoadNavMapServiceCallFinish(boolean success, String message) {}
     }
 
     public TangoServiceClientNode() {}
@@ -200,6 +208,28 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return true;
     }
 
+    private Boolean loadNavMap(String mapName) throws ServiceNotFoundException {
+        ServiceClient<LoadNavMapRequest, LoadNavMapResponse> loadNavMapService =
+                mConnectedNode.newServiceClient(
+                        NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(LOAD_NAV_MAP_SRV_NAME),
+                        LoadNavMap._TYPE);
+
+        LoadNavMapRequest loadNavMapRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(LoadNavMap._TYPE);
+        loadNavMapRequest.setMapName(mapName);
+        loadNavMapService.call(loadNavMapRequest, new ServiceResponseListener<LoadNavMapResponse>() {
+            @Override
+            public void onSuccess(LoadNavMapResponse loadNavMapResponse) {
+                mCallbackListener.onLoadNavMapServiceCallFinish(loadNavMapResponse.getSuccess(), loadNavMapResponse.getMessage());
+            }
+            @Override
+            public void onFailure(RemoteException e) {
+                mCallbackListener.onLoadNavMapServiceCallFinish(false, e.getMessage());
+            }
+        });
+
+        return true;
+    }
+
     private Boolean getMapUuids() throws ServiceNotFoundException {
         ServiceClient<GetMapUuidsRequest, GetMapUuidsResponse> getMapUuidsService =
                 mConnectedNode.newServiceClient(
@@ -236,6 +266,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
                 return saveMap(mapName);
+            }
+        });
+    }
+
+    public Boolean callLoadNavMapService(final String mapName) {
+        final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(LOAD_NAV_MAP_SRV_NAME);
+        return wrapCallROSService(serviceName, new Callable<Boolean>() {
+            public Boolean call() throws ServiceNotFoundException {
+                return loadNavMap(mapName);
             }
         });
     }

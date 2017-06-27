@@ -69,6 +69,7 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.MasterConnectionChecker;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
+import eu.intermodalics.tango_ros_streamer.android.LoadNavMapDialog;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
 import eu.intermodalics.tango_ros_common.ParameterNode;
 import eu.intermodalics.tango_ros_streamer.R;
@@ -77,7 +78,8 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
+        SaveMapDialog.CallbackListener, LoadNavMapDialog.CallbackListener,
+        TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -139,6 +141,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
     private Button mSaveMapButton;
+    private Button mLoadNavMapButton;
     private Snackbar mSnackbarLoadNewMap;
     private Snackbar mSnackbarRosReconnection;
 
@@ -256,7 +259,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         });
     }
 
-    private void updateSaveMapButton() {
+    private void updateLoadAndSaveMapButtons() {
         mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
         runOnUiThread(new Runnable() {
             @Override
@@ -264,8 +267,10 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mSaveMapButton.setEnabled(!mMapSaved);
                 if (mCreateNewMap) {
                     mSaveMapButton.setVisibility(View.VISIBLE);
+                    mLoadNavMapButton.setVisibility(View.GONE);
                 } else {
                     mSaveMapButton.setVisibility(View.GONE);
+                    mLoadNavMapButton.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -288,7 +293,14 @@ public class RunningActivity extends AppCompatRosActivity implements
         FragmentManager manager = getFragmentManager();
         SaveMapDialog saveMapDialog = new SaveMapDialog();
         saveMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
-        saveMapDialog.show(manager, "MapNameDialog");
+        saveMapDialog.show(manager, "SaveMapDialog");
+    }
+
+    private void showLoadNavMapDialog() {
+        FragmentManager manager = getFragmentManager();
+        LoadNavMapDialog loadNavMapDialog = new LoadNavMapDialog();
+        loadNavMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
+        loadNavMapDialog.show(manager, "LoadNavMapDialog");
     }
 
     private void setupUI() {
@@ -316,7 +328,14 @@ public class RunningActivity extends AppCompatRosActivity implements
                 showSaveMapDialog();
             }
         });
-        updateSaveMapButton();
+        mLoadNavMapButton = (Button) findViewById(R.id.load_nav_map_button);
+        mLoadNavMapButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showLoadNavMapDialog();
+            }
+        });
+        updateLoadAndSaveMapButtons();
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
@@ -361,6 +380,32 @@ public class RunningActivity extends AppCompatRosActivity implements
         } else {
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
+        }
+    }
+
+    public void onClickOkLoadNavMapDialog(final String mapName) {
+        if (mapName == null || mapName.isEmpty()) {
+            Log.e(TAG, "Map name is null or empty, unable to load the navigation map");
+            displayToastMessage(R.string.map_name_error);
+            return;
+        }
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                mTangoServiceClientNode.callLoadNavMapService(mapName);
+                return null;
+            }
+        }.execute();
+    }
+
+    @Override
+    public void onLoadNavMapServiceCallFinish(boolean success, final String message) {
+        if (success) {
+            displayToastMessage(R.string.load_nav_map_success);
+            Log.i(TAG, message);
+        } else {
+            Log.e(TAG, "Error while loading navigation map: " + message);
+            displayToastMessage(R.string.load_nav_map_error);
         }
     }
 
@@ -423,7 +468,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mSnackbarLoadNewMap.dismiss();
             }
         }
-        updateSaveMapButton();
+        updateLoadAndSaveMapButtons();
         updateTangoStatus(TangoStatus.values()[status]);
     }
 
@@ -537,7 +582,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mLogger.start();
                 getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
                 getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
-                updateSaveMapButton();
+                updateLoadAndSaveMapButtons();
             } else if (requestCode == StartSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
@@ -603,7 +648,7 @@ public class RunningActivity extends AppCompatRosActivity implements
 
     private void restartTango() {
         if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
-        updateSaveMapButton();
+        updateLoadAndSaveMapButtons();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 
