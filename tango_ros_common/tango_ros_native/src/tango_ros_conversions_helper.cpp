@@ -279,7 +279,6 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
       // flipped around the x axis.
       int value = static_cast<int>(
           image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
-      //occupancy_grid->data.push_back(-100 * value / 255 + 100);
       if (value < 128) {
         occupancy_grid->data.push_back(OCCUPIED_CELL);
       } else if (value > 128) {
