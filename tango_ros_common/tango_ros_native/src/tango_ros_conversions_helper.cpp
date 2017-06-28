@@ -277,10 +277,12 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
       // The image uses a coordinate system with (x: right, y: down), while
       // the occupancy grid is using (x: right, y: up). The image is therefore
       // flipped around the x axis.
-      int value = static_cast<int>(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
-      if (value == 1) {
+      int value = static_cast<int>(
+          image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
+      //occupancy_grid->data.push_back(-100 * value / 255 + 100);
+      if (value < 128) {
         occupancy_grid->data.push_back(OCCUPIED_CELL);
-      } else if (value == 255) {
+      } else if (value > 128) {
         occupancy_grid->data.push_back(FREE_CELL);
       } else if (value == 128) {
         occupancy_grid->data.push_back(UNKNOWN_CELL);

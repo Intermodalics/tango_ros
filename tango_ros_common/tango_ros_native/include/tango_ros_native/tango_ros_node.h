@@ -78,10 +78,15 @@ const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
 const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
 const std::string USE_FLOOR_PLAN_PARAM_NAME = "use_floor_plan";
-const std::string ENABLE_DEPTH = "enable_depth";
-const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
+const std::string ENABLE_DEPTH_PARAM_NAME = "enable_depth";
+const std::string ENABLE_COLOR_CAMERA_PARAM_NAME = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
-const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
+const std::string TANGO_3DR_RESOLUTION_PARAM_NAME = "reconstruction/resolution_3d";
+const std::string TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME = "reconstruction/use_space_clearing";
+const std::string TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME = "reconstruction/min_num_vertices";
+const std::string TANGO_3DR_UPDATE_METHOD_PARAM_NAME = "reconstruction/update_method";
+const std::string TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME = "reconstruction/max_voxel_weight";
+const std::string TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME = "reconstruction/floorplan_max_error";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
@@ -90,7 +95,12 @@ const std::string SAVE_MAP_SERVICE_NAME = "save_map";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
-const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
+const double TANGO_3DR_DEFAULT_RESOLUTION = 0.05; // meter
+const bool TANGO_3DR_DEFAULT_USE_SPACE_CLEARING = false;
+const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1;
+const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
+const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // Roughly number of observations.
+const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 // Localization mode values.
