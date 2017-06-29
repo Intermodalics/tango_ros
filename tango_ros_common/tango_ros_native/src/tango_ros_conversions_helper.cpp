@@ -258,7 +258,7 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,
-                     double time_offset, double resolution, double threshold,
+                     double time_offset, double resolution, int threshold,
                      nav_msgs::OccupancyGrid* occupancy_grid) {
   occupancy_grid->header.frame_id = toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
   occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);

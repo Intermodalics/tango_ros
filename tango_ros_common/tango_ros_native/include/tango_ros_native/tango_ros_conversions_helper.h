@@ -127,10 +127,14 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // @param origin, position of the top left pixel in
 /// world coordinates (x: right, y: up).
 // @param resolution the grid resolution (m/cell).
+// @param threshold Threshold to decide if a pixel value corresponds to a free
+// or occupied cell. Should be between 0 and 255.
+// Pixel value <= threshold --> cell is free.
+// Pixel value > threshold --> cell is occupied.
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,
-                     double time_offset, double resolution, double threshold,
+                     double time_offset, double resolution, int threshold,
                      nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.
