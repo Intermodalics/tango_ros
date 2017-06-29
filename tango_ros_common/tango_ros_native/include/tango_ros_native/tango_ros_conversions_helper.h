@@ -134,7 +134,7 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin,
-                     double time_offset, double resolution, int threshold,
+                     double time_offset, double resolution, uint8_t threshold,
                      nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.

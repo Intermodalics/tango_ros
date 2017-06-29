@@ -203,6 +203,7 @@ void TangoRosNode::onInit() {
                   &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
 
   tango_status_ = TangoStatus::UNKNOWN;
+  t3dr_occupancy_grid_threshold_ = TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD;
 
   if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
     node_handle_.setParam(CREATE_NEW_MAP_PARAM_NAME, false);
