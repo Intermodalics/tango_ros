@@ -82,6 +82,7 @@ const std::string ENABLE_DEPTH = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
+const std::string TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME = "reconstruction_occupancy_grid_threshold";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
@@ -91,6 +92,7 @@ const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
+const int TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 // Localization mode values.
@@ -275,6 +277,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;
+  int t3dr_occupancy_grid_threshold_ = TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;

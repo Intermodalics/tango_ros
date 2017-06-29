@@ -223,6 +223,13 @@ void TangoRosNode::onInit() {
     node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
                           TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
   }
+  if (node_handle_.hasParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME)) {
+    node_handle_.getParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME,
+                          t3dr_occupancy_grid_threshold_);
+  } else {
+    node_handle_.setParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME,
+                          TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD);
+  }
   if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
       node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
   }
@@ -1084,11 +1091,12 @@ void TangoRosNode::PublishMesh() {
           Tango3DR_Vector2 origin;
           Tango3DR_ImageBuffer image_grid;
           result = Tango3DR_extractFullFloorplanImage(
-              t3dr_context_, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
+              t3dr_context_, TANGO_3DR_LAYER_SPACE, &origin, &image_grid);
           if (result == TANGO_3DR_SUCCESS) {
             nav_msgs::OccupancyGrid occupancy_grid;
             tango_ros_conversions_helper::toOccupancyGrid(
-                image_grid, origin, time_offset_, t3dr_resolution_, &occupancy_grid);
+                image_grid, origin, time_offset_, t3dr_resolution_,
+                t3dr_occupancy_grid_threshold_, &occupancy_grid);
             occupancy_grid_publisher_.publish(occupancy_grid);
           } else {
             LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error code: " << result;
