@@ -226,6 +226,14 @@ void TangoRosNode::onInit() {
   if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
       node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
   }
+  if (!node_handle_.hasParam(START_OF_SERVICE_FRAME_ID_PARAM_NAME)) {
+    node_handle_.setParam(START_OF_SERVICE_FRAME_ID_PARAM_NAME,
+                          START_OF_SERVICE_DEFAULT_FRAME_ID);
+  }
+  if (!node_handle_.hasParam(AREA_DESCRIPTION_FRAME_ID_PARAM_NAME)) {
+    node_handle_.setParam(AREA_DESCRIPTION_FRAME_ID_PARAM_NAME,
+                          AREA_DESCRIPTION_DEFAULT_FRAME_ID);
+  }
   if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
     node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
   } else {

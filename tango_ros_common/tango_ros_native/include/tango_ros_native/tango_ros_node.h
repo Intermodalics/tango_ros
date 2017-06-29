@@ -83,6 +83,8 @@ const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
+const std::string START_OF_SERVICE_FRAME_ID_PARAM_NAME = "start_of_service_frame_id";
+const std::string AREA_DESCRIPTION_FRAME_ID_PARAM_NAME = "area_description_frame_id";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
@@ -92,6 +94,8 @@ const std::string CONNECT_SERVICE_NAME = "connect";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
+const std::string START_OF_SERVICE_DEFAULT_FRAME_ID = "start_of_service";
+const std::string AREA_DESCRIPTION_DEFAULT_FRAME_ID = "area_description";
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
