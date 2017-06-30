@@ -32,7 +32,7 @@
 PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
 
 namespace {
-std::vector<std::string> splitCommaSeparatedString(const std::string& comma_separated_string) {
+std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_separated_string) {
   std::vector<std::string> output;
   std::stringstream ss(comma_separated_string);
 
@@ -48,7 +48,7 @@ std::vector<std::string> splitCommaSeparatedString(const std::string& comma_sepa
 // @param context, context will be a pointer to a TangoRosNode
 //        instance on which to call the callback.
 // @param pose, pose data to route to onPoseAvailable function.
-void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
+void OnPoseAvailableRouter(void* context, const TangoPoseData* pose) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
   app->OnPoseAvailable(pose);
@@ -59,7 +59,7 @@ void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
 //        instance on which to call the callback.
 // @param point_cloud, point cloud data to route to OnPointCloudAvailable
 //        function.
-void onPointCloudAvailableRouter(void* context,
+void OnPointCloudAvailableRouter(void* context,
                                  const TangoPointCloud* point_cloud) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
@@ -72,7 +72,7 @@ void onPointCloudAvailableRouter(void* context,
 // @param camera_id, the ID of the camera. Only TANGO_CAMERA_COLOR and
 //        TANGO_CAMERA_FISHEYE are supported.
 // @param buffer, image data to route to OnFrameAvailable function.
-void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
+void OnFrameAvailableRouter(void* context, TangoCameraId camera_id,
                             const TangoImageBuffer* buffer) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
@@ -132,7 +132,7 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
-std::string getCurrentDateAndTime() {
+std::string GetCurrentDateAndTime() {
   std::time_t currentTime;
   struct tm* currentDateTime;
   std::time(&currentTime);
@@ -147,11 +147,29 @@ std::string getCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
-
-double getBootTimeInSecond() {
+double GetBootTimeInSecond() {
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
   return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
+}
+template<typename T>
+void SetDefaultValueIfParamDoesNotExist(
+    const ros::NodeHandle& node_handle, const std::string& param_name,
+    T default_value) {
+  if (!node_handle.hasParam(param_name)) {
+    node_handle.setParam(param_name, default_value);
+  }
+}
+template<typename T>
+void GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+    const ros::NodeHandle& node_handle, const std::string& param_name,
+    T default_value, T& param_value) {
+  if (node_handle.hasParam(param_name)) {
+    node_handle.getParam(param_name, param_value);
+  } else {
+    param_value = default_value;
+    node_handle.setParam(param_name, default_value);
+  }
 }
 }  // namespace
 
@@ -205,59 +223,42 @@ void TangoRosNode::onInit() {
 
   tango_status_ = TangoStatus::UNKNOWN;
 
-  if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
-    node_handle_.setParam(CREATE_NEW_MAP_PARAM_NAME, false);
-  }
-  if (!node_handle_.hasParam(LOCALIZATION_MODE_PARAM_NAME)) {
-    node_handle_.setParam(LOCALIZATION_MODE_PARAM_NAME, 2);
-  }
-  if (!node_handle_.hasParam(LOCALIZATION_MAP_UUID_PARAM_NAME)) {
-    node_handle_.setParam(LOCALIZATION_MAP_UUID_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(DATASET_PATH_PARAM_NAME)) {
-    node_handle_.setParam(DATASET_PATH_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
-    node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_RESOLUTION);
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_UPDATE_METHOD);
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
-  }
-  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME)) {
-    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
-                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
-  }
-  if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
-      node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
-  }
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
-    node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
-  }
-  if (node_handle_.hasParam(ENABLE_DEPTH_PARAM_NAME)) {
-    node_handle_.param(ENABLE_DEPTH_PARAM_NAME, enable_depth_, true);
-  }
-  if (node_handle_.hasParam(ENABLE_COLOR_CAMERA_PARAM_NAME)) {
-    node_handle_.param(ENABLE_COLOR_CAMERA_PARAM_NAME, enable_color_camera_, true);
-  }
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, CREATE_NEW_MAP_PARAM_NAME, false);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, LOCALIZATION_MODE_PARAM_NAME, 2);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, LOCALIZATION_MAP_UUID_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_PATH_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_UUID_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_RESOLUTION);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_UPDATE_METHOD);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, USE_TF_STATIC_PARAM_NAME, true);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, PUBLISH_POSE_ON_TF_PARAM_NAME, true, publish_pose_on_tf_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_DEPTH_PARAM_NAME, true, enable_depth_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_COLOR_CAMERA_PARAM_NAME, true, enable_color_camera_);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -323,7 +324,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ = ros::Time::now().toSec() - getBootTimeInSecond();
+  time_offset_ = ros::Time::now().toSec() - GetBootTimeInSecond();
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -477,14 +478,14 @@ TangoErrorType TangoRosNode::TangoConnect() {
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
 
   TangoErrorType result;
-  result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
+  result = TangoService_connectOnPoseAvailable(1, &pair, OnPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPoseAvailable error: " << result;
     return result;
   }
 
-  result = TangoService_connectOnPointCloudAvailable(onPointCloudAvailableRouter);
+  result = TangoService_connectOnPointCloudAvailable(OnPointCloudAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPointCloudAvailable error: " << result;
@@ -492,7 +493,7 @@ TangoErrorType TangoRosNode::TangoConnect() {
   }
 
   result = TangoService_connectOnFrameAvailable(
-      TANGO_CAMERA_FISHEYE, this, onFrameAvailableRouter);
+      TANGO_CAMERA_FISHEYE, this, OnFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
@@ -500,7 +501,7 @@ TangoErrorType TangoRosNode::TangoConnect() {
   }
 
   result = TangoService_connectOnFrameAvailable(
-      TANGO_CAMERA_COLOR, this, onFrameAvailableRouter);
+      TANGO_CAMERA_COLOR, this, OnFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result;
@@ -1114,7 +1115,7 @@ bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &
     return true;
   }
   // Prepend name with date and time.
-  std::string map_name = getCurrentDateAndTime() + " " + req.map_name;
+  std::string map_name = GetCurrentDateAndTime() + " " + req.map_name;
   result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
@@ -1158,7 +1159,7 @@ bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list)
     return false;
   }
   LOG(INFO) << "UUID list: " << c_uuid_list;
-  uuid_list = splitCommaSeparatedString(std::string(c_uuid_list));
+  uuid_list = SplitCommaSeparatedString(std::string(c_uuid_list));
   return true;
 }
 
