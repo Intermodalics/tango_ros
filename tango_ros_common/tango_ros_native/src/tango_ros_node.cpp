@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "tango_ros_native/tango_3d_reconstruction_helper.h"
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 #include "tango_ros_native/tango_ros_node.h"
 
@@ -219,29 +220,29 @@ void TangoRosNode::onInit() {
   if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
     node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
   }
-  if (!node_handle_.hasParam(TANGO_3DR_RESOLUTION_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_RESOLUTION);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_RESOLUTION);
   }
-  if (!node_handle_.hasParam(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
   }
-  if (!node_handle_.hasParam(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
   }
-  if (!node_handle_.hasParam(TANGO_3DR_UPDATE_METHOD_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_UPDATE_METHOD);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_UPDATE_METHOD);
   }
-  if (!node_handle_.hasParam(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
   }
-  if (!node_handle_.hasParam(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
-                          TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
+  if (!node_handle_.hasParam(tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME)) {
+    node_handle_.setParam(tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+                          tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
   }
   if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
       node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
@@ -344,7 +345,8 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
 
   tango_ros_conversions_helper::toTango3DR_CameraCalibration(
       tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
-  TangoSetup3DRConfig();
+  tango_3d_reconstruction_helper::TangoSetup3DRConfig(
+      node_handle_, &t3dr_resolution_, &t3dr_context_, &t3dr_color_camera_intrinsics_);
   return TANGO_SUCCESS;
 }
 
@@ -465,106 +467,6 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     }
   }
   return TANGO_SUCCESS;
-}
-
-Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
-  const char* function_name = "TangoRosNode::TangoSetup3DRConfig()";
-
-  Tango3DR_Config t3dr_config =
-      Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
-  Tango3DR_Status result;
-  const char* resolution = "resolution";
-  node_handle_.param(TANGO_3DR_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3DR_DEFAULT_RESOLUTION);
-  result = Tango3DR_Config_setDouble(t3dr_config, resolution, t3dr_resolution_);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
-        << resolution << " error: " << result;
-    return result;
-  }
-  const char* generate_color = "generate_color";
-  result = Tango3DR_Config_setBool(t3dr_config, generate_color, true);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
-        << generate_color << " error: " << result;
-    return result;
-  }
-  const char* use_floorplan = "use_floorplan";
-  result = Tango3DR_Config_setBool(t3dr_config, use_floorplan, true);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
-        << use_floorplan << " error: " << result;
-    return result;
-  }
-  const char* use_space_clearing = "use_space_clearing";
-  bool t3dr_use_space_clearing;
-  node_handle_.param(TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
-                     t3dr_use_space_clearing, TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
-  result = Tango3DR_Config_setBool(t3dr_config, use_space_clearing,
-                                   t3dr_use_space_clearing);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
-        << use_space_clearing << " error: " << result;
-    return result;
-  }
-  const char* min_num_vertices = "min_num_vertices";
-  int t3dr_min_num_vertices;
-  node_handle_.param(TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
-                     t3dr_min_num_vertices, TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
-  result = Tango3DR_Config_setInt32(t3dr_config, min_num_vertices,
-                                    t3dr_min_num_vertices);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
-        << min_num_vertices << " error: " << result;
-    return result;
-  }
-  const char* update_method = "update_method";
-  int t3dr_update_method;
-  node_handle_.param(TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
-                     t3dr_update_method, TANGO_3DR_DEFAULT_UPDATE_METHOD);
-  result = Tango3DR_Config_setInt32(t3dr_config, update_method,
-                                    t3dr_update_method);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
-        << update_method << " error: " << result;
-    return result;
-  }
-  const char* max_voxel_weight = "max_voxel_weight";
-  int t3dr_max_voxel_weight;
-  node_handle_.param(TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
-                     t3dr_max_voxel_weight, TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
-  result = Tango3DR_Config_setInt32(t3dr_config, max_voxel_weight,
-                                    t3dr_max_voxel_weight);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setInt32 "
-        << max_voxel_weight << " error: " << result;
-    return result;
-  }
-  const char* floorplan_max_error = "floorplan_max_error";
-  double t3dr_floorplan_max_error;
-  node_handle_.param(TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
-                     t3dr_floorplan_max_error, TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
-  result = Tango3DR_Config_setDouble(t3dr_config, floorplan_max_error,
-                                     t3dr_floorplan_max_error);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
-        << floorplan_max_error << " error: " << result;
-    return result;
-  }
-
-  t3dr_context_ = Tango3DR_ReconstructionContext_create(t3dr_config);
-  if (t3dr_context_ == nullptr) {
-    LOG(ERROR) << function_name << ", Tango3DR_ReconstructionContext_create error: "
-        "Unable to create 3DR context.";
-    return TANGO_3DR_ERROR;
-  }
-  // Configure the color camera intrinsics to be used with updates to the mesh.
-  result = Tango3DR_ReconstructionContext_setColorCalibration(t3dr_context_, &t3dr_color_camera_intrinsics_);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Unable to set color calibration.";
-    return TANGO_3DR_ERROR;
-  }
-  return Tango3DR_Config_destroy(t3dr_config);
 }
 
 TangoErrorType TangoRosNode::TangoConnect() {
@@ -1082,70 +984,22 @@ void TangoRosNode::PublishMesh() {
     if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
         occupancy_grid_publisher_.getNumSubscribers() > 0) {
       Tango3DR_GridIndexArray t3dr_updated_indices;
-      // Update Tango mesh with latest point cloud.
+      // Update Tango mesh with latest point cloud and color image.
       {
         std::unique_lock<std::mutex> lock(mesh_thread_.data_available_mutex);
         mesh_thread_.data_available.wait(lock);
-        // Get latest point cloud.
-        TangoPointCloud* last_point_cloud;
-        TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
-        Tango3DR_PointCloud t3dr_depth;
-        t3dr_depth.timestamp = last_point_cloud->timestamp;
-        t3dr_depth.num_points = last_point_cloud->num_points;
-        t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud->points);
-        // Get latest image.
-        TangoImageBuffer* last_color_image_buffer;
-        if (image_buffer_manager_ != nullptr) {
-          TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
-          Tango3DR_ImageBuffer t3dr_image;
-          t3dr_image.width = last_color_image_buffer->width;
-          t3dr_image.height = last_color_image_buffer->height;
-          t3dr_image.stride = last_color_image_buffer->stride;
-          t3dr_image.timestamp = last_color_image_buffer->timestamp;
-          t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
-          t3dr_image.data = last_color_image_buffer->data;
-          // Get updated mesh segment indices.
-          Tango3DR_Status result =
-              Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
-                              &last_camera_color_pose_, &t3dr_updated_indices);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_update failed with error code " << result;
-          }
-        }
+        tango_3d_reconstruction_helper::UpdateMesh(
+            t3dr_context_, point_cloud_manager_, image_buffer_manager_,
+            &last_camera_depth_pose_, &last_camera_color_pose_,
+            &t3dr_updated_indices);
       }
       // Publish Tango mesh as visualization marker.
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
-        for (size_t i = 0; i < t3dr_updated_indices.num_indices; ++i) {
-          // Extract Tango mesh from updated index.
-          Tango3DR_Mesh tango_mesh;
-          Tango3DR_Status result = Tango3DR_extractMeshSegment(
-              t3dr_context_, t3dr_updated_indices.indices[i], &tango_mesh);
-          if(result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_extractMeshSegment failed.";
-            continue;
-          }
-          if (tango_mesh.num_faces == 0) {
-            LOG(INFO) << "Empty mesh extracted.";
-            continue;
-          }
-          // Make mesh marker from tango mesh.
-          visualization_msgs::Marker mesh_marker;
-          tango_ros_conversions_helper::toMeshMarker(
-              t3dr_updated_indices.indices[i],
-              tango_mesh, time_offset_, &mesh_marker);
-          // Free tango mesh once we are finished with it.
-          result = Tango3DR_Mesh_destroy(&tango_mesh);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_Mesh_destroy failed with error code: "
-                << result;
-          }
-          if (mesh_marker.points.empty()) {
-            LOG(INFO) << "Empty mesh marker.";
-            continue;
-          }
-          mesh_marker_array.markers.push_back(mesh_marker);
-        }
+        tango_3d_reconstruction_helper::ExtractMeshAndConvertItTMarkerArray(
+            t3dr_context_, t3dr_updated_indices, time_offset_,
+            &mesh_marker_array);
+        mesh_marker_publisher_.publish(mesh_marker_array);
         Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
             &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
@@ -1155,35 +1009,13 @@ void TangoRosNode::PublishMesh() {
         if (mesh_marker_array.markers.empty()) {
           LOG(INFO) << "Empty mesh array!";
         }
-        mesh_marker_publisher_.publish(mesh_marker_array);
       }
       // Publish Tango mesh as occupancy grid.
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
-        Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context_);
-        if (result == TANGO_3DR_SUCCESS) {
-          Tango3DR_Vector2 origin;
-          Tango3DR_ImageBuffer image_grid;
-          result = Tango3DR_extractFullFloorplanImage(
-              t3dr_context_, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
-          if (result == TANGO_3DR_SUCCESS) {
-            nav_msgs::OccupancyGrid occupancy_grid;
-            tango_ros_conversions_helper::toOccupancyGrid(
-                image_grid, origin, time_offset_, t3dr_resolution_,
-                &occupancy_grid);
-            occupancy_grid_publisher_.publish(occupancy_grid);
-          } else {
-            LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error"
-                "code: " << result;
-          }
-          result = Tango3DR_ImageBuffer_destroy(&image_grid);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_ImageBuffer_destroy failed with error "
-                "code: " << result;
-          }
-        } else {
-          LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with error "
-              "code: " << result;
-        }
+        nav_msgs::OccupancyGrid occupancy_grid;
+        if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertItToOccupancyGrid(
+            t3dr_context_, time_offset_, t3dr_resolution_,&occupancy_grid))
+          occupancy_grid_publisher_.publish(occupancy_grid);
       }
     }
   }
