@@ -1222,7 +1222,7 @@ bool TangoRosNode::TangoConnectServiceCallback(
                  << ", RECONNECT: "
                  << tango_ros_messages::TangoConnect::Request::RECONNECT
                  << ")";
-      response.message = "Did not understand request";
+      response.message = "Did not understand request.";
       return true;
     }
     return true;
@@ -1252,33 +1252,8 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
 bool TangoRosNode::SaveMapServiceCallback(
     const tango_ros_messages::SaveMap::Request& req,
     tango_ros_messages::SaveMap::Response& res) {
-  bool save_localization_map = false;
-  bool save_navigation_map = false;
-  switch (req.request) {
-    case tango_ros_messages::SaveMap::Request::LOC_AND_NAV_MAPS:
-      save_localization_map = true;
-      save_navigation_map = true;
-      break;
-    case tango_ros_messages::SaveMap::Request::ONLY_LOC_MAP:
-      save_localization_map = true;
-      save_navigation_map = false;
-      break;
-    case tango_ros_messages::SaveMap::Request::ONLY_NAV_MAP:
-      save_localization_map = false;
-      save_navigation_map = true;
-      break;
-    default:
-      LOG(ERROR) << "Did not understand request " << static_cast<int>(req.request)
-                 << ", valid requests are (LOC_AND_NAV_MAPS: "
-                 << tango_ros_messages::SaveMap::Request::LOC_AND_NAV_MAPS
-                 << ", ONLY_LOC_MAP: "
-                 << tango_ros_messages::SaveMap::Request::ONLY_LOC_MAP
-                 << ", ONLY_NAV_MAP: "
-                 << tango_ros_messages::SaveMap::Request::ONLY_NAV_MAP
-                 << ")";
-      res.message = "Did not understand request";
-      return true;
-  }
+  bool save_localization_map = req.request & tango_ros_messages::SaveMap::Request::SAVE_LOCALIZATION_MAP;
+  bool save_navigation_map = req.request & tango_ros_messages::SaveMap::Request::SAVE_NAVIGATION_MAP;
   res.message = "";
   if (save_localization_map) {
     res.localization_map_name = getCurrentDateAndTime() + " " + req.map_name;
