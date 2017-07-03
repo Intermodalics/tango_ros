@@ -351,6 +351,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 return null;
             }
         }.execute();
+        mSaveMapButton.setEnabled(false);
     }
 
     @Override
@@ -396,6 +397,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 return null;
             }
         }.execute();
+        mLoadNavMapButton.setEnabled(false);
     }
 
     @Override
@@ -407,6 +409,12 @@ public class RunningActivity extends AppCompatRosActivity implements
             Log.e(TAG, "Error while loading navigation map: " + message);
             displayToastMessage(R.string.load_nav_map_error);
         }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mLoadNavMapButton.setEnabled(true);
+            }
+        });
     }
 
     @Override

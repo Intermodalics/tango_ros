@@ -20,10 +20,13 @@ import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 
 import eu.intermodalics.tango_ros_streamer.R;
@@ -35,6 +38,7 @@ import eu.intermodalics.tango_ros_streamer.R;
 public class SaveMapDialog extends DialogFragment implements View.OnClickListener {
     private static final String TAG = SaveMapDialog.class.getSimpleName();
 
+    Button mOkButton;
     EditText mNameEditText;
     CallbackListener mCallbackListener;
 
@@ -52,11 +56,31 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
         View dialogView = inflator.inflate(R.layout.dialog_save_map, null);
-        getDialog().setTitle("Enter the name of the map");
-        mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
-        dialogView.findViewById(R.id.save_map_ok).setOnClickListener(this);
+        getDialog().setTitle(R.string.save_map_dialog_title);
+        mOkButton = (Button) dialogView.findViewById(R.id.save_map_ok);
+        mOkButton.setOnClickListener(this);
         dialogView.findViewById(R.id.save_map_cancel).setOnClickListener(this);
-        setCancelable(false);
+        mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
+        mNameEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // Not used.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // Not used.
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (mNameEditText.getText().toString().isEmpty()) {
+                    mOkButton.setEnabled(false);
+                } else {
+                    mOkButton.setEnabled(true);
+                }
+            }
+        });
         return dialogView;
     }
 
@@ -64,13 +88,13 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.save_map_ok:
-                Log.w(TAG, "OK");
+                Log.i(TAG, "OK");
                 mCallbackListener.onClickOkSaveMapDialog(
                         mNameEditText.getText().toString());
                 dismiss();
                 break;
             case R.id.save_map_cancel:
-                Log.w(TAG, "CANCEL");
+                Log.i(TAG, "CANCEL");
                 dismiss();
                 break;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Intermodalics All Rights Reserved.
+ * Copyright 2017 Intermodalics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 
 import eu.intermodalics.tango_ros_streamer.R;
@@ -35,8 +38,10 @@ import eu.intermodalics.tango_ros_streamer.R;
 public class LoadNavMapDialog extends DialogFragment implements View.OnClickListener {
     private static final String TAG = LoadNavMapDialog.class.getSimpleName();
 
+    Button mOkButton;
     EditText mNameEditText;
     CallbackListener mCallbackListener;
+
 
     public interface CallbackListener {
         void onClickOkLoadNavMapDialog(String name);
@@ -52,11 +57,31 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
         View dialogView = inflator.inflate(R.layout.dialog_load_nav_map, null);
-        getDialog().setTitle("Enter name of navigation map to load");
-        mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
-        dialogView.findViewById(R.id.load_nav_map_ok).setOnClickListener(this);
+        getDialog().setTitle(R.string.load_nav_map_dialog_title);
+        mOkButton = (Button) dialogView.findViewById(R.id.load_nav_map_ok);
+        mOkButton.setOnClickListener(this);
         dialogView.findViewById(R.id.load_nav_map_cancel).setOnClickListener(this);
-        setCancelable(false);
+        mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
+        mNameEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // Not used.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                // Not used.
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (mNameEditText.getText().toString().isEmpty()) {
+                    mOkButton.setEnabled(false);
+                } else {
+                    mOkButton.setEnabled(true);
+                }
+            }
+        });
         return dialogView;
     }
 
@@ -64,13 +89,13 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.load_nav_map_ok:
-                Log.w(TAG, "OK");
+                Log.i(TAG, "OK");
                 mCallbackListener.onClickOkLoadNavMapDialog(
                         mNameEditText.getText().toString());
                 dismiss();
                 break;
             case R.id.load_nav_map_cancel:
-                Log.w(TAG, "CANCEL");
+                Log.i(TAG, "CANCEL");
                 dismiss();
                 break;
         }

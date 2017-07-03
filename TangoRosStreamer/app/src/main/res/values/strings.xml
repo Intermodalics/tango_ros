@@ -27,6 +27,7 @@
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
+    <string name="load_nav_map_dialog_title">Enter the name of navigation map to load</string>
     <string name="uuids_names_map">uuids_names_map</string>
     <string name="ros_status">ros_status</string>
 
