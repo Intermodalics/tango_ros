@@ -92,7 +92,7 @@ const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
-const int TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
+const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 // Localization mode values.
@@ -277,7 +277,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;
-  int t3dr_occupancy_grid_threshold_;
+  uint8_t t3dr_occupancy_grid_threshold_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;

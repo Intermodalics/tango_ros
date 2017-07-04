@@ -225,8 +225,10 @@ void TangoRosNode::onInit() {
                           TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
   }
   if (node_handle_.hasParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME)) {
+    int t3dr_occupancy_grid_threshold;
     node_handle_.getParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME,
-                          t3dr_occupancy_grid_threshold_);
+                          t3dr_occupancy_grid_threshold);
+    t3dr_occupancy_grid_threshold_ = static_cast<uint8_t>(t3dr_occupancy_grid_threshold);
   } else {
     node_handle_.setParam(TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME,
                           TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD);
