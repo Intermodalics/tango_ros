@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "tango_ros_native/tango_3d_reconstruction_helper.h"
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 #include "tango_ros_native/tango_ros_node.h"
 
@@ -31,7 +32,7 @@
 PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
 
 namespace {
-std::vector<std::string> splitCommaSeparatedString(const std::string& comma_separated_string) {
+std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_separated_string) {
   std::vector<std::string> output;
   std::stringstream ss(comma_separated_string);
 
@@ -47,7 +48,7 @@ std::vector<std::string> splitCommaSeparatedString(const std::string& comma_sepa
 // @param context, context will be a pointer to a TangoRosNode
 //        instance on which to call the callback.
 // @param pose, pose data to route to onPoseAvailable function.
-void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
+void OnPoseAvailableRouter(void* context, const TangoPoseData* pose) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
   app->OnPoseAvailable(pose);
@@ -58,7 +59,7 @@ void onPoseAvailableRouter(void* context, const TangoPoseData* pose) {
 //        instance on which to call the callback.
 // @param point_cloud, point cloud data to route to OnPointCloudAvailable
 //        function.
-void onPointCloudAvailableRouter(void* context,
+void OnPointCloudAvailableRouter(void* context,
                                  const TangoPointCloud* point_cloud) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
@@ -71,7 +72,7 @@ void onPointCloudAvailableRouter(void* context,
 // @param camera_id, the ID of the camera. Only TANGO_CAMERA_COLOR and
 //        TANGO_CAMERA_FISHEYE are supported.
 // @param buffer, image data to route to OnFrameAvailable function.
-void onFrameAvailableRouter(void* context, TangoCameraId camera_id,
+void OnFrameAvailableRouter(void* context, TangoCameraId camera_id,
                             const TangoImageBuffer* buffer) {
   tango_ros_native::TangoRosNode* app =
       static_cast<tango_ros_native::TangoRosNode*>(context);
@@ -131,7 +132,7 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
-std::string getCurrentDateAndTime() {
+std::string GetCurrentDateAndTime() {
   std::time_t currentTime;
   struct tm* currentDateTime;
   std::time(&currentTime);
@@ -146,11 +147,29 @@ std::string getCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
-
-double getBootTimeInSecond() {
+double GetBootTimeInSecond() {
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
   return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
+}
+template<typename T>
+void SetDefaultValueIfParamDoesNotExist(
+    const ros::NodeHandle& node_handle, const std::string& param_name,
+    T default_value) {
+  if (!node_handle.hasParam(param_name)) {
+    node_handle.setParam(param_name, default_value);
+  }
+}
+template<typename T>
+void GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+    const ros::NodeHandle& node_handle, const std::string& param_name,
+    T default_value, T& param_value) {
+  if (node_handle.hasParam(param_name)) {
+    node_handle.getParam(param_name, param_value);
+  } else {
+    param_value = default_value;
+    node_handle.setParam(param_name, default_value);
+  }
 }
 }  // namespace
 
@@ -204,39 +223,42 @@ void TangoRosNode::onInit() {
 
   tango_status_ = TangoStatus::UNKNOWN;
 
-  if (!node_handle_.hasParam(CREATE_NEW_MAP_PARAM_NAME)) {
-    node_handle_.setParam(CREATE_NEW_MAP_PARAM_NAME, false);
-  }
-  if (!node_handle_.hasParam(LOCALIZATION_MODE_PARAM_NAME)) {
-    node_handle_.setParam(LOCALIZATION_MODE_PARAM_NAME, 2);
-  }
-  if (!node_handle_.hasParam(LOCALIZATION_MAP_UUID_PARAM_NAME)) {
-    node_handle_.setParam(LOCALIZATION_MAP_UUID_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(DATASET_PATH_PARAM_NAME)) {
-    node_handle_.setParam(DATASET_PATH_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(DATASET_UUID_PARAM_NAME)) {
-    node_handle_.setParam(DATASET_UUID_PARAM_NAME, "");
-  }
-  if (!node_handle_.hasParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME)) {
-    node_handle_.setParam(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
-                          TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
-  }
-  if (!node_handle_.hasParam(USE_TF_STATIC_PARAM_NAME)) {
-      node_handle_.setParam(USE_TF_STATIC_PARAM_NAME, true);
-  }
-  if (node_handle_.hasParam(PUBLISH_POSE_ON_TF_PARAM_NAME)) {
-    node_handle_.getParam(PUBLISH_POSE_ON_TF_PARAM_NAME, publish_pose_on_tf_);
-  } else {
-    node_handle_.setParam(PUBLISH_POSE_ON_TF_PARAM_NAME, true);
-  }
-  if (node_handle_.hasParam(ENABLE_DEPTH)) {
-    node_handle_.param(ENABLE_DEPTH, enable_depth_, true);
-  }
-  if (node_handle_.hasParam(ENABLE_COLOR_CAMERA)) {
-    node_handle_.param(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
-  }
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, CREATE_NEW_MAP_PARAM_NAME, false);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, LOCALIZATION_MODE_PARAM_NAME, 2);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, LOCALIZATION_MAP_UUID_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_PATH_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_UUID_PARAM_NAME, "");
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_RESOLUTION_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_RESOLUTION);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_USE_SPACE_CLEARING);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MIN_NUM_VERTICES);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_UPDATE_METHOD_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_UPDATE_METHOD);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT);
+  SetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME,
+      tango_3d_reconstruction_helper::TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, USE_TF_STATIC_PARAM_NAME, true);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, PUBLISH_POSE_ON_TF_PARAM_NAME, true, publish_pose_on_tf_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_DEPTH_PARAM_NAME, true, enable_depth_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_COLOR_CAMERA_PARAM_NAME, true, enable_color_camera_);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -302,7 +324,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     LOG(ERROR) << "Error, could not get a first valid pose.";
     return TANGO_INVALID;
   }
-  time_offset_ = ros::Time::now().toSec() - getBootTimeInSecond();
+  time_offset_ = ros::Time::now().toSec() - GetBootTimeInSecond();
 
   TangoCameraIntrinsics tango_camera_intrinsics;
   TangoService_getCameraIntrinsics(TANGO_CAMERA_FISHEYE, &tango_camera_intrinsics);
@@ -324,7 +346,8 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
 
   tango_ros_conversions_helper::toTango3DR_CameraCalibration(
       tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
-  TangoSetup3DRConfig();
+  tango_3d_reconstruction_helper::TangoSetup3DRConfig(
+      node_handle_, &t3dr_resolution_, &t3dr_context_, &t3dr_color_camera_intrinsics_);
   return TANGO_SUCCESS;
 }
 
@@ -389,7 +412,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_depth = "config_enable_depth";
-  node_handle_.param<bool>(ENABLE_DEPTH, enable_depth_, true);
+  node_handle_.param<bool>(ENABLE_DEPTH_PARAM_NAME, enable_depth_, true);
   result = TangoConfig_setBool(tango_config_, config_enable_depth, enable_depth_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
@@ -404,7 +427,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   const char* config_enable_color_camera = "config_enable_color_camera";
-  node_handle_.param<bool>(ENABLE_COLOR_CAMERA, enable_color_camera_, true);
+  node_handle_.param<bool>(ENABLE_COLOR_CAMERA_PARAM_NAME, enable_color_camera_, true);
   result = TangoConfig_setBool(tango_config_, config_enable_color_camera, enable_color_camera_);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name << ", TangoConfig_setBool "
@@ -447,50 +470,6 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   return TANGO_SUCCESS;
 }
 
-Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
-  const char* function_name = "TangoRosNode::TangoSetup3DRConfig()";
-
-  Tango3DR_Config t3dr_config =
-      Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
-  Tango3DR_Status result;
-  const char* resolution = "resolution";
-  node_handle_.param(TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME,
-                     t3dr_resolution_, TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION);
-  result = Tango3DR_Config_setDouble(t3dr_config, resolution, t3dr_resolution_);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setDouble "
-        << resolution << " error: " << result;
-    return result;
-  }
-  const char* generate_color = "generate_color";
-  result = Tango3DR_Config_setBool(t3dr_config, generate_color, true);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
-        << generate_color << " error: " << result;
-    return result;
-  }
-  const char* use_floorplan = "use_floorplan";
-  result = Tango3DR_Config_setBool(t3dr_config, use_floorplan, true);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Tango3DR_Config_setBool "
-        << use_floorplan << " error: " << result;
-    return result;
-  }
-  t3dr_context_ = Tango3DR_ReconstructionContext_create(t3dr_config);
-  if (t3dr_context_ == nullptr) {
-    LOG(ERROR) << function_name << ", Tango3DR_ReconstructionContext_create error: "
-        "Unable to create 3DR context.";
-    return TANGO_3DR_ERROR;
-  }
-  // Configure the color camera intrinsics to be used with updates to the mesh.
-  result = Tango3DR_ReconstructionContext_setColorCalibration(t3dr_context_, &t3dr_color_camera_intrinsics_);
-  if (result != TANGO_3DR_SUCCESS) {
-    LOG(ERROR) << function_name << ", Unable to set color calibration.";
-    return TANGO_3DR_ERROR;
-  }
-  return Tango3DR_Config_destroy(t3dr_config);
-}
-
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
 
@@ -499,14 +478,14 @@ TangoErrorType TangoRosNode::TangoConnect() {
   pair.target = TANGO_COORDINATE_FRAME_DEVICE;
 
   TangoErrorType result;
-  result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
+  result = TangoService_connectOnPoseAvailable(1, &pair, OnPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPoseAvailable error: " << result;
     return result;
   }
 
-  result = TangoService_connectOnPointCloudAvailable(onPointCloudAvailableRouter);
+  result = TangoService_connectOnPointCloudAvailable(OnPointCloudAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPointCloudAvailable error: " << result;
@@ -514,7 +493,7 @@ TangoErrorType TangoRosNode::TangoConnect() {
   }
 
   result = TangoService_connectOnFrameAvailable(
-      TANGO_CAMERA_FISHEYE, this, onFrameAvailableRouter);
+      TANGO_CAMERA_FISHEYE, this, OnFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
@@ -522,7 +501,7 @@ TangoErrorType TangoRosNode::TangoConnect() {
   }
 
   result = TangoService_connectOnFrameAvailable(
-      TANGO_CAMERA_COLOR, this, onFrameAvailableRouter);
+      TANGO_CAMERA_COLOR, this, OnFrameAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_COLOR error: " << result;
@@ -1006,100 +985,38 @@ void TangoRosNode::PublishMesh() {
     if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
         occupancy_grid_publisher_.getNumSubscribers() > 0) {
       Tango3DR_GridIndexArray t3dr_updated_indices;
-      // Update Tango mesh with latest point cloud.
+      // Update Tango mesh with latest point cloud and color image.
       {
         std::unique_lock<std::mutex> lock(mesh_thread_.data_available_mutex);
         mesh_thread_.data_available.wait(lock);
-        // Get latest point cloud.
-        TangoPointCloud* last_point_cloud;
-        TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
-        Tango3DR_PointCloud t3dr_depth;
-        t3dr_depth.timestamp = last_point_cloud->timestamp;
-        t3dr_depth.num_points = last_point_cloud->num_points;
-        t3dr_depth.points = reinterpret_cast<Tango3DR_Vector4*>(last_point_cloud->points);
-        // Get latest image.
-        TangoImageBuffer* last_color_image_buffer;
-        if (image_buffer_manager_ != nullptr) {
-          TangoSupport_getLatestImageBuffer(image_buffer_manager_, &last_color_image_buffer);
-          Tango3DR_ImageBuffer t3dr_image;
-          t3dr_image.width = last_color_image_buffer->width;
-          t3dr_image.height = last_color_image_buffer->height;
-          t3dr_image.stride = last_color_image_buffer->stride;
-          t3dr_image.timestamp = last_color_image_buffer->timestamp;
-          t3dr_image.format = static_cast<Tango3DR_ImageFormatType>(last_color_image_buffer->format);
-          t3dr_image.data = last_color_image_buffer->data;
-          // Get updated mesh segment indices.
-          Tango3DR_Status result =
-              Tango3DR_update(t3dr_context_, &t3dr_depth, &last_camera_depth_pose_, &t3dr_image,
-                              &last_camera_color_pose_, &t3dr_updated_indices);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_update failed with error code " << result;
-          }
-        }
+        tango_3d_reconstruction_helper::UpdateMesh(
+            t3dr_context_, point_cloud_manager_, image_buffer_manager_,
+            &last_camera_depth_pose_, &last_camera_color_pose_,
+            &t3dr_updated_indices);
       }
       // Publish Tango mesh as visualization marker.
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
-        for (size_t i = 0; i < t3dr_updated_indices.num_indices; ++i) {
-          // Extract Tango mesh from updated index.
-          Tango3DR_Mesh tango_mesh;
-          Tango3DR_Status result = Tango3DR_extractMeshSegment(
-              t3dr_context_, t3dr_updated_indices.indices[i], &tango_mesh);
-          if(result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_extractMeshSegment failed.";
-            continue;
-          }
-          if (tango_mesh.num_faces == 0) {
-            LOG(INFO) << "Empty mesh extracted.";
-            continue;
-          }
-          // Make mesh marker from tango mesh.
-          visualization_msgs::Marker mesh_marker;
-          tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices.indices[i],
-                                             tango_mesh, time_offset_, &mesh_marker);
-          // Free tango mesh once we are finished with it.
-          result = Tango3DR_Mesh_destroy(&tango_mesh);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_Mesh_destroy failed with error code: " << result;
-          }
-          if (mesh_marker.points.empty()) {
-            LOG(INFO) << "Empty mesh marker.";
-            continue;
-          }
-          mesh_marker_array.markers.push_back(mesh_marker);
-        }
-        Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(&t3dr_updated_indices);
+        tango_3d_reconstruction_helper::ExtractMeshAndConvertToMarkerArray(
+            t3dr_context_, t3dr_updated_indices, time_offset_,
+            &mesh_marker_array);
+        mesh_marker_publisher_.publish(mesh_marker_array);
+        Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
+            &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
-          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with error code: " << result;
+          LOG(ERROR) << "Tango3DR_GridIndexArray_destroy failed with error code: "
+              << result;
         }
         if (mesh_marker_array.markers.empty()) {
           LOG(INFO) << "Empty mesh array!";
         }
-        mesh_marker_publisher_.publish(mesh_marker_array);
       }
       // Publish Tango mesh as occupancy grid.
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
-        Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context_);
-        if (result == TANGO_3DR_SUCCESS) {
-          Tango3DR_Vector2 origin;
-          Tango3DR_ImageBuffer image_grid;
-          result = Tango3DR_extractFullFloorplanImage(
-              t3dr_context_, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
-          if (result == TANGO_3DR_SUCCESS) {
-            nav_msgs::OccupancyGrid occupancy_grid;
-            tango_ros_conversions_helper::toOccupancyGrid(
-                image_grid, origin, time_offset_, t3dr_resolution_, &occupancy_grid);
-            occupancy_grid_publisher_.publish(occupancy_grid);
-          } else {
-            LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error code: " << result;
-          }
-          result = Tango3DR_ImageBuffer_destroy(&image_grid);
-          if (result != TANGO_3DR_SUCCESS) {
-            LOG(ERROR) << "Tango3DR_ImageBuffer_destroy failed with error code: " << result;
-          }
-        } else {
-          LOG(ERROR) << "Tango3DR_updateFullFloorplan failed with error code: " << result;
-        }
+        nav_msgs::OccupancyGrid occupancy_grid;
+        if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
+            t3dr_context_, time_offset_, t3dr_resolution_,&occupancy_grid))
+          occupancy_grid_publisher_.publish(occupancy_grid);
       }
     }
   }
@@ -1198,7 +1115,7 @@ bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &
     return true;
   }
   // Prepend name with date and time.
-  std::string map_name = getCurrentDateAndTime() + " " + req.map_name;
+  std::string map_name = GetCurrentDateAndTime() + " " + req.map_name;
   result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
@@ -1242,7 +1159,7 @@ bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list)
     return false;
   }
   LOG(INFO) << "UUID list: " << c_uuid_list;
-  uuid_list = splitCommaSeparatedString(std::string(c_uuid_list));
+  uuid_list = SplitCommaSeparatedString(std::string(c_uuid_list));
   return true;
 }
 
