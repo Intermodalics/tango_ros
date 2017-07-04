@@ -661,7 +661,7 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  LOG(INFO) << "OnPoseAvailable";
+  //LOG(INFO) << "OnPoseAvailable";
   if (publish_pose_on_tf_ ||
       start_of_service_T_device_publisher_.getNumSubscribers() > 0 ||
       area_description_T_start_of_service_publisher_.getNumSubscribers() > 0) {
@@ -688,7 +688,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
 }
 
 void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
-  LOG(INFO) << "OnPointCloudAvailable";
+  //LOG(INFO) << "OnPointCloudAvailable";
   if (point_cloud->num_points > 0) {
     if (point_cloud_publisher_.getNumSubscribers() > 0 &&
         point_cloud_thread_.data_available_mutex.try_lock()) {
@@ -742,11 +742,11 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
 }
 
 void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
-  LOG(INFO) << "OnFrameAvailable, camera id: " << static_cast<int>(camera_id);
+  //LOG(INFO) << "OnFrameAvailable, camera id: " << static_cast<int>(camera_id);
   if (fisheye_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE &&
        fisheye_image_thread_.data_available_mutex.try_lock()) {
-    LOG(INFO) << "in fisheye if";
+    //LOG(INFO) << "in fisheye if";
     fisheye_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                              CV_8UC1, buffer->data, buffer->stride); // No deep copy.
     fisheye_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
@@ -759,7 +759,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
   if (color_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
        color_image_thread_.data_available_mutex.try_lock()) {
-    LOG(INFO) << "in color if";
+    //LOG(INFO) << "in color if";
     color_image_ = cv::Mat(buffer->height + buffer->height / 2, buffer->width,
                            CV_8UC1, buffer->data, buffer->stride); // No deep copy.
     color_image_header_.stamp.fromSec(buffer->timestamp + time_offset_);
@@ -775,7 +775,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
       camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
       new_point_cloud_available_for_t3dr_ &&
       mesh_thread_.data_available_mutex.try_lock()) {
-    LOG(INFO) << "in mesh if";
+    //LOG(INFO) << "in mesh if";
     if (image_buffer_manager_ == nullptr) {
       TangoErrorType result = TangoSupport_createImageBufferManager(
           buffer->format, buffer->width, buffer->height, &image_buffer_manager_);
@@ -822,6 +822,7 @@ void TangoRosNode::StartPublishing() {
 
 void TangoRosNode::StopPublishing() {
   if (run_threads_) {
+    LOG(INFO) << "Need to stop threads.";
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ || (!publish_pose_on_tf_ &&
@@ -868,6 +869,7 @@ void TangoRosNode::StopPublishing() {
       mesh_thread_.publish_thread.join();
     }
     ros_spin_thread_.join();
+    LOG(INFO) << "Threads stopped";
   }
 }
 
@@ -877,11 +879,11 @@ void TangoRosNode::PublishDevicePose() {
       break;
     }
     {
-      LOG(INFO) << "PublishDevicePose";
+      //LOG(INFO) << "PublishDevicePose";
       std::unique_lock<std::mutex> lock(device_pose_thread_.data_available_mutex);
-      LOG(INFO) << "PublishDevicePose waits";
+      //LOG(INFO) << "PublishDevicePose waits";
       device_pose_thread_.data_available.wait(lock);
-      LOG(INFO) << "PublishDevicePose thread spins";
+      //LOG(INFO) << "PublishDevicePose thread spins";
       if (!use_tf_static_) {
         PublishStaticTransforms();
       }
@@ -910,11 +912,11 @@ void TangoRosNode::PublishPointCloud() {
       break;
     }
     {
-      LOG(INFO) << "PublishPointCloud";
+      //LOG(INFO) << "PublishPointCloud";
       std::unique_lock<std::mutex> lock(point_cloud_thread_.data_available_mutex);
-      LOG(INFO) << "PublishPointCloud thread waits";
+      //LOG(INFO) << "PublishPointCloud thread waits";
       point_cloud_thread_.data_available.wait(lock);
-      LOG(INFO) << "PublishPointCloud thread spins";
+      //LOG(INFO) << "PublishPointCloud thread spins";
       if (point_cloud_publisher_.getNumSubscribers() > 0) {
         point_cloud_publisher_.publish(point_cloud_);
       }
@@ -928,11 +930,11 @@ void TangoRosNode::PublishLaserScan() {
       break;
     }
     {
-      LOG(INFO) << "PublishLaserScan thread";
+      //LOG(INFO) << "PublishLaserScan thread";
       std::unique_lock<std::mutex> lock(laser_scan_thread_.data_available_mutex);
-      LOG(INFO) << "PublishLaserScan thread waits";
+      //LOG(INFO) << "PublishLaserScan thread waits";
       laser_scan_thread_.data_available.wait(lock);
-      LOG(INFO) << "PublishLaserScan thread spins";
+      //LOG(INFO) << "PublishLaserScan thread spins";
       if (laser_scan_publisher_.getNumSubscribers() > 0) {
         laser_scan_publisher_.publish(laser_scan_);
       }
@@ -947,11 +949,11 @@ void TangoRosNode::PublishFisheyeImage() {
       break;
     }
     {
-      LOG(INFO) << "PublishFisheyeImage thread";
+      //LOG(INFO) << "PublishFisheyeImage thread";
       std::unique_lock<std::mutex> lock(fisheye_image_thread_.data_available_mutex);
-      LOG(INFO) << "PublishFisheyeImage thread waits";
+      //LOG(INFO) << "PublishFisheyeImage thread waits";
       fisheye_image_thread_.data_available.wait(lock);
-      LOG(INFO) << "PublishFisheyeImage thread spins";
+      //LOG(INFO) << "PublishFisheyeImage thread spins";
       if (fisheye_camera_publisher_.getNumSubscribers() > 0 ||
           fisheye_rectified_image_publisher_.getNumSubscribers() > 0) {
         // The Tango image encoding is not supported by ROS.
@@ -987,11 +989,11 @@ void TangoRosNode::PublishColorImage() {
       break;
     }
     {
-      LOG(INFO) << "PublishColorImage thread";
+      //LOG(INFO) << "PublishColorImage thread";
       std::unique_lock<std::mutex> lock(color_image_thread_.data_available_mutex);
-      LOG(INFO) << "PublishColorImage thread waits";
+      //LOG(INFO) << "PublishColorImage thread waits";
       color_image_thread_.data_available.wait(lock);
-      LOG(INFO) << "PublishColorImage thread spins";
+      //LOG(INFO) << "PublishColorImage thread spins";
       if (color_camera_publisher_.getNumSubscribers() > 0 ||
           color_rectified_image_publisher_.getNumSubscribers() > 0) {
         // The Tango image encoding is not supported by ROS.
@@ -1027,14 +1029,14 @@ void TangoRosNode::PublishMesh() {
     }
     if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
         occupancy_grid_publisher_.getNumSubscribers() > 0) {
-      LOG(INFO) << "PublishMesh thread";
+      //LOG(INFO) << "PublishMesh thread";
       Tango3DR_GridIndexArray t3dr_updated_indices;
       // Update Tango mesh with latest point cloud.
       {
         std::unique_lock<std::mutex> lock(mesh_thread_.data_available_mutex);
-        LOG(INFO) << "PublishMesh thread waits";
+        //LOG(INFO) << "PublishMesh thread waits";
         mesh_thread_.data_available.wait(lock);
-        LOG(INFO) << "PublishMesh thread spins";
+        //LOG(INFO) << "PublishMesh thread spins";
         // Get latest point cloud.
         TangoPointCloud* last_point_cloud;
         TangoSupport_getLatestPointCloud(point_cloud_manager_, &last_point_cloud);
@@ -1205,8 +1207,8 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
 bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
                            tango_ros_messages::SaveMap::Response &res) {
   LOG(INFO) << "SaveMapServiceCallback";
-  //LOG(INFO) << "calling StopPublishing";
-  //StopPublishing();
+  LOG(INFO) << "calling StopPublishing";
+  StopPublishing();
   TangoErrorType result;
   TangoUUID map_uuid;
   LOG(INFO) << "calling TangoService_saveAreaDescription";
