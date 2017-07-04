@@ -25,7 +25,7 @@
 namespace tango_3d_reconstruction_helper {
 const double TANGO_3DR_DEFAULT_RESOLUTION = 0.05; // meter
 const bool TANGO_3DR_DEFAULT_USE_SPACE_CLEARING = false;
-const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1; // Default value from TangoCongig
+const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1; // Default value from TangoConfig
 const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
 const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // Default value from TangoConfig
 const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
