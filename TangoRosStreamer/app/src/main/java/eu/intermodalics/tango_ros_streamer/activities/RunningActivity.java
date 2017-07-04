@@ -296,9 +296,12 @@ public class RunningActivity extends AppCompatRosActivity implements
         saveMapDialog.show(manager, "SaveMapDialog");
     }
 
-    private void showLoadNavMapDialog() {
+    private void showLoadNavMapDialog(boolean firstTry) {
         FragmentManager manager = getFragmentManager();
         LoadNavMapDialog loadNavMapDialog = new LoadNavMapDialog();
+        Bundle bundle = new Bundle();
+        bundle.putBoolean(getString(R.string.show_load_nav_map_error_key), !firstTry);
+        loadNavMapDialog.setArguments(bundle);
         loadNavMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
         loadNavMapDialog.show(manager, "LoadNavMapDialog");
     }
@@ -332,7 +335,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         mLoadNavMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showLoadNavMapDialog();
+                showLoadNavMapDialog(true);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -408,6 +411,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         } else {
             Log.e(TAG, "Error while loading navigation map: " + message);
             displayToastMessage(R.string.load_nav_map_error);
+            showLoadNavMapDialog(false);
         }
         runOnUiThread(new Runnable() {
             @Override

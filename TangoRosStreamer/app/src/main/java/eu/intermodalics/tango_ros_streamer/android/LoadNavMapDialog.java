@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tango_ros_streamer.android;
 
-import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
@@ -28,6 +27,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import eu.intermodalics.tango_ros_streamer.R;
 
@@ -41,7 +41,6 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
     Button mOkButton;
     EditText mNameEditText;
     CallbackListener mCallbackListener;
-
 
     public interface CallbackListener {
         void onClickOkLoadNavMapDialog(String name);
@@ -82,6 +81,11 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
                 }
             }
         });
+        Bundle bundle = getArguments();
+        if(bundle.getBoolean(getString(R.string.show_load_nav_map_error_key), false)) {
+            TextView errorTextView = (TextView) dialogView.findViewById(R.id.load_nav_map_error_message);
+            errorTextView.setVisibility(View.VISIBLE);
+        }
         return dialogView;
     }
 
