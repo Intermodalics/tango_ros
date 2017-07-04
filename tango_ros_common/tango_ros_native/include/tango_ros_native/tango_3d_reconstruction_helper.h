@@ -49,12 +49,12 @@ void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
          Tango3DR_Pose* last_camera_color_pose,
          Tango3DR_GridIndexArray* t3dr_updated_indices);
 
-void ExtractMeshAndConvertItTMarkerArray(
+void ExtractMeshAndConvertToMarkerArray(
     const Tango3DR_ReconstructionContext& t3dr_context,
     const Tango3DR_GridIndexArray& t3dr_updated_indices,
     double time_offset, visualization_msgs::MarkerArray* mesh_marker_array);
 
-bool ExtractFloorPlanImageAndConvertItToOccupancyGrid(
+bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
     const Tango3DR_ReconstructionContext& t3dr_context,
     double time_offset, double t3dr_resolution,
     nav_msgs::OccupancyGrid* occupancy_grid);

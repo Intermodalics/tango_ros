@@ -997,7 +997,7 @@ void TangoRosNode::PublishMesh() {
       // Publish Tango mesh as visualization marker.
       if (mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
-        tango_3d_reconstruction_helper::ExtractMeshAndConvertItTMarkerArray(
+        tango_3d_reconstruction_helper::ExtractMeshAndConvertToMarkerArray(
             t3dr_context_, t3dr_updated_indices, time_offset_,
             &mesh_marker_array);
         mesh_marker_publisher_.publish(mesh_marker_array);
@@ -1014,7 +1014,7 @@ void TangoRosNode::PublishMesh() {
       // Publish Tango mesh as occupancy grid.
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
         nav_msgs::OccupancyGrid occupancy_grid;
-        if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertItToOccupancyGrid(
+        if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
             t3dr_context_, time_offset_, t3dr_resolution_,&occupancy_grid))
           occupancy_grid_publisher_.publish(occupancy_grid);
       }
