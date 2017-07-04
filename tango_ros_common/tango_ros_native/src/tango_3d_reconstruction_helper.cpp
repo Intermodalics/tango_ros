@@ -200,18 +200,18 @@ void ExtractMeshAndConvertToMarkerArray(
 
 bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
     const Tango3DR_ReconstructionContext& t3dr_context,
-    double time_offset, double t3dr_resolution,
+    double time_offset, double t3dr_resolution, uint8_t threshold,
     nav_msgs::OccupancyGrid* occupancy_grid) {
   Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context);
   if (result == TANGO_3DR_SUCCESS) {
     Tango3DR_Vector2 origin;
     Tango3DR_ImageBuffer image_grid;
     result = Tango3DR_extractFullFloorplanImage(
-        t3dr_context, TANGO_3DR_LAYER_OBSTACLES, &origin, &image_grid);
+        t3dr_context, TANGO_3DR_LAYER_SPACE, &origin, &image_grid);
     if (result == TANGO_3DR_SUCCESS) {
       tango_ros_conversions_helper::toOccupancyGrid(
           image_grid, origin, time_offset, t3dr_resolution,
-          occupancy_grid);
+          threshold, occupancy_grid);
     } else {
       LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error"
           "code: " << result;
@@ -230,5 +230,4 @@ bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
   }
   return true;
 }
-
 } // namespace tango_3d_reconstruction_helper

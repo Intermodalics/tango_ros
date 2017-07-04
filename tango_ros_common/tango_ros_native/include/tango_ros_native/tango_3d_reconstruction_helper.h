@@ -29,6 +29,7 @@ const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1; // Default value from Tang
 const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
 const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // Default value from TangoConfig
 const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
+const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
 
 const std::string TANGO_3DR_RESOLUTION_PARAM_NAME = "reconstruction/resolution_3d";
 const std::string TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME = "reconstruction/use_space_clearing";
@@ -36,6 +37,7 @@ const std::string TANGO_3DR_MIN_NUM_VERTICES_PARAM_NAME = "reconstruction/min_nu
 const std::string TANGO_3DR_UPDATE_METHOD_PARAM_NAME = "reconstruction/update_method";
 const std::string TANGO_3DR_MAX_VOXEL_WEIGHT_PARAM_NAME = "reconstruction/max_voxel_weight";
 const std::string TANGO_3DR_FLOORPLAN_MAX_ERROR_PARAM_NAME = "reconstruction/floorplan_max_error";
+const std::string TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME = "reconstruction/occupancy_grid_threshold";
 
 Tango3DR_Status TangoSetup3DRConfig(
     const ros::NodeHandle& node_handle, double* t3dr_resolution,
@@ -56,7 +58,7 @@ void ExtractMeshAndConvertToMarkerArray(
 
 bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
     const Tango3DR_ReconstructionContext& t3dr_context,
-    double time_offset, double t3dr_resolution,
+    double time_offset, double t3dr_resolution, uint8_t threshold,
     nav_msgs::OccupancyGrid* occupancy_grid);
 
 } // namespace tango_3d_reconstruction_helper

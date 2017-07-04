@@ -259,6 +259,14 @@ void TangoRosNode::onInit() {
       node_handle_, ENABLE_DEPTH_PARAM_NAME, true, enable_depth_);
   GetParamValueAndSetDefaultValueIfParamDoesNotExist(
       node_handle_, ENABLE_COLOR_CAMERA_PARAM_NAME, true, enable_color_camera_);
+  int t3dr_occupancy_grid_threshold =
+      tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD;
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(node_handle_,
+      tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_THRESHOLD_PARAM_NAME,
+      static_cast<int>(
+          tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD),
+      t3dr_occupancy_grid_threshold);
+  t3dr_occupancy_grid_threshold_ = t3dr_occupancy_grid_threshold;
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -1015,7 +1023,8 @@ void TangoRosNode::PublishMesh() {
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
         nav_msgs::OccupancyGrid occupancy_grid;
         if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
-            t3dr_context_, time_offset_, t3dr_resolution_,&occupancy_grid))
+            t3dr_context_, time_offset_, t3dr_resolution_,
+            t3dr_occupancy_grid_threshold_, &occupancy_grid))
           occupancy_grid_publisher_.publish(occupancy_grid);
       }
     }
