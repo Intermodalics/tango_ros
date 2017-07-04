@@ -188,7 +188,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: StaticMap
-      Topic: /tango/static_nav_map
+      Topic: /tango/static_occupancy_grid
       Unreliable: false
       Value: true
   Enabled: true

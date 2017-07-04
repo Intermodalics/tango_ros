@@ -35,15 +35,15 @@ import eu.intermodalics.tango_ros_streamer.R;
 /**
  * Displays dialog requesting name of the map before saving.
  */
-public class LoadNavMapDialog extends DialogFragment implements View.OnClickListener {
-    private static final String TAG = LoadNavMapDialog.class.getSimpleName();
+public class LoadOccupancyGridDialog extends DialogFragment implements View.OnClickListener {
+    private static final String TAG = LoadOccupancyGridDialog.class.getSimpleName();
 
     Button mOkButton;
     EditText mNameEditText;
     CallbackListener mCallbackListener;
 
     public interface CallbackListener {
-        void onClickOkLoadNavMapDialog(String name);
+        void onClickOkLoadOccupancyGridDialog(String name);
     }
 
     @Override
@@ -55,12 +55,12 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
     @Override
     public View onCreateView(LayoutInflater inflator, ViewGroup container,
                              Bundle savedInstanceState) {
-        View dialogView = inflator.inflate(R.layout.dialog_load_nav_map, null);
-        getDialog().setTitle(R.string.load_nav_map_dialog_title);
-        mOkButton = (Button) dialogView.findViewById(R.id.load_nav_map_ok);
+        View dialogView = inflator.inflate(R.layout.dialog_load_occupancy_grid, null);
+        getDialog().setTitle(R.string.load_occupancy_grid_dialog_title);
+        mOkButton = (Button) dialogView.findViewById(R.id.load_occupancy_grid_ok);
         mOkButton.setOnClickListener(this);
-        dialogView.findViewById(R.id.load_nav_map_cancel).setOnClickListener(this);
-        mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
+        dialogView.findViewById(R.id.load_occupancy_grid_cancel).setOnClickListener(this);
+        mNameEditText = (EditText) dialogView.findViewById(R.id.load_occupancy_grid_name);
         mNameEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -82,8 +82,8 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
             }
         });
         Bundle bundle = getArguments();
-        if(bundle.getBoolean(getString(R.string.show_load_nav_map_error_key), false)) {
-            TextView errorTextView = (TextView) dialogView.findViewById(R.id.load_nav_map_error_message);
+        if(bundle.getBoolean(getString(R.string.show_load_occupancy_grid_error_key), false)) {
+            TextView errorTextView = (TextView) dialogView.findViewById(R.id.load_occupancy_grid_error_message);
             errorTextView.setVisibility(View.VISIBLE);
         }
         return dialogView;
@@ -92,13 +92,13 @@ public class LoadNavMapDialog extends DialogFragment implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.load_nav_map_ok:
+            case R.id.load_occupancy_grid_ok:
                 Log.i(TAG, "OK");
-                mCallbackListener.onClickOkLoadNavMapDialog(
+                mCallbackListener.onClickOkLoadOccupancyGridDialog(
                         mNameEditText.getText().toString());
                 dismiss();
                 break;
-            case R.id.load_nav_map_cancel:
+            case R.id.load_occupancy_grid_cancel:
                 Log.i(TAG, "CANCEL");
                 dismiss();
                 break;

@@ -41,7 +41,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
-#include <tango_ros_messages/LoadNavMap.h>
+#include <tango_ros_messages/LoadOccupancyGrid.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -71,7 +71,7 @@ const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
 const std::string COLOR_MESH_TOPIC_NAME = "reconstruction/mesh";
 const std::string OCCUPANCY_GRID_TOPIC_NAME = "reconstruction/occupancy_grid";
-const std::string NAV_MAP_TOPIC_NAME = "static_nav_map";
+const std::string STATIC_OCCUPANCY_GRID_TOPIC_NAME = "static_occupancy_grid";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
@@ -86,16 +86,16 @@ const std::string ENABLE_COLOR_CAMERA = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string TANGO_3D_RECONSTRUCTION_RESOLUTION_PARAM_NAME = "reconstruction_resolution_3d";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
-const std::string NAV_MAP_DIRECTORY_PARAM_NAME = "nav_map_directory";
+const std::string OCCUPANCY_GRID_DIRECTORY_PARAM_NAME = "occupancy_grid_directory";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
-const std::string LOAD_NAV_MAP_SERVICE_NAME = "load_navigation_map";
+const std::string LOAD_OCCUPANCY_GRID_SERVICE_NAME = "load_occupancy_grid";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
-const std::string NAV_MAP_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/nav_maps/";
+const std::string OCCUPANCY_GRID_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/occupancy_grids/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
@@ -198,10 +198,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // user readable map names.
   bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request& req,
                                   tango_ros_messages::GetMapUuids::Response& res);
-  // Function called when the LoadNavMap service is called.
-  // Load the requested navigation map and publish it as an occupancy grid.
-  bool LoadNavMapServiceCallback(const tango_ros_messages::LoadNavMap::Request& req,
-                             tango_ros_messages::LoadNavMap::Response& res);
+  // Function called when the LoadOccupancyGrid service is called.
+  // Load the requested occupancy grid and publish it.
+  bool LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
+                             tango_ros_messages::LoadOccupancyGrid::Response& res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
   bool SaveMapServiceCallback(const tango_ros_messages::SaveMap::Request& req,
@@ -287,12 +287,12 @@ class TangoRosNode : public ::nodelet::Nodelet {
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;
 
-  ros::Publisher static_nav_map_publisher_;
+  ros::Publisher static_occupancy_grid_publisher_;
 
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
-  ros::ServiceServer load_nav_map_service_;
+  ros::ServiceServer load_occupancy_grid_service_;
   ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native

@@ -69,7 +69,7 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.MasterConnectionChecker;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
-import eu.intermodalics.tango_ros_streamer.android.LoadNavMapDialog;
+import eu.intermodalics.tango_ros_streamer.android.LoadOccupancyGridDialog;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
 import eu.intermodalics.tango_ros_common.ParameterNode;
 import eu.intermodalics.tango_ros_streamer.R;
@@ -78,7 +78,7 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, LoadNavMapDialog.CallbackListener,
+        SaveMapDialog.CallbackListener, LoadOccupancyGridDialog.CallbackListener,
         TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
@@ -141,7 +141,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
     private Button mSaveMapButton;
-    private Button mLoadNavMapButton;
+    private Button mLoadOccupancyGridButton;
     private Snackbar mSnackbarLoadNewMap;
     private Snackbar mSnackbarRosReconnection;
 
@@ -267,10 +267,10 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mSaveMapButton.setEnabled(!mMapSaved);
                 if (mCreateNewMap) {
                     mSaveMapButton.setVisibility(View.VISIBLE);
-                    mLoadNavMapButton.setVisibility(View.GONE);
+                    mLoadOccupancyGridButton.setVisibility(View.GONE);
                 } else {
                     mSaveMapButton.setVisibility(View.GONE);
-                    mLoadNavMapButton.setVisibility(View.VISIBLE);
+                    mLoadOccupancyGridButton.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -296,14 +296,14 @@ public class RunningActivity extends AppCompatRosActivity implements
         saveMapDialog.show(manager, "SaveMapDialog");
     }
 
-    private void showLoadNavMapDialog(boolean firstTry) {
+    private void showLoadOccupancyGridDialog(boolean firstTry) {
         FragmentManager manager = getFragmentManager();
-        LoadNavMapDialog loadNavMapDialog = new LoadNavMapDialog();
+        LoadOccupancyGridDialog loadOccupancyGridDialog = new LoadOccupancyGridDialog();
         Bundle bundle = new Bundle();
-        bundle.putBoolean(getString(R.string.show_load_nav_map_error_key), !firstTry);
-        loadNavMapDialog.setArguments(bundle);
-        loadNavMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
-        loadNavMapDialog.show(manager, "LoadNavMapDialog");
+        bundle.putBoolean(getString(R.string.show_load_occupancy_grid_error_key), !firstTry);
+        loadOccupancyGridDialog.setArguments(bundle);
+        loadOccupancyGridDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
+        loadOccupancyGridDialog.show(manager, "LoadOccupancyGridDialog");
     }
 
     private void setupUI() {
@@ -331,11 +331,11 @@ public class RunningActivity extends AppCompatRosActivity implements
                 showSaveMapDialog();
             }
         });
-        mLoadNavMapButton = (Button) findViewById(R.id.load_nav_map_button);
-        mLoadNavMapButton.setOnClickListener(new View.OnClickListener() {
+        mLoadOccupancyGridButton = (Button) findViewById(R.id.load_occupancy_grid_button);
+        mLoadOccupancyGridButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showLoadNavMapDialog(true);
+                showLoadOccupancyGridDialog(true);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -344,7 +344,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     public void onClickOkSaveMapDialog(final String mapName) {
         if (mapName == null || mapName.isEmpty()) {
             Log.e(TAG, "Map name is null or empty, unable to save the map");
-            displayToastMessage(R.string.map_name_error);
+            displayToastMessage(R.string.name_error);
             return;
         }
         new AsyncTask<Void, Void, Void>() {
@@ -387,36 +387,36 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
     }
 
-    public void onClickOkLoadNavMapDialog(final String mapName) {
-        if (mapName == null || mapName.isEmpty()) {
-            Log.e(TAG, "Map name is null or empty, unable to load the navigation map");
-            displayToastMessage(R.string.map_name_error);
+    public void onClickOkLoadOccupancyGridDialog(final String occupancyGridName) {
+        if (occupancyGridName == null || occupancyGridName.isEmpty()) {
+            Log.e(TAG, "Name is null or empty, unable to load the occupancy grid");
+            displayToastMessage(R.string.name_error);
             return;
         }
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                mTangoServiceClientNode.callLoadNavMapService(mapName);
+                mTangoServiceClientNode.callLoadOccupancyGridService(occupancyGridName);
                 return null;
             }
         }.execute();
-        mLoadNavMapButton.setEnabled(false);
+        mLoadOccupancyGridButton.setEnabled(false);
     }
 
     @Override
-    public void onLoadNavMapServiceCallFinish(boolean success, final String message) {
+    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message) {
         if (success) {
-            displayToastMessage(R.string.load_nav_map_success);
+            displayToastMessage(R.string.load_occupancy_grid_success);
             Log.i(TAG, message);
         } else {
-            Log.e(TAG, "Error while loading navigation map: " + message);
-            displayToastMessage(R.string.load_nav_map_error);
-            showLoadNavMapDialog(false);
+            Log.e(TAG, "Error while loading occupancy grid: " + message);
+            displayToastMessage(R.string.load_occupancy_grid_error);
+            showLoadOccupancyGridDialog(false);
         }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mLoadNavMapButton.setEnabled(true);
+                mLoadOccupancyGridButton.setEnabled(true);
             }
         });
     }

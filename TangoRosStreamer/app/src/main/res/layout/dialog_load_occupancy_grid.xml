@@ -6,38 +6,38 @@
     android:orientation="vertical" >
 
     <TextView
-        android:id="@+id/load_nav_map_error_message"
+        android:id="@+id/load_occupancy_grid_error_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/load_nav_map_error"
+        android:text="@string/load_occupancy_grid_error"
         android:textSize="18sp"
         android:textColor="#F58F06"
         android:visibility="gone"/>
 
     <EditText
-        android:id="@+id/map_name"
+        android:id="@+id/load_occupancy_grid_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:hint="Tango Ros Streamer Map"
-        android:layout_below="@+id/load_nav_map_error_message"
+        android:layout_below="@+id/load_occupancy_grid_error_message"
         android:inputType="textCapWords"
         android:selectAllOnFocus="true">
     </EditText>
 
     <Button
-        android:id="@+id/load_nav_map_cancel"
+        android:id="@+id/load_occupancy_grid_cancel"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/map_name"
+        android:layout_below="@+id/load_occupancy_grid_name"
         android:text="Cancel" />
 
     <Button
-        android:id="@+id/load_nav_map_ok"
+        android:id="@+id/load_occupancy_grid_ok"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/map_name"
+        android:layout_below="@+id/load_occupancy_grid_name"
         android:layout_alignParentRight="true"
         android:enabled="false"
         android:text="Ok" />

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "tango_ros_native/navigation_map_file_io.h"
+#include "tango_ros_native/occupancy_grid_file_io.h"
 
 #include <cmath>
 #include <fstream>
@@ -32,8 +32,8 @@ void AddTrailingSlashToDirectoryPathIfNeeded(std::string& directory_path) {
 }
 } // namespace
 
-namespace navigation_map_file_io {
-bool SaveOccupancyGridToNavigationMap(
+namespace occupancy_grid_file_io {
+bool SaveOccupancyGridToFiles(
     const std::string& map_name, const std::string& map_uuid,
     const std::string& map_directory, const nav_msgs::OccupancyGrid& occupancy_grid) {
   return SaveOccupancyGridDataToPgmFile(map_name, map_directory, occupancy_grid)
@@ -112,7 +112,7 @@ bool SaveOccupancyGridMetadataToYamlFile(
   return true;
 }
 
-bool LoadOccupancyGridFromNavigationMap(
+bool LoadOccupancyGridFromFiles(
     const std::string&  map_name, const std::string& map_directory,
     nav_msgs::OccupancyGrid* occupancy_grid, std::string* map_uuid) {
   int negate;
@@ -255,4 +255,4 @@ bool LoadOccupancyGridMetadataFromYamlFile(
   yaml_file.close();
   return true;
 }
-} // namespace navigation_map_file_io
+} // namespace occupancy_grid_file_io

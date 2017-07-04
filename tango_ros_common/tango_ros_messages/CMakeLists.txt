@@ -11,7 +11,7 @@ add_service_files(
   FILES
   GetMapName.srv
   GetMapUuids.srv
-  LoadNavMap.srv
+  LoadOccupancyGrid.srv
   SaveMap.srv
   TangoConnect.srv
 )
@@ -40,9 +40,9 @@ set(file_names_to_copy
   GetMapUuids
   GetMapUuidsRequest
   GetMapUuidsResponse
-  LoadNavMap
-  LoadNavMapRequest
-  LoadNavMapResponse
+  LoadOccupancyGrid
+  LoadOccupancyGridRequest
+  LoadOccupancyGridResponse
   SaveMap
   SaveMapRequest
   SaveMapResponse

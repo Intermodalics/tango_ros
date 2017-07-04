@@ -1,10 +1,10 @@
 int8 SAVE_LOCALIZATION_MAP=1
-int8 SAVE_NAVIGATION_MAP=2
+int8 SAVE_OCCUPANCY_GRID=2
 int8 request
 string map_name
 ---
 string message
 string localization_map_name
 string localization_map_uuid
-string navigation_map_name
+string occupancy_grid_name
 bool success
