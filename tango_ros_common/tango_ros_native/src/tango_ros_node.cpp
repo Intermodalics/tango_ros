@@ -1216,7 +1216,7 @@ bool TangoRosNode::SaveMapServiceCallback(
         + res.occupancy_grid_name + " in  directory " + occupancy_grid_directory;
     if (res.localization_map_uuid.empty()) {
       res.message += "\nThe occupancy grid has been saved without localization map uuid. "
-          "This means the it will not be aligned when loaded later.";
+          "This means it will not be aligned when loaded later.";
     }
   }
   res.success = true;
