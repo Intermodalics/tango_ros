@@ -1231,11 +1231,13 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
                      occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
 
   std::string map_uuid;
+  res.aligned = true;
   if(!occupancy_grid_file_io::LoadOccupancyGridFromFiles(
       req.name, occupancy_grid_directory, &occupancy_grid, &map_uuid)) {
     LOG(ERROR) << "Error while loading occupancy grid from file.";
     res.message =  "Could not load occupancy grid from file " + req.name
               + " in directory " + occupancy_grid_directory;
+    res.aligned = false;
     res.success = false;
     return true;
   }
@@ -1244,20 +1246,24 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
   std::string current_map_uuid;
   if (!GetCurrentADFUuid(tango_config_, current_map_uuid)) {
     res.message += "\nCould not get current localization map uuid.";
+    res.aligned = false;
     res.success = false;
     return true;
   }
   if (current_map_uuid.empty()) {
     res.message += "\nThe occupancy grid is not aligned because "
         "no localization map is currently used.";
+    res.aligned = false;
   }
   if (map_uuid.empty()) {
     res.message += "\nThe occupancy grid is not aligned because "
         "its localization map uuid is empty.";
+    res.aligned = false;
   }
   if (map_uuid.compare(current_map_uuid) != 0) {
     res.message += "\nThe occupancy grid is not aligned because "
         "it does not correspond to the localization map currently used.";
+    res.aligned = false;
   }
   res.success = true;
 

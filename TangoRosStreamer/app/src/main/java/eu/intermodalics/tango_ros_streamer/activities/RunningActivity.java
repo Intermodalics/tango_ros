@@ -420,9 +420,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     @Override
-    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message) {
+    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message, boolean aligned) {
         if (success) {
-            displayToastMessage(R.string.load_occupancy_grid_success);
+            if (aligned) {
+                displayToastMessage(R.string.load_occupancy_grid_success);
+            } else {
+                displayToastMessage(R.string.load_occupancy_grid_not_aligned);
+            }
             Log.i(TAG, message);
         } else {
             Log.e(TAG, "Error while loading occupancy grid: " + message);

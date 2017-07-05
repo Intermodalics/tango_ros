@@ -48,7 +48,8 @@
     <string name="load_occupancy_grid_error">Unable to load the occupancy grid, please try again with a different name.</string>
     <string name="load_occupancy_grid_empty">No occupancy grid available, please create a new map.</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
-    <string name="load_occupancy_grid_success">Occupancy grid successfully loaded.</string>
+    <string name="load_occupancy_grid_success">Occupancy grid successfully loaded!</string>
+    <string name="load_occupancy_grid_not_aligned">Occupancy grid successfully loaded but not aligned.</string>
     <string name="tango_permission_denied">Requested permission denied: connection to Tango can fail and some functionalities will not work properly.</string>
 
     <!-- Strings related to settings preferences -->
