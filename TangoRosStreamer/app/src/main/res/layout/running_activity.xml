@@ -72,7 +72,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_below="@+id/is_tango_ok_text"
-                    android:text="Save map"
+                    android:text="Save map and occupancy grid"
                     android:visibility="gone"/>
 
                 <Button
