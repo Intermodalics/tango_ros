@@ -388,14 +388,6 @@ public class RunningActivity extends AppCompatRosActivity implements
                             mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
                                     getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
                             restartTango();
-                            mLoadOccupancyGridButton.setEnabled(false);
-                            new AsyncTask<Void, Void, Void>() {
-                                @Override
-                                protected Void doInBackground(Void... params) {
-                                    mTangoServiceClientNode.callLoadOccupancyGridService(mapName);
-                                    return null;
-                                }
-                            }.execute();
                         }
                     });
                     mSnackbarLoadNewMap.show();
