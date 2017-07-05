@@ -33,6 +33,7 @@
     <string name="show_load_occupancy_grid_error_key">show_load_occupancy_grid_error</string>
     <string name="show_load_occupancy_grid_empty_key">show_load_occupancy_grid_empty</string>
     <string name="list_names_occupancy_grid_key">list_names_occupancy_grid</string>
+    <string name="occupancy_grid_directory_key">occupancy_grid_directory</string>
 
     <!-- Strings related to error messages -->
 

@@ -341,7 +341,8 @@ public class RunningActivity extends AppCompatRosActivity implements
             @Override
             public void onClick(View view) {
                 mOccupancyGridNameList = new ArrayList<String>();
-                File occupancyGridDirectory = new File("/sdcard/tango_ros_streamer/occupancy_grids");
+                String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
+                File occupancyGridDirectory = new File(directory);
                 if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
                     File[] files = occupancyGridDirectory.listFiles();
                     for (File file : files) {
