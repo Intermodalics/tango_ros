@@ -6,40 +6,37 @@
     android:orientation="vertical" >
 
     <TextView
+        android:id="@+id/load_occupancy_grid_empty_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/load_occupancy_grid_empty"
+        android:textSize="18sp"
+        android:textColor="#F58F06"
+        android:visibility="gone"/>
+
+    <TextView
         android:id="@+id/load_occupancy_grid_error_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/load_occupancy_grid_empty_message"
         android:text="@string/load_occupancy_grid_error"
         android:textSize="18sp"
         android:textColor="#F58F06"
         android:visibility="gone"/>
 
-    <EditText
-        android:id="@+id/load_occupancy_grid_name"
-        android:layout_width="wrap_content"
+    <ListView
+        android:id="@+id/load_occupancy_grid_list"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Tango Ros Streamer Map"
-        android:layout_below="@+id/load_occupancy_grid_error_message"
-        android:inputType="textCapWords"
-        android:selectAllOnFocus="true">
-    </EditText>
+        android:layout_below="@+id/load_occupancy_grid_error_message" />
 
     <Button
         android:id="@+id/load_occupancy_grid_cancel"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/load_occupancy_grid_name"
-        android:text="Cancel" />
-
-    <Button
-        android:id="@+id/load_occupancy_grid_ok"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/load_occupancy_grid_name"
-        android:layout_alignParentRight="true"
-        android:enabled="false"
-        android:text="Ok" />
+        android:layout_below="@+id/load_occupancy_grid_list"
+        android:text="Cancel"
+        android:layout_centerHorizontal="true"/>
 
 </RelativeLayout>

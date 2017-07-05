@@ -46,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.io.FilenameUtils;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.NodeMainExecutorService;
 import org.ros.android.NodeMainExecutorServiceListener;
@@ -56,6 +57,7 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeListener;
 import org.ros.node.NodeMainExecutor;
 
+import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -131,6 +133,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mAdfPermissionHasBeenAnswered = false;
     // True after the user answered the dataset permission popup (the permission has not been necessarily granted).
     private boolean mDatasetPermissionHasBeenAnswered = false;
+    private ArrayList<String> mOccupancyGridNameList = new ArrayList<String>();
 
     // UI objects.
     private Menu mToolbarMenu;
@@ -296,11 +299,13 @@ public class RunningActivity extends AppCompatRosActivity implements
         saveMapDialog.show(manager, "SaveMapDialog");
     }
 
-    private void showLoadOccupancyGridDialog(boolean firstTry) {
+    private void showLoadOccupancyGridDialog(boolean firstTry, java.util.ArrayList<java.lang.String> nameList) {
         FragmentManager manager = getFragmentManager();
         LoadOccupancyGridDialog loadOccupancyGridDialog = new LoadOccupancyGridDialog();
         Bundle bundle = new Bundle();
+        bundle.putBoolean(getString(R.string.show_load_occupancy_grid_empty_key), nameList.isEmpty());
         bundle.putBoolean(getString(R.string.show_load_occupancy_grid_error_key), !firstTry);
+        bundle.putStringArrayList(getString(R.string.list_names_occupancy_grid_key), nameList);
         loadOccupancyGridDialog.setArguments(bundle);
         loadOccupancyGridDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
         loadOccupancyGridDialog.show(manager, "LoadOccupancyGridDialog");
@@ -335,7 +340,17 @@ public class RunningActivity extends AppCompatRosActivity implements
         mLoadOccupancyGridButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showLoadOccupancyGridDialog(true);
+                mOccupancyGridNameList = new ArrayList<String>();
+                File occupancyGridDirectory = new File("/sdcard/tango_ros_streamer/occupancy_grids");
+                if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
+                    File[] files = occupancyGridDirectory.listFiles();
+                    for (File file : files) {
+                        if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
+                            mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                        }
+                    }
+                }
+                showLoadOccupancyGridDialog(true, mOccupancyGridNameList);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -383,7 +398,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
     }
 
-    public void onClickOkLoadOccupancyGridDialog(final String occupancyGridName) {
+    public void onClickItemLoadOccupancyGridDialog(final String occupancyGridName) {
         assert(occupancyGridName !=null && !occupancyGridName.isEmpty());
         mLoadOccupancyGridButton.setEnabled(false);
         new AsyncTask<Void, Void, Void>() {
@@ -403,7 +418,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         } else {
             Log.e(TAG, "Error while loading occupancy grid: " + message);
             displayToastMessage(R.string.load_occupancy_grid_error);
-            showLoadOccupancyGridDialog(false);
+            showLoadOccupancyGridDialog(false, mOccupancyGridNameList);
         }
         runOnUiThread(new Runnable() {
             @Override
