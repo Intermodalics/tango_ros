@@ -342,11 +342,8 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
-        if (mapName == null || mapName.isEmpty()) {
-            Log.e(TAG, "Map name is null or empty, unable to save the map");
-            displayToastMessage(R.string.name_error);
-            return;
-        }
+        assert(mapName !=null && !mapName.isEmpty());
+        mSaveMapButton.setEnabled(false);
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -354,7 +351,6 @@ public class RunningActivity extends AppCompatRosActivity implements
                 return null;
             }
         }.execute();
-        mSaveMapButton.setEnabled(false);
     }
 
     @Override
@@ -388,11 +384,8 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     public void onClickOkLoadOccupancyGridDialog(final String occupancyGridName) {
-        if (occupancyGridName == null || occupancyGridName.isEmpty()) {
-            Log.e(TAG, "Name is null or empty, unable to load the occupancy grid");
-            displayToastMessage(R.string.name_error);
-            return;
-        }
+        assert(occupancyGridName !=null && !occupancyGridName.isEmpty());
+        mLoadOccupancyGridButton.setEnabled(false);
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -400,7 +393,6 @@ public class RunningActivity extends AppCompatRosActivity implements
                 return null;
             }
         }.execute();
-        mLoadOccupancyGridButton.setEnabled(false);
     }
 
     @Override
@@ -660,7 +652,6 @@ public class RunningActivity extends AppCompatRosActivity implements
 
     private void restartTango() {
         if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
-        updateLoadAndSaveMapButtons();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 
