@@ -923,7 +923,6 @@ void TangoRosNode::PublishLaserScan() {
       if (laser_scan_publisher_.getNumSubscribers() > 0) {
         laser_scan_publisher_.publish(laser_scan_);
       }
-
     }
   }
 }

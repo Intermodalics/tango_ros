@@ -320,7 +320,6 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
-        Log.w(TAG, "onClickOkSaveMapDialog");
         if (mapName == null || mapName.isEmpty()) {
             Log.e(TAG, "Map name is null or empty, unable to save the map");
             displayToastMessage(R.string.map_name_error);
@@ -329,7 +328,6 @@ public class RunningActivity extends AppCompatRosActivity implements
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                Log.w(TAG, "calling SaveMapService");
                 mTangoServiceClientNode.callSaveMapService(mapName);
                 return null;
             }

@@ -177,7 +177,6 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     private Boolean saveMap(String mapName) throws ServiceNotFoundException {
-        mLog.warn("saveMap");
         ServiceClient<SaveMapRequest, SaveMapResponse> saveMapService =
                 mConnectedNode.newServiceClient(
                         NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(SAVE_MAP_SRV_NAME),
@@ -185,17 +184,14 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
         SaveMapRequest saveMapRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(SaveMap._TYPE);
         saveMapRequest.setMapName(mapName);
-        mLog.warn("calling service");
         saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
-                mLog.warn("onSuccess");
                 mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
                         saveMapResponse.getMessage(), saveMapResponse.getMapName(), saveMapResponse.getMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
-                mLog.warn("onFailure");
                 mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage(), null, null);
             }
         });
@@ -235,11 +231,9 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     }
 
     public Boolean callSaveMapService(final String mapName) {
-        mLog.warn("callSaveMapService");
         final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(SAVE_MAP_SRV_NAME);
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
-                mLog.warn("calling saveMap");
                 return saveMap(mapName);
             }
         });
