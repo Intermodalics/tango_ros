@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tango_ros_streamer.android;
 
-import android.app.Activity;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
@@ -28,6 +27,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import eu.intermodalics.tango_ros_streamer.R;
 
@@ -61,6 +64,8 @@ public class SaveMapDialog extends DialogFragment implements View.OnClickListene
         mOkButton.setOnClickListener(this);
         dialogView.findViewById(R.id.save_map_cancel).setOnClickListener(this);
         mNameEditText = (EditText) dialogView.findViewById(R.id.map_name);
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        mNameEditText.setText(dateFormat.format(new Date()) + "_map");
         mNameEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {

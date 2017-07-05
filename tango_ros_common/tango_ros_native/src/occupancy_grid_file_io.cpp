@@ -200,7 +200,7 @@ bool LoadOccupancyGridMetadataFromYamlFile(
   std::string map_directory_with_trailing_slash = map_directory;
   AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
 
-  std::string map_yam_file_path = map_directory + map_name + ".yaml";
+  std::string map_yam_file_path = map_directory_with_trailing_slash + map_name + ".yaml";
   std::ifstream yaml_file(map_yam_file_path.c_str());
   if (yaml_file.fail()) {
     LOG(ERROR) << "Could no open file " << map_yam_file_path;

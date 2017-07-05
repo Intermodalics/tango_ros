@@ -1184,7 +1184,7 @@ bool TangoRosNode::SaveMapServiceCallback(
   bool save_occupancy_grid = req.request & tango_ros_messages::SaveMap::Request::SAVE_OCCUPANCY_GRID;
   res.message = "";
   if (save_localization_map) {
-    res.localization_map_name = GetCurrentDateAndTime() + " " + req.map_name;
+    res.localization_map_name = req.map_name;
     if (!SaveTangoAreaDescription(res.localization_map_name, res.localization_map_uuid, res.message)) {
       res.success = false;
       return true;
@@ -1230,10 +1230,6 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
   node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
                      occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
 
-  occupancy_grid.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
-  occupancy_grid.header.stamp = ros::Time::now();
-  occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
-
   std::string map_uuid;
   if(!occupancy_grid_file_io::LoadOccupancyGridFromFiles(
       req.name, occupancy_grid_directory, &occupancy_grid, &map_uuid)) {
@@ -1243,7 +1239,7 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
     res.success = false;
     return true;
   }
-  res.message = "Map " + req.name + " successfully loaded from " + occupancy_grid_directory;
+  res.message = "Occupancy grid " + req.name + " successfully loaded from " + occupancy_grid_directory;
 
   std::string current_map_uuid;
   if (!GetCurrentADFUuid(tango_config_, current_map_uuid)) {
@@ -1260,10 +1256,14 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
         "its localization map uuid is empty.";
   }
   if (map_uuid.compare(current_map_uuid) != 0) {
-    res.message += "The occupancy grid is not aligned because "
+    res.message += "\nThe occupancy grid is not aligned because "
         "it does not correspond to the localization map currently used.";
   }
   res.success = true;
+
+  occupancy_grid.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  occupancy_grid.header.stamp = ros::Time::now();
+  occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
   static_occupancy_grid_publisher_.publish(occupancy_grid);
   return true;
 }

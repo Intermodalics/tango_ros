@@ -29,7 +29,6 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/map_name"
         android:layout_alignParentRight="true"
-        android:enabled="false"
         android:text="Ok" />
 
 </RelativeLayout>
