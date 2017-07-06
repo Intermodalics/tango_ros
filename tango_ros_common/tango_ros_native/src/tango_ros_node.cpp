@@ -555,12 +555,13 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
 
-  TangoCoordinateFramePair pair;
-  pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-  pair.target = TANGO_COORDINATE_FRAME_DEVICE;
-
-  TangoErrorType result;
-  result = TangoService_connectOnPoseAvailable(1, &pair, OnPoseAvailableRouter);
+  TangoCoordinateFramePair pairs[2] = {
+         {TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+          TANGO_COORDINATE_FRAME_DEVICE},
+         {TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+          TANGO_COORDINATE_FRAME_START_OF_SERVICE}};
+  TangoErrorType result =
+      TangoService_connectOnPoseAvailable(2, pairs, OnPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPoseAvailable error: " << result;
@@ -638,10 +639,11 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return success;
   }
+  area_description_T_start_of_service_.child_frame_id = "";
+  tango_data_available_ = true;
   // Create publishing threads.
   StartPublishing();
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
-  tango_data_available_ = true;
   return success;
 }
 
@@ -728,17 +730,17 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
-        tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
-                                                 &start_of_service_T_device_);
-        TangoCoordinateFramePair pair;
-        pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
-        pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-        TangoPoseData area_description_T_start_of_service;
-        TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
-        if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-          tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
-                             time_offset_, &area_description_T_start_of_service_);
-        }
+        tango_ros_conversions_helper::toTransformStamped(
+            *pose, time_offset_, &start_of_service_T_device_);
+        device_pose_thread_.data_available_mutex.unlock();
+        device_pose_thread_.data_available.notify_all();
+      }
+    } else if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
+        pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
+      if (pose->status_code == TANGO_POSE_VALID &&
+          device_pose_thread_.data_available_mutex.try_lock()) {
+        tango_ros_conversions_helper::toTransformStamped(
+            *pose, time_offset_, &area_description_T_start_of_service_);
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
       }
@@ -1199,7 +1201,6 @@ bool TangoRosNode::SaveMapServiceCallback(
       return true;
     }
   }
-
   if (save_occupancy_grid) {
     std::string occupancy_grid_directory;
     node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
@@ -1265,8 +1266,8 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
         "it does not correspond to the localization map currently used.";
     res.aligned = false;
   }
-  res.success = true;
 
+  res.success = true;
   occupancy_grid.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
   occupancy_grid.header.stamp = ros::Time::now();
   occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
