@@ -28,9 +28,9 @@
 
 namespace tango_ros_conversions_helper {
 const int NUMBER_OF_FIELDS_IN_POINT_CLOUD = 4;
-constexpr int FREE_CELL = 0;
-constexpr int OCCUPIED_CELL = 100;
-constexpr int UNKNOWN_CELL = -1;
+constexpr int8_t FREE_CELL = 0;
+constexpr int8_t OCCUPIED_CELL = 100;
+constexpr int8_t UNKNOWN_CELL = -1;
 
 // Converts a TangoPoseData to a geometry_msgs::TransformStamped.
 // @param pose, TangoPoseData to convert.
@@ -129,11 +129,15 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // @param origin, position of the top left pixel in
 /// world coordinates (x: right, y: up).
 // @param resolution the grid resolution (m/cell).
+// @param threshold Threshold to decide if a pixel value corresponds to a free
+// or occupied cell. Should be between 0 and 255.
+// Pixel value <= threshold --> cell is free.
+// Pixel value > threshold --> cell is occupied.
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
-                     const Tango3DR_Vector2& origin,
-                     double time_offset, const std::string& frame_id,
-                     double resolution, nav_msgs::OccupancyGrid* occupancy_grid);
+                     const Tango3DR_Vector2& origin, double time_offset,
+                     const std::string& frame_id, double resolution,
+                     uint8_t threshold, nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.
 // @param tango_vector, Tango3DR_Vector3 to convert.

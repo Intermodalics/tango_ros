@@ -259,9 +259,9 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 }
 
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
-                     const Tango3DR_Vector2& origin,
-                     double time_offset, const std::string& frame_id,
-                     double resolution, nav_msgs::OccupancyGrid* occupancy_grid) {
+                     const Tango3DR_Vector2& origin, double time_offset,
+                     const std::string& frame_id, double resolution,
+                     uint8_t threshold, nav_msgs::OccupancyGrid* occupancy_grid) {
   occupancy_grid->header.frame_id = frame_id;
   occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
   occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
@@ -279,13 +279,13 @@ void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
       // The image uses a coordinate system with (x: right, y: down), while
       // the occupancy grid is using (x: right, y: up). The image is therefore
       // flipped around the x axis.
-      int value = static_cast<int>(image_grid.data[j + (image_grid.height - i - 1) * image_grid.width]);
-      if (value == 1) {
-        occupancy_grid->data.push_back(OCCUPIED_CELL);
-      } else if (value == 255) {
-        occupancy_grid->data.push_back(FREE_CELL);
-      } else if (value == 128) {
+      uint8_t value = image_grid.data[j + (image_grid.height - i - 1) * image_grid.width];
+      if (value == 128) {
         occupancy_grid->data.push_back(UNKNOWN_CELL);
+      } else if (value <= threshold) {
+        occupancy_grid->data.push_back(FREE_CELL);
+      } else if (value > threshold) {
+        occupancy_grid->data.push_back(OCCUPIED_CELL);
       } else {
         LOG(WARNING) << "Unknown value: " << static_cast<int>(value);
       }
