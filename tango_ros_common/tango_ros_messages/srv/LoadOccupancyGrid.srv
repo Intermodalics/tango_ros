@@ -1,0 +1,5 @@
+string name
+---
+string message
+bool aligned
+bool success

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2017 Intermodalics All Rights Reserved. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/load_occupancy_grid_empty_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/load_occupancy_grid_empty"
+        android:textSize="18sp"
+        android:textColor="#F58F06"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/load_occupancy_grid_error_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/load_occupancy_grid_empty_message"
+        android:text="@string/load_occupancy_grid_error"
+        android:textSize="18sp"
+        android:textColor="#F58F06"
+        android:visibility="gone"/>
+
+    <ListView
+        android:id="@+id/load_occupancy_grid_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/load_occupancy_grid_error_message" />
+
+    <Button
+        android:id="@+id/load_occupancy_grid_cancel"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/load_occupancy_grid_list"
+        android:text="Cancel"
+        android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>

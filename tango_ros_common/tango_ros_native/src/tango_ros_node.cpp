@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "tango_ros_native/occupancy_grid_file_io.h"
 #include "tango_ros_native/tango_3d_reconstruction_helper.h"
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 #include "tango_ros_native/tango_ros_node.h"
@@ -42,7 +43,6 @@ std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_sepa
   }
   return output;
 }
-
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode
@@ -132,6 +132,8 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
+// Returns a string corresponding to current date and time.
+// The format is as follow: year-month-day_hour-min-sec.
 std::string GetCurrentDateAndTime() {
   std::time_t currentTime;
   struct tm* currentDateTime;
@@ -147,11 +149,75 @@ std::string GetCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
+// Returns device boottime in second.
 double GetBootTimeInSecond() {
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
   return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
 }
+// Save an Area Description File (ADF) and set its name.
+// @param map_name Name of the ADF
+// @param[out] map_uuid Uuid of the ADF.
+// @param[out] message Contains an error message in case of failure.
+// Returns true if the ADF was successfully saved and named, false otherwise.
+bool SaveTangoAreaDescription(const std::string& map_name,
+                              std::string& map_uuid, std::string& message) {
+  TangoErrorType result;
+  TangoUUID map_tango_uuid;
+  result = TangoService_saveAreaDescription(&map_tango_uuid);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving area description, error: " << result;
+    message =  "Could not save the map. "
+        "Did you allow the app to use area learning?";
+    return false;
+  }
+  TangoAreaDescriptionMetadata metadata;
+  result = TangoService_getAreaDescriptionMetadata(map_tango_uuid, &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    message =  "Could not access map metadata";
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
+    message =  "Could not set the name of the map";
+    return false;
+  }
+  result = TangoService_saveAreaDescriptionMetadata(map_tango_uuid, metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
+    message =  "Could not save map metadata";
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+    message =  "Could not free map metadata";
+    return false;
+  }
+  map_uuid = static_cast<std::string>(map_tango_uuid);
+  return true;
+}
+// Get the uuid of the ADF currently used by Tango.
+// @param tango_config Current configuration of Tango.
+// @param[out] adf_uuid Uuid of the current ADF, empty if Tango
+// is not using an ADF for localization.
+bool GetCurrentADFUuid(const TangoConfig& tango_config, std::string& adf_uuid) {
+  char current_adf_uuid[TANGO_UUID_LEN];
+  const char* config_load_area_description_UUID = "config_load_area_description_UUID";
+  TangoErrorType result = TangoConfig_getString(
+      tango_config, config_load_area_description_UUID, current_adf_uuid,
+      TANGO_UUID_LEN);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "TangoConfig_getString "
+        << config_load_area_description_UUID << " error: " << result;
+    return false;
+  }
+  adf_uuid = std::string(current_adf_uuid);
+  return true;
+}
+
 template<typename T>
 void SetDefaultValueIfParamDoesNotExist(
     const ros::NodeHandle& node_handle, const std::string& param_name,
@@ -203,6 +269,8 @@ void TangoRosNode::onInit() {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
   }
+  static_occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+      STATIC_OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
@@ -215,6 +283,9 @@ void TangoRosNode::onInit() {
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::SaveMapServiceCallback, this, _1, _2));
+  load_occupancy_grid_service_ = node_handle_.advertiseService<tango_ros_messages::LoadOccupancyGrid::Request,
+        tango_ros_messages::LoadOccupancyGrid::Response>(LOAD_OCCUPANCY_GRID_SERVICE_NAME,
+                                               boost::bind(&TangoRosNode::LoadOccupancyGridServiceCallback, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
@@ -230,7 +301,10 @@ void TangoRosNode::onInit() {
   SetDefaultValueIfParamDoesNotExist(
       node_handle_, LOCALIZATION_MAP_UUID_PARAM_NAME, "");
   SetDefaultValueIfParamDoesNotExist(
-      node_handle_, DATASET_PATH_PARAM_NAME, "");
+       node_handle_, OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+       OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_DIRECTORY_PARAM_NAME, DATASET_DEFAULT_DIRECTORY);
   SetDefaultValueIfParamDoesNotExist(
       node_handle_, DATASET_UUID_PARAM_NAME, "");
   SetDefaultValueIfParamDoesNotExist(node_handle_,
@@ -443,7 +517,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   std::string datasets_path;
-  node_handle_.param(DATASET_PATH_PARAM_NAME, datasets_path, DATASETS_PATH);
+  node_handle_.param(DATASET_DIRECTORY_PARAM_NAME, datasets_path, DATASET_DEFAULT_DIRECTORY);
   const char* config_datasets_path = "config_datasets_path";
   result = TangoConfig_setString(tango_config_, config_datasets_path, datasets_path.c_str());
   if (result != TANGO_SUCCESS) {
@@ -570,7 +644,6 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   tango_data_available_ = true;
   return success;
 }
-
 
 void TangoRosNode::TangoDisconnect() {
   StopPublishing();
@@ -1021,11 +1094,11 @@ void TangoRosNode::PublishMesh() {
       }
       // Publish Tango mesh as occupancy grid.
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
-        nav_msgs::OccupancyGrid occupancy_grid;
+        occupancy_grid_.data.clear();
         if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
             t3dr_context_, time_offset_, t3dr_resolution_,
-            t3dr_occupancy_grid_threshold_, &occupancy_grid))
-          occupancy_grid_publisher_.publish(occupancy_grid);
+            t3dr_occupancy_grid_threshold_, &occupancy_grid_))
+          occupancy_grid_publisher_.publish(occupancy_grid_);
       }
     }
   }
@@ -1077,7 +1150,8 @@ bool TangoRosNode::TangoConnectServiceCallback(
                  << ", RECONNECT: "
                  << tango_ros_messages::TangoConnect::Request::RECONNECT
                  << ")";
-      return false;
+      response.message = "Did not understand request.";
+      return true;
     }
     return true;
 }
@@ -1089,8 +1163,8 @@ bool TangoRosNode::GetMapNameServiceCallback(
 }
 
 bool TangoRosNode::GetMapUuidsServiceCallback(
-    const tango_ros_messages::GetMapUuids::Request &req,
-    tango_ros_messages::GetMapUuids::Response &res) {
+    const tango_ros_messages::GetMapUuids::Request& req,
+    tango_ros_messages::GetMapUuids::Response& res) {
   if (!GetAvailableMapUuidsList(res.map_uuids) ) return false;
 
   res.map_names.resize(res.map_uuids.size());
@@ -1103,56 +1177,100 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
   return true;
 }
 
-bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
-                           tango_ros_messages::SaveMap::Response &res) {
-  TangoErrorType result;
-  TangoUUID map_uuid;
-  result = TangoService_saveAreaDescription(&map_uuid);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving area description, error: " << result;
-    res.message =  "Could not save the map. Did you turn on create_new_map? "
-        "Did you allow the app to use area learning?";
-    res.success = false;
-    return true;
-  }
-  TangoAreaDescriptionMetadata metadata;
-  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
-    res.message =  "Could not access map metadata";
-    res.success = false;
-    return true;
-  }
-  // Prepend name with date and time.
-  std::string map_name = GetCurrentDateAndTime() + " " + req.map_name;
-  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
-    res.message =  "Could not set the name of the map";
-    res.success = false;
-    return true;
-  }
-  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
-    res.message =  "Could not save map metadata";
-    res.success = false;
-    return true;
-  }
-  result = TangoAreaDescriptionMetadata_free(metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
-    res.message =  "Could not free map metadata";
-    res.success = false;
-    return true;
+bool TangoRosNode::SaveMapServiceCallback(
+    const tango_ros_messages::SaveMap::Request& req,
+    tango_ros_messages::SaveMap::Response& res) {
+  bool save_localization_map = req.request & tango_ros_messages::SaveMap::Request::SAVE_LOCALIZATION_MAP;
+  bool save_occupancy_grid = req.request & tango_ros_messages::SaveMap::Request::SAVE_OCCUPANCY_GRID;
+  res.message = "";
+  if (save_localization_map) {
+    res.localization_map_name = req.map_name;
+    if (!SaveTangoAreaDescription(res.localization_map_name, res.localization_map_uuid, res.message)) {
+      res.success = false;
+      return true;
+    }
+    tango_data_available_ = false;
+    res.message += "\nLocalization map " + res.localization_map_uuid +
+        " successfully saved with name " + res.localization_map_name;
+  } else if (save_occupancy_grid) {
+    if (!GetCurrentADFUuid(tango_config_, res.localization_map_uuid)) {
+      res.message += "\nCould not get current localization map uuid.";
+      res.success = false;
+      return true;
+    }
   }
 
-  std::string map_uuid_string = static_cast<std::string>(map_uuid);
-  res.message =  "Map " + map_uuid_string + " successfully saved with the following name: " + map_name;
-  res.map_name = map_name;
-  res.map_uuid = map_uuid_string;
+  if (save_occupancy_grid) {
+    std::string occupancy_grid_directory;
+    node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+                       occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+    res.occupancy_grid_name = req.map_name;
+    if (!occupancy_grid_file_io::SaveOccupancyGridToFiles(
+        res.occupancy_grid_name, res.localization_map_uuid, occupancy_grid_directory, occupancy_grid_)) {
+      res.message += "\nCould not save occupancy grid " + res.occupancy_grid_name
+          + " in directory " + occupancy_grid_directory;
+      res.success = false;
+      return true;
+    }
+    res.message += "\nOccupancy grid successfully saved with name "
+        + res.occupancy_grid_name + " in  directory " + occupancy_grid_directory;
+    if (res.localization_map_uuid.empty()) {
+      res.message += "\nThe occupancy grid has been saved without localization map uuid. "
+          "This means it will not be aligned when loaded later.";
+    }
+  }
   res.success = true;
-  tango_data_available_ = false;
+  return true;
+}
+
+bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
+                           tango_ros_messages::LoadOccupancyGrid::Response& res) {
+  nav_msgs::OccupancyGrid occupancy_grid;
+  std::string occupancy_grid_directory;
+  node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+                     occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+
+  std::string map_uuid;
+  res.aligned = true;
+  if(!occupancy_grid_file_io::LoadOccupancyGridFromFiles(
+      req.name, occupancy_grid_directory, &occupancy_grid, &map_uuid)) {
+    LOG(ERROR) << "Error while loading occupancy grid from file.";
+    res.message =  "Could not load occupancy grid from file " + req.name
+              + " in directory " + occupancy_grid_directory;
+    res.aligned = false;
+    res.success = false;
+    return true;
+  }
+  res.message = "Occupancy grid " + req.name + " successfully loaded from " + occupancy_grid_directory;
+
+  std::string current_map_uuid;
+  if (!GetCurrentADFUuid(tango_config_, current_map_uuid)) {
+    res.message += "\nCould not get current localization map uuid.";
+    res.aligned = false;
+    res.success = false;
+    return true;
+  }
+  if (current_map_uuid.empty()) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "no localization map is currently used.";
+    res.aligned = false;
+  }
+  if (map_uuid.empty()) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "its localization map uuid is empty.";
+    res.aligned = false;
+  }
+  if (map_uuid.compare(current_map_uuid) != 0) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "it does not correspond to the localization map currently used.";
+    res.aligned = false;
+  }
+  res.success = true;
+
+  occupancy_grid.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  occupancy_grid.header.stamp = ros::Time::now();
+  occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
+  static_occupancy_grid_publisher_.publish(occupancy_grid);
   return true;
 }
 

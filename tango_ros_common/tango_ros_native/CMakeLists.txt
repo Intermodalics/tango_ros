@@ -47,6 +47,7 @@ include_directories(
 )
 
 add_library(tango_ros_native SHARED
+  src/occupancy_grid_file_io.cpp
   src/tango_3d_reconstruction_helper.cpp
   src/tango_ros_conversions_helper.cpp
   src/tango_ros_node.cpp
