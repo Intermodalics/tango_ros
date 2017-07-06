@@ -351,7 +351,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                         }
                     }
                 }
-                showLoadOccupancyGridDialog(true, mOccupancyGridNameList);
+                showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -423,7 +423,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         } else {
             Log.e(TAG, "Error while loading occupancy grid: " + message);
             displayToastMessage(R.string.load_occupancy_grid_error);
-            showLoadOccupancyGridDialog(false, mOccupancyGridNameList);
+            showLoadOccupancyGridDialog(/* firstTry */ false, mOccupancyGridNameList);
         }
         runOnUiThread(new Runnable() {
             @Override

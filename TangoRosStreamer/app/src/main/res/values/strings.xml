@@ -45,7 +45,7 @@
     <string name="point_device">Please point the device to a feature-rich environment</string>
     <string name="name_error">Please enter a valid name</string>
     <string name="save_map_error">Unable to save the map</string>
-    <string name="load_occupancy_grid_error">Unable to load the occupancy grid, please try again with a different name.</string>
+    <string name="load_occupancy_grid_error">Unable to load the occupancy grid, please try again with a different one.</string>
     <string name="load_occupancy_grid_empty">No occupancy grid available, please create a new map.</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
     <string name="load_occupancy_grid_success">Occupancy grid successfully loaded!</string>
