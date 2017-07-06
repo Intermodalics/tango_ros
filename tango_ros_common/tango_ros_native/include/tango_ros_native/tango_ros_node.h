@@ -94,8 +94,6 @@ const std::string CONNECT_SERVICE_NAME = "connect";
 const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
 const double TANGO_3D_RECONSTRUCTION_DEFAULT_RESOLUTION = 0.05; // meter
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
-const std::string START_OF_SERVICE_DEFAULT_FRAME_ID = "start_of_service";
-const std::string AREA_DESCRIPTION_DEFAULT_FRAME_ID = "area_description";
 
 // Localization mode values.
 // See http://developers.google.com/tango/overview/area-learning to know more
@@ -223,6 +221,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool use_tf_static_ = true;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
+  std::string start_of_service_frame_id_;
+  std::string area_description_frame_id;
 
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Publisher start_of_service_T_device_publisher_;
