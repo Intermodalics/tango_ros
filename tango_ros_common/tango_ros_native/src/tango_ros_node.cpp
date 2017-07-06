@@ -735,8 +735,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
       }
-    }
-    if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
+    } else if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
         pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
