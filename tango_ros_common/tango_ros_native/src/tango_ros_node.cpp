@@ -494,12 +494,13 @@ Tango3DR_Status TangoRosNode::TangoSetup3DRConfig() {
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
 
-  TangoCoordinateFramePair pair;
-  pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-  pair.target = TANGO_COORDINATE_FRAME_DEVICE;
-
+  TangoCoordinateFramePair pairs[2] = {
+         {TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+          TANGO_COORDINATE_FRAME_DEVICE},
+         {TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+          TANGO_COORDINATE_FRAME_START_OF_SERVICE}};
   TangoErrorType result;
-  result = TangoService_connectOnPoseAvailable(1, &pair, onPoseAvailableRouter);
+  result = TangoService_connectOnPoseAvailable(2, pairs, onPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPoseAvailable error: " << result;
@@ -577,10 +578,11 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return success;
   }
+  area_description_T_start_of_service_.child_frame_id = "";
+  tango_data_available_ = true;
   // Create publishing threads.
   StartPublishing();
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
-  tango_data_available_ = true;
   return success;
 }
 
@@ -670,17 +672,16 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
           device_pose_thread_.data_available_mutex.try_lock()) {
         tango_ros_conversions_helper::toTransformStamped(
             *pose, time_offset_, &start_of_service_T_device_);
-        if (tango_data_available_) {
-          TangoCoordinateFramePair pair;
-          pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
-          pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-          TangoPoseData area_description_T_start_of_service;
-          TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
-          if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-            tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
-                               time_offset_, &area_description_T_start_of_service_);
-          }
-        }
+        device_pose_thread_.data_available_mutex.unlock();
+        device_pose_thread_.data_available.notify_all();
+      }
+    }
+    if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
+        pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
+      if (pose->status_code == TANGO_POSE_VALID &&
+          device_pose_thread_.data_available_mutex.try_lock()) {
+        tango_ros_conversions_helper::toTransformStamped(
+            *pose, time_offset_, &area_description_T_start_of_service_);
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
       }
@@ -1183,16 +1184,15 @@ bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &
                            tango_ros_messages::SaveMap::Response &res) {
   TangoErrorType result;
   TangoUUID map_uuid;
-  tango_data_available_ = false;
   result = TangoService_saveAreaDescription(&map_uuid);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << "Error while saving area description, error: " << result;
     res.message =  "Could not save the map. Did you turn on create_new_map? "
         "Did you allow the app to use area learning?";
     res.success = false;
-    tango_data_available_ = true;
     return true;
   }
+  tango_data_available_ = false;
   TangoAreaDescriptionMetadata metadata;
   result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
   if (result != TANGO_SUCCESS) {
