@@ -39,6 +39,8 @@ constexpr int8_t UNKNOWN_CELL = -1;
 // @param transform, the output TransformStamped.
 void toTransformStamped(const TangoPoseData& pose,
                         double time_offset,
+                        const std::string& base_frame_id,
+                        const std::string& target_frame_id,
                         geometry_msgs::TransformStamped* transform);
 
 // Converts a TangoPointCloud to a sensor_msgs::PointCloud2.
@@ -117,7 +119,7 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 // @param mesh_marker, the output visualization_msgs::Marker.
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
                   const Tango3DR_Mesh& tango_mesh,
-                  double time_offset,
+                  double time_offset, const std::string& base_frame_id,
                   visualization_msgs::Marker* mesh_marker);
 
 // Converts Tango3DR_ImageBuffer to nav_msgs::OccupancyGrid.
@@ -133,9 +135,9 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // Pixel value > threshold --> cell is occupied.
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
-                     const Tango3DR_Vector2& origin,
-                     double time_offset, double resolution, uint8_t threshold,
-                     nav_msgs::OccupancyGrid* occupancy_grid);
+                     const Tango3DR_Vector2& origin, double time_offset,
+                     const std::string& base_frame_id, double resolution,
+                     uint8_t threshold, nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.
 // @param tango_vector, Tango3DR_Vector3 to convert.

@@ -89,6 +89,8 @@ const std::string ENABLE_DEPTH_PARAM_NAME = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA_PARAM_NAME = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
+const std::string START_OF_SERVICE_FRAME_ID_PARAM_NAME = "start_of_service_frame_id";
+const std::string AREA_DESCRIPTION_FRAME_ID_PARAM_NAME = "area_description_frame_id";
 const std::string OCCUPANCY_GRID_DIRECTORY_PARAM_NAME = "occupancy_grid_directory";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
@@ -229,6 +231,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool use_tf_static_ = true;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
+  std::string start_of_service_frame_id_;
+  std::string area_description_frame_id_;
 
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Publisher start_of_service_T_device_publisher_;

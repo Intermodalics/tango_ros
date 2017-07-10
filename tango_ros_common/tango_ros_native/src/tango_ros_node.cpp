@@ -341,6 +341,14 @@ void TangoRosNode::onInit() {
           tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD),
       t3dr_occupancy_grid_threshold);
   t3dr_occupancy_grid_threshold_ = t3dr_occupancy_grid_threshold;
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, START_OF_SERVICE_FRAME_ID_PARAM_NAME,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE),
+      start_of_service_frame_id_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, AREA_DESCRIPTION_FRAME_ID_PARAM_NAME,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION),
+      area_description_frame_id_);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -680,13 +688,21 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.target = TANGO_COORDINATE_FRAME_IMU;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_IMU),
+      &device_T_imu);
   tf_transforms.push_back(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH),
+      &device_T_camera_depth_);
   tf_transforms.push_back(device_T_camera_depth_);
 
   // According to the ROS documentation, laser scan angles are measured around
@@ -704,15 +720,21 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
-                                           &device_T_camera_fisheye_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE),
+      &device_T_camera_fisheye_);
   tf_transforms.push_back(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
-                                           &device_T_camera_color_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR),
+      &device_T_camera_color_);
   tf_transforms.push_back(device_T_camera_color_);
 
   if (use_tf_static_) {
@@ -731,7 +753,9 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
         tango_ros_conversions_helper::toTransformStamped(
-            *pose, time_offset_, &start_of_service_T_device_);
+            *pose, time_offset_, start_of_service_frame_id_,
+            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+            &start_of_service_T_device_);
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
       }
@@ -740,7 +764,8 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
       if (pose->status_code == TANGO_POSE_VALID &&
           device_pose_thread_.data_available_mutex.try_lock()) {
         tango_ros_conversions_helper::toTransformStamped(
-            *pose, time_offset_, &area_description_T_start_of_service_);
+            *pose, time_offset_, area_description_frame_id_,
+            start_of_service_frame_id_, &area_description_T_start_of_service_);
         device_pose_thread_.data_available_mutex.unlock();
         device_pose_thread_.data_available.notify_all();
       }
@@ -1082,7 +1107,7 @@ void TangoRosNode::PublishMesh() {
         visualization_msgs::MarkerArray mesh_marker_array;
         tango_3d_reconstruction_helper::ExtractMeshAndConvertToMarkerArray(
             t3dr_context_, t3dr_updated_indices, time_offset_,
-            &mesh_marker_array);
+            start_of_service_frame_id_, &mesh_marker_array);
         mesh_marker_publisher_.publish(mesh_marker_array);
         Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
             &t3dr_updated_indices);
@@ -1098,8 +1123,8 @@ void TangoRosNode::PublishMesh() {
       if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
         occupancy_grid_.data.clear();
         if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
-            t3dr_context_, time_offset_, t3dr_resolution_,
-            t3dr_occupancy_grid_threshold_, &occupancy_grid_))
+            t3dr_context_, time_offset_, start_of_service_frame_id_,
+            t3dr_resolution_, t3dr_occupancy_grid_threshold_, &occupancy_grid_))
           occupancy_grid_publisher_.publish(occupancy_grid_);
       }
     }
