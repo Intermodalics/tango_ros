@@ -54,12 +54,12 @@ void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
 void ExtractMeshAndConvertToMarkerArray(
     const Tango3DR_ReconstructionContext& t3dr_context,
     const Tango3DR_GridIndexArray& t3dr_updated_indices,
-    double time_offset, const std::string& frame_id,
+    double time_offset, const std::string& base_frame_id,
     visualization_msgs::MarkerArray* mesh_marker_array);
 
 bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
     const Tango3DR_ReconstructionContext& t3dr_context,
-    double time_offset, const std::string& frame_id,
+    double time_offset, const std::string& base_frame_id,
     double t3dr_resolution, uint8_t threshold,
     nav_msgs::OccupancyGrid* occupancy_grid);
 

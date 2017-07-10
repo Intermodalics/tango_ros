@@ -165,7 +165,7 @@ void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
 void ExtractMeshAndConvertToMarkerArray(
     const Tango3DR_ReconstructionContext& t3dr_context,
     const Tango3DR_GridIndexArray& t3dr_updated_indices,
-    double time_offset, const std::string& frame_id,
+    double time_offset, const std::string& base_frame_id,
     visualization_msgs::MarkerArray* mesh_marker_array) {
   for (size_t i = 0; i < t3dr_updated_indices.num_indices; ++i) {
     // Extract Tango mesh from updated index.
@@ -183,7 +183,7 @@ void ExtractMeshAndConvertToMarkerArray(
     // Make mesh marker from tango mesh.
     visualization_msgs::Marker mesh_marker;
     tango_ros_conversions_helper::toMeshMarker(t3dr_updated_indices.indices[i],
-        tango_mesh, time_offset, frame_id, &mesh_marker);
+        tango_mesh, time_offset, base_frame_id, &mesh_marker);
     // Free tango mesh once we are finished with it.
     result = Tango3DR_Mesh_destroy(&tango_mesh);
     if (result != TANGO_3DR_SUCCESS) {
@@ -200,7 +200,7 @@ void ExtractMeshAndConvertToMarkerArray(
 
 bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
     const Tango3DR_ReconstructionContext& t3dr_context,
-    double time_offset, const std::string& frame_id,
+    double time_offset, const std::string& base_frame_id,
     double t3dr_resolution, uint8_t threshold,
     nav_msgs::OccupancyGrid* occupancy_grid) {
   Tango3DR_Status result  = Tango3DR_updateFullFloorplan(t3dr_context);
@@ -211,7 +211,7 @@ bool ExtractFloorPlanImageAndConvertToOccupancyGrid(
         t3dr_context, TANGO_3DR_LAYER_SPACE, &origin, &image_grid);
     if (result == TANGO_3DR_SUCCESS) {
       tango_ros_conversions_helper::toOccupancyGrid(image_grid, origin,
-          time_offset, frame_id, t3dr_resolution, threshold, occupancy_grid);
+          time_offset, base_frame_id, t3dr_resolution, threshold, occupancy_grid);
     } else {
       LOG(ERROR) << "Tango3DR_extractFullFloorplanImage failed with error"
           "code: " << result;

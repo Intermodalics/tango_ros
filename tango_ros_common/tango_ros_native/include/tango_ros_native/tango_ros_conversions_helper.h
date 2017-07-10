@@ -119,7 +119,7 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 // @param mesh_marker, the output visualization_msgs::Marker.
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
                   const Tango3DR_Mesh& tango_mesh,
-                  double time_offset, const std::string& frame_id,
+                  double time_offset, const std::string& base_frame_id,
                   visualization_msgs::Marker* mesh_marker);
 
 // Converts Tango3DR_ImageBuffer to nav_msgs::OccupancyGrid.
@@ -136,7 +136,7 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 // @param occupancy_grid, the output nav_msgs::OccupancyGrid.
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin, double time_offset,
-                     const std::string& frame_id, double resolution,
+                     const std::string& base_frame_id, double resolution,
                      uint8_t threshold, nav_msgs::OccupancyGrid* occupancy_grid);
 
 // Converts Tango3DR_Vector3 to geometry_msgs::Point.

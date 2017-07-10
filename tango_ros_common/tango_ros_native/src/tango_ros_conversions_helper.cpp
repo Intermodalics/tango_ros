@@ -214,9 +214,9 @@ void toTango3DR_Pose(const TangoPoseData& tango_pose_data, Tango3DR_Pose* t3dr_p
 
 void toMeshMarker(const Tango3DR_GridIndex& grid_index,
                   const Tango3DR_Mesh& tango_mesh,
-                  double time_offset, const std::string& frame_id,
+                  double time_offset, const std::string& base_frame_id,
                   visualization_msgs::Marker* mesh_marker) {
-  mesh_marker->header.frame_id = frame_id;
+  mesh_marker->header.frame_id = base_frame_id;
   mesh_marker->header.stamp.fromSec(tango_mesh.timestamp + time_offset);
   mesh_marker->ns = "tango";
   mesh_marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
@@ -260,9 +260,9 @@ void toMeshMarker(const Tango3DR_GridIndex& grid_index,
 
 void toOccupancyGrid(const Tango3DR_ImageBuffer& image_grid,
                      const Tango3DR_Vector2& origin, double time_offset,
-                     const std::string& frame_id, double resolution,
+                     const std::string& base_frame_id, double resolution,
                      uint8_t threshold, nav_msgs::OccupancyGrid* occupancy_grid) {
-  occupancy_grid->header.frame_id = frame_id;
+  occupancy_grid->header.frame_id = base_frame_id;
   occupancy_grid->header.stamp.fromSec(image_grid.timestamp + time_offset);
   occupancy_grid->info.map_load_time = occupancy_grid->header.stamp;
   occupancy_grid->info.width = image_grid.width;
