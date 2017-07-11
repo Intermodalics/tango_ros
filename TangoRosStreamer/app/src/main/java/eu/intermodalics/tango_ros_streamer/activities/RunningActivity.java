@@ -412,7 +412,8 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     @Override
-    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message, boolean aligned) {
+    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message,
+                                                     boolean aligned, String mapUuid) {
         if (success) {
             if (aligned) {
                 displayToastMessage(R.string.load_occupancy_grid_success);

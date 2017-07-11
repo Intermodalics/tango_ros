@@ -62,13 +62,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     public interface CallbackListener {
-        void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
+        void onSaveMapServiceCallFinish(boolean success, String message, String mapName,
+                                        String mapUuid);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
         void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
-        void onLoadOccupancyGridServiceCallFinish(boolean success, String message, boolean aligned);
+        void onLoadOccupancyGridServiceCallFinish(boolean success, String message, boolean aligned,
+                                                  String mapUuid);
     }
 
     public class DefaultCallbackListener implements CallbackListener {
@@ -76,7 +78,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         public DefaultCallbackListener() {}
 
         @Override
-        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid) {}
+        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName,
+                                               String mapUuid) {}
 
         @Override
         public void onTangoConnectServiceFinish(int response, String message) {}
@@ -94,7 +97,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         public void onTangoStatus(int status) {}
 
         @Override
-        public void onLoadOccupancyGridServiceCallFinish(boolean success, String message, boolean aligned) {}
+        public void onLoadOccupancyGridServiceCallFinish(boolean success, String message,
+                                                         boolean aligned, String mapUuid) {}
     }
 
     public TangoServiceClientNode() {}
@@ -197,7 +201,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
                 mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
-                        saveMapResponse.getMessage(), saveMapResponse.getLocalizationMapName(), saveMapResponse.getLocalizationMapUuid());
+                        saveMapResponse.getMessage(), saveMapResponse.getLocalizationMapName(),
+                        saveMapResponse.getLocalizationMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
@@ -220,11 +225,12 @@ public class TangoServiceClientNode extends AbstractNodeMain {
             @Override
             public void onSuccess(LoadOccupancyGridResponse loadOccupancyGridResponse) {
                 mCallbackListener.onLoadOccupancyGridServiceCallFinish(loadOccupancyGridResponse.getSuccess(),
-                        loadOccupancyGridResponse.getMessage(), loadOccupancyGridResponse.getAligned());
+                        loadOccupancyGridResponse.getMessage(), loadOccupancyGridResponse.getAligned(),
+                        loadOccupancyGridResponse.getLocalizationMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
-                mCallbackListener.onLoadOccupancyGridServiceCallFinish(false, e.getMessage(), false);
+                mCallbackListener.onLoadOccupancyGridServiceCallFinish(false, e.getMessage(), false, "");
             }
         });
 

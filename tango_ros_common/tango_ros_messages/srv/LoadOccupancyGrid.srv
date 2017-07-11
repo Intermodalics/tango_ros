@@ -3,3 +3,4 @@ string name
 string message
 bool aligned
 bool success
+string localization_map_uuid
