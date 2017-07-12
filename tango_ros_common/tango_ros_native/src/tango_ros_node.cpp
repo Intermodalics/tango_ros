@@ -26,9 +26,11 @@
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Int8.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
 
@@ -236,6 +238,19 @@ void GetParamValueAndSetDefaultValueIfParamDoesNotExist(
     param_value = default_value;
     node_handle.setParam(param_name, default_value);
   }
+}
+
+void InvertTransformStamped(const geometry_msgs::TransformStamped& a_T_b,
+                            geometry_msgs::TransformStamped* b_T_a) {
+  geometry_msgs::Transform a_T_b_msg = a_T_b.transform;
+  tf2::Transform a_T_b_tf;
+  tf2::fromMsg(a_T_b_msg, a_T_b_tf);
+  tf2::Transform b_T_a_tf = a_T_b_tf.inverse();
+  geometry_msgs::Transform b_T_a_msg = tf2::toMsg(b_T_a_tf);
+  b_T_a->transform = b_T_a_msg;
+  b_T_a->header = a_T_b.header;
+  b_T_a->header.frame_id = a_T_b.child_frame_id;
+  b_T_a->child_frame_id = a_T_b.header.frame_id;
 }
 }  // namespace
 
@@ -745,30 +760,26 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  if (publish_pose_on_tf_ ||
-      start_of_service_T_device_publisher_.getNumSubscribers() > 0 ||
-      area_description_T_start_of_service_publisher_.getNumSubscribers() > 0) {
-    if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
-        pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-      if (pose->status_code == TANGO_POSE_VALID &&
-          device_pose_thread_.data_available_mutex.try_lock()) {
-        tango_ros_conversions_helper::toTransformStamped(
-            *pose, time_offset_, start_of_service_frame_id_,
-            tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
-            &start_of_service_T_device_);
-        device_pose_thread_.data_available_mutex.unlock();
-        device_pose_thread_.data_available.notify_all();
-      }
-    } else if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
-        pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
-      if (pose->status_code == TANGO_POSE_VALID &&
-          device_pose_thread_.data_available_mutex.try_lock()) {
-        tango_ros_conversions_helper::toTransformStamped(
-            *pose, time_offset_, area_description_frame_id_,
-            start_of_service_frame_id_, &area_description_T_start_of_service_);
-        device_pose_thread_.data_available_mutex.unlock();
-        device_pose_thread_.data_available.notify_all();
-      }
+  if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
+      pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
+    if (pose->status_code == TANGO_POSE_VALID &&
+        device_pose_thread_.data_available_mutex.try_lock()) {
+      tango_ros_conversions_helper::toTransformStamped(
+          *pose, time_offset_, start_of_service_frame_id_,
+          tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+          &start_of_service_T_device_);
+      device_pose_thread_.data_available_mutex.unlock();
+      device_pose_thread_.data_available.notify_all();
+    }
+  } else if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
+      pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
+    if (pose->status_code == TANGO_POSE_VALID &&
+        device_pose_thread_.data_available_mutex.try_lock()) {
+      tango_ros_conversions_helper::toTransformStamped(
+          *pose, time_offset_, area_description_frame_id_,
+          start_of_service_frame_id_, &area_description_T_start_of_service_);
+      device_pose_thread_.data_available_mutex.unlock();
+      device_pose_thread_.data_available.notify_all();
     }
   }
 }
@@ -905,9 +916,7 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ || (!publish_pose_on_tf_ &&
-          start_of_service_T_device_publisher_.getNumSubscribers() <= 0 &&
-          area_description_T_start_of_service_publisher_.getNumSubscribers() <= 0)) {
+      if (!tango_data_available_) {
         device_pose_thread_.data_available.notify_all();
       }
       device_pose_thread_.publish_thread.join();
@@ -1231,6 +1240,20 @@ bool TangoRosNode::SaveMapServiceCallback(
     node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
                        occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
     res.occupancy_grid_name = req.map_name;
+    if (!res.localization_map_uuid.empty()) {
+      // Save the occupancy grid wrt the area description frame.
+      geometry_msgs::TransformStamped start_of_service_T_area_description;
+      InvertTransformStamped(area_description_T_start_of_service_, &start_of_service_T_area_description);
+      geometry_msgs::PoseStamped stamped_origin;
+      stamped_origin.header = occupancy_grid_.header;
+      stamped_origin.pose = occupancy_grid_.info.origin;
+      geometry_msgs::PoseStamped stamped_origin_in_area_description;
+      tf2::doTransform(stamped_origin, stamped_origin_in_area_description,
+                       start_of_service_T_area_description);
+      occupancy_grid_.info.origin = stamped_origin_in_area_description.pose;
+      occupancy_grid_.info.origin.position.z = 0.;
+      occupancy_grid_.header.frame_id = area_description_frame_id_;
+    }
     if (!occupancy_grid_file_io::SaveOccupancyGridToFiles(
         res.occupancy_grid_name, res.localization_map_uuid, occupancy_grid_directory, occupancy_grid_)) {
       res.message += "\nCould not save occupancy grid " + res.occupancy_grid_name
@@ -1293,7 +1316,11 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
   }
 
   res.success = true;
-  occupancy_grid.header.frame_id = tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE);
+  if (map_uuid.empty()) {
+    occupancy_grid.header.frame_id = start_of_service_frame_id_;
+  } else {
+    occupancy_grid.header.frame_id = area_description_frame_id_;
+  }
   occupancy_grid.header.stamp = ros::Time::now();
   occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
   static_occupancy_grid_publisher_.publish(occupancy_grid);

@@ -25,6 +25,7 @@
   <build_depend>tango_ros_messages</build_depend>
   <build_depend>tango_support_api</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>yaml-cpp</build_depend>
 
@@ -44,6 +45,7 @@
   <run_depend>tango_ros_messages</run_depend>
   <run_depend>tango_support_api</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>tf2_geometry_msgs</run_depend>
   <run_depend>tf2_ros</run_depend>
   <run_depend>yaml-cpp</run_depend>
 
