@@ -951,7 +951,7 @@ void TangoRosNode::StopPublishing() {
     }
     if (mesh_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ || !enable_depth_ || !enable_color_camera_ ||
-          !(enable_3dr_mesh_ && enable_3dr_occupancy_grid_)) {
+          (!enable_3dr_mesh_ && !enable_3dr_occupancy_grid_)) {
         mesh_thread_.data_available.notify_all();
       }
       mesh_thread_.publish_thread.join();
