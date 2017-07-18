@@ -1265,8 +1265,10 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
               + " in directory " + occupancy_grid_directory;
     res.aligned = false;
     res.success = false;
+    res.localization_map_uuid = "";
     return true;
   }
+  res.localization_map_uuid = map_uuid;
   res.message = "Occupancy grid " + req.name + " successfully loaded from " + occupancy_grid_directory;
 
   std::string current_map_uuid;
