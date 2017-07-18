@@ -1110,14 +1110,12 @@ void TangoRosNode::PublishMesh() {
             &t3dr_updated_indices);
       }
       // Publish Tango mesh as visualization marker.
-      if (enable_3dr_mesh_) {
+      if (enable_3dr_mesh_ && mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
         tango_3d_reconstruction_helper::ExtractMeshAndConvertToMarkerArray(
             t3dr_context_, t3dr_updated_indices, time_offset_,
             start_of_service_frame_id_, &mesh_marker_array);
-        if (mesh_marker_publisher_.getNumSubscribers() > 0) {
-          mesh_marker_publisher_.publish(mesh_marker_array);
-        }
+        mesh_marker_publisher_.publish(mesh_marker_array);
         Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
             &t3dr_updated_indices);
         if (result != TANGO_3DR_SUCCESS) {
@@ -1131,6 +1129,9 @@ void TangoRosNode::PublishMesh() {
       // Publish Tango mesh as occupancy grid.
       if (enable_3dr_occupancy_grid_) {
         occupancy_grid_.data.clear();
+        // We extract the floor plan and convert it to occupancy grid even if
+        // there is no subscriber for the occupancy grid topic. That way we
+        // avoid saving an empty occupancy grid.
         if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
             t3dr_context_, time_offset_, start_of_service_frame_id_,
             t3dr_resolution_, t3dr_occupancy_grid_threshold_, &occupancy_grid_) &&
