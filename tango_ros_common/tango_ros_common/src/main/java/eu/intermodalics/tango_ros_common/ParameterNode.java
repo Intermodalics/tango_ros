@@ -21,6 +21,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import org.apache.commons.logging.Log;
+import org.ros.exception.ParameterClassCastException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -107,17 +108,30 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         for (String paramName : mParamNames.keySet()) {
             if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
-                if (mParamNames.get(paramName) == "boolean") {
-                    Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
-                    editor.putBoolean(paramName, booleanValue);
-                }
-                if (mParamNames.get(paramName) == "int_as_string") {
-                    Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
-                    editor.putString(paramName, intValue.toString());
-                }
-                if (mParamNames.get(paramName) == "string") {
-                    String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
-                    editor.putString(paramName, stringValue);
+                try {
+                    if (mParamNames.get(paramName) == "boolean") {
+                        Boolean booleanValue = getBoolParam(paramName);
+                        editor.putBoolean(paramName, booleanValue);
+                    }
+                    if (mParamNames.get(paramName) == "int_as_string") {
+                        Integer intValue = getIntParam(paramName);
+                        editor.putString(paramName, intValue.toString());
+                    }
+                    if (mParamNames.get(paramName) == "string") {
+                        String stringValue = getStringParam(paramName);
+                        editor.putString(paramName, stringValue);
+                    }
+                } catch (ParameterClassCastException e) {
+                    if (mParamNames.get(paramName) == "boolean") {
+                        try {
+                            Integer intValue = getIntParam(paramName);
+                            editor.putBoolean(paramName, !intValue.equals(0));
+                        } catch (ParameterClassCastException e2) {
+                            mLog.error("Preference " + paramName + " can not be set from parameter server.", e2);
+                        }
+                    } else {
+                        mLog.error("Preference " + paramName + " can not be set from parameter server.", e);
+                    }
                 }
             }
         }
@@ -132,5 +146,17 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         editor.putString(prefLocalizationMapUuidKey, mapUuid);
         editor.commit();
         uploadPreferencesToParameterServer();
+    }
+
+    public Boolean getBoolParam(String paramName) {
+        return mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+    }
+
+    public Integer getIntParam(String paramName) {
+        return mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+    }
+
+    public String getStringParam(String paramName) {
+        return mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
     }
 }

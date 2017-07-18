@@ -27,8 +27,13 @@
     <string name="rosjava_about"><a href="http://wiki.ros.org/rosjava">RosJava</a></string>
 
     <string name="save_map_dialog_title">Enter the name of the map</string>
+    <string name="load_occupancy_grid_dialog_title">Choose an occupancy grid</string>
     <string name="uuids_names_map">uuids_names_map</string>
     <string name="ros_status">ros_status</string>
+    <string name="show_load_occupancy_grid_error_key">show_load_occupancy_grid_error</string>
+    <string name="show_load_occupancy_grid_empty_key">show_load_occupancy_grid_empty</string>
+    <string name="list_names_occupancy_grid_key">list_names_occupancy_grid</string>
+    <string name="occupancy_grid_directory_key">occupancy_grid_directory</string>
 
     <!-- Strings related to error messages -->
 
@@ -38,9 +43,13 @@
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
     <string name="point_device">Please point the device to a feature-rich environment</string>
-    <string name="map_name_error">Please enter a valid name to save a map</string>
+    <string name="name_error">Please enter a valid name</string>
     <string name="save_map_error">Unable to save the map</string>
+    <string name="load_occupancy_grid_error">Unable to load the occupancy grid, please try again with a different one.</string>
+    <string name="load_occupancy_grid_empty">No occupancy grid available, please create a new map.</string>
     <string name="save_map_success">Map saved successfully! Tango is disconnecting now.</string>
+    <string name="load_occupancy_grid_success">Occupancy grid successfully loaded!</string>
+    <string name="load_occupancy_grid_not_aligned">Occupancy grid successfully loaded but not aligned.</string>
     <string name="tango_permission_denied">Requested permission denied: connection to Tango can fail and some functionalities will not work properly.</string>
 
     <!-- Strings related to settings preferences -->
