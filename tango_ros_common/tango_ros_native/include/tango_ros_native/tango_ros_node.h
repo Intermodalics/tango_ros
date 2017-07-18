@@ -84,10 +84,11 @@ const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
 const std::string DATASET_DIRECTORY_PARAM_NAME = "dataset_directory";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
-
 const std::string ENABLE_DEPTH_PARAM_NAME = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA_PARAM_NAME = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
+const std::string ENABLE_3DR_MESH_PARAM_NAME = "enable_3dr_mesh";
+const std::string ENABLE_3DR_OCCUPANCY_GRID_PARAM_NAME = "enable_3dr_occupancy_grid";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
 const std::string START_OF_SERVICE_FRAME_ID_PARAM_NAME = "start_of_service_frame_id";
 const std::string AREA_DESCRIPTION_FRAME_ID_PARAM_NAME = "area_description_frame_id";
@@ -231,6 +232,8 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool use_tf_static_ = true;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
+  bool enable_3dr_mesh_ = true;
+  bool enable_3dr_occupancy_grid_ = true;
   std::string start_of_service_frame_id_;
   std::string area_description_frame_id_;
 
