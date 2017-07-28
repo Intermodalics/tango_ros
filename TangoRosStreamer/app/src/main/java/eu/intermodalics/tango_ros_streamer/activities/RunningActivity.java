@@ -350,9 +350,13 @@ public class RunningActivity extends AppCompatRosActivity implements
                     mSnackbarLoadNewMap.setAction(getString(R.string.snackbar_action_text_load_new_map), new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
-                                    getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
-                            restartTango();
+                            try {
+                                mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
+                                        getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
+                                restartTango();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     });
                     mSnackbarLoadNewMap.show();
@@ -403,7 +407,13 @@ public class RunningActivity extends AppCompatRosActivity implements
         for (int i = 0; i < mapUuids.size(); ++i) {
             mUuidsNamesHashMap.put(mapUuids.get(i), mapNames.get(i));
         }
-        if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if(mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
@@ -417,7 +427,11 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
-            mParameterNode.setPreferencesFromParameterServer();
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             mMapSaved = false;
             if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
                 mSnackbarLoadNewMap.dismiss();
@@ -480,7 +494,16 @@ public class RunningActivity extends AppCompatRosActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+                if(mParameterNode != null) {
+                    try {
+                        mParameterNode.setPreferencesFromParameterServer();
+                    } catch (Exception e) {
+                        // java.lang.RuntimeException: java.net.ConnectException:
+                        // failed to connect to /192.168.42.129 (port 11311):
+                        // connect failed: ENETUNREACH (Network is unreachable)
+                        e.printStackTrace();
+                    }
+                }
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
                 startActivityForResult(settingsActivityIntent, StartSettingsActivityRequest.STANDARD_RUN);
@@ -508,7 +531,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if (mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         this.nodeMainExecutorService.forceShutdown();
     }
 
@@ -519,7 +548,14 @@ public class RunningActivity extends AppCompatRosActivity implements
             if ((requestCode == StartSettingsActivityRequest.STANDARD_RUN ||
                     requestCode == StartSettingsActivityRequest.FIRST_RUN) &&
                     mParameterNode != null) {
-                mParameterNode.uploadPreferencesToParameterServer();
+                try {
+                    mParameterNode.uploadPreferencesToParameterServer();
+                } catch (Exception e) {
+                    // java.lang.RuntimeException: java.net.ConnectException:
+                    // failed to connect to /192.168.42.129 (port 11311):
+                    // connect failed: ENETUNREACH (Network is unreachable) .
+                    e.printStackTrace();
+                }
             }
 
             if (data != null && data.getBooleanExtra(RESTART_TANGO, false)) {
@@ -602,7 +638,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     private void restartTango() {
-        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if (mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         updateSaveMapButton();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
@@ -716,16 +758,20 @@ public class RunningActivity extends AppCompatRosActivity implements
             }
         });
         if (mRunLocalMaster) {
-            this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
-            mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
-            // The URI returned by getMasterUri is correct but looks 'weird',
-            // e.g. 'http://android-c90553518bc67cf5:1131'.
-            // Instead of showing this to the user, we show the IP address of the device,
-            // which is also correct and less confusing.
-            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
-            mUriTextView = (TextView) findViewById(R.id.master_uri);
-            mUriTextView.setText("http://" + deviceIP + ":11311");
+            if (this.nodeMainExecutorService.getMasterUri() != null) {
+                this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
+                mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
+                // The URI returned by getMasterUri is correct but looks 'weird',
+                // e.g. 'http://android-c90553518bc67cf5:1131'.
+                // Instead of showing this to the user, we show the IP address of the device,
+                // which is also correct and less confusing.
+                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+                String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
+                mUriTextView = (TextView) findViewById(R.id.master_uri);
+                mUriTextView.setText("http://" + deviceIP + ":11311");
+            } else {
+                switchRosLight(mRosStatus);
+            }
         }
         if (mMasterUri != null) {
             URI masterUri;
