@@ -32,6 +32,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
 #include <ros/node_handle.h>
@@ -40,6 +41,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tango_ros_messages/GetMapName.h>
 #include <tango_ros_messages/GetMapUuids.h>
+#include <tango_ros_messages/LoadOccupancyGrid.h>
 #include <tango_ros_messages/SaveMap.h>
 #include <tango_ros_messages/TangoConnect.h>
 #include <tf/transform_broadcaster.h>
@@ -60,7 +62,8 @@ const float LASER_SCAN_RANGE_MIN = 0.15;
 const float LASER_SCAN_RANGE_MAX = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
-const std::string DATASETS_PATH = "/sdcard/tango_ros_streamer/datasets/";
+const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
+const std::string OCCUPANCY_GRID_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/occupancy_grids/";
 const int NUMBER_OF_STATIC_TRANSFORMS = 5;
 
 const std::string TANGO_STATUS_TOPIC_NAME = "status";
@@ -70,25 +73,31 @@ const std::string FISHEYE_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_raw";
 const std::string FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME = "camera/fisheye_1/image_rect";
 const std::string COLOR_IMAGE_TOPIC_NAME = "camera/color_1/image_raw";
 const std::string COLOR_RECTIFIED_IMAGE_TOPIC_NAME = "camera/color_1/image_rect";
-const std::string COLOR_MESH_TOPIC_NAME = "mesh_marker";
-const std::string OCCUPANCY_GRID_TOPIC_NAME = "occupancy_grid";
+const std::string COLOR_MESH_TOPIC_NAME = "reconstruction/mesh";
+const std::string OCCUPANCY_GRID_TOPIC_NAME = "reconstruction/occupancy_grid";
+const std::string STATIC_OCCUPANCY_GRID_TOPIC_NAME = "static_occupancy_grid";
 const std::string START_OF_SERVICE_T_DEVICE_TOPIC_NAME = "transform/start_of_service_T_device";
 const std::string AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME = "transform/area_description_T_start_of_service";
 
 const std::string CREATE_NEW_MAP_PARAM_NAME = "create_new_map";
 const std::string LOCALIZATION_MODE_PARAM_NAME = "localization_mode";
 const std::string LOCALIZATION_MAP_UUID_PARAM_NAME = "localization_map_uuid";
-const std::string DATASET_PATH_PARAM_NAME = "dataset_datasets_path";
+const std::string DATASET_DIRECTORY_PARAM_NAME = "dataset_directory";
 const std::string DATASET_UUID_PARAM_NAME = "dataset_uuid";
-
 const std::string ENABLE_DEPTH_PARAM_NAME = "enable_depth";
 const std::string ENABLE_COLOR_CAMERA_PARAM_NAME = "enable_color_camera";
 const std::string PUBLISH_POSE_ON_TF_PARAM_NAME = "publish_pose_on_tf";
+const std::string ENABLE_3DR_MESH_PARAM_NAME = "enable_3dr_mesh";
+const std::string ENABLE_3DR_OCCUPANCY_GRID_PARAM_NAME = "enable_3dr_occupancy_grid";
 const std::string USE_TF_STATIC_PARAM_NAME = "use_tf_static";
+const std::string START_OF_SERVICE_FRAME_ID_PARAM_NAME = "start_of_service_frame_id";
+const std::string AREA_DESCRIPTION_FRAME_ID_PARAM_NAME = "area_description_frame_id";
+const std::string OCCUPANCY_GRID_DIRECTORY_PARAM_NAME = "occupancy_grid_directory";
 
 const std::string GET_MAP_NAME_SERVICE_NAME = "get_map_name";
 const std::string GET_MAP_UUIDS_SERVICE_NAME = "get_map_uuids";
 const std::string SAVE_MAP_SERVICE_NAME = "save_map";
+const std::string LOAD_OCCUPANCY_GRID_SERVICE_NAME = "load_occupancy_grid";
 const std::string CONNECT_SERVICE_NAME = "connect";
 
 // Localization mode values.
@@ -183,18 +192,22 @@ class TangoRosNode : public ::nodelet::Nodelet {
   void DynamicReconfigureCallback(PublisherConfig &config, uint32_t level);
   // ROS service callback to get the user readable name from a given UUID.
   bool GetMapNameServiceCallback(const tango_ros_messages::GetMapName::Request& req,
-                                 tango_ros_messages::GetMapName::Response &res);
+                                 tango_ros_messages::GetMapName::Response& res);
   // ROS service callback to get a list of available ADF UUIDs and corresponding
   // user readable map names.
-  bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request &req,
-                                  tango_ros_messages::GetMapUuids::Response &res);
+  bool GetMapUuidsServiceCallback(const tango_ros_messages::GetMapUuids::Request& req,
+                                  tango_ros_messages::GetMapUuids::Response& res);
+  // Function called when the LoadOccupancyGrid service is called.
+  // Load the requested occupancy grid and publish it.
+  bool LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
+                             tango_ros_messages::LoadOccupancyGrid::Response& res);
   // Function called when the SaveMap service is called.
   // Save the current map (ADF) to disc with the given name.
-  bool SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
-               tango_ros_messages::SaveMap::Response &res);
+  bool SaveMapServiceCallback(const tango_ros_messages::SaveMap::Request& req,
+               tango_ros_messages::SaveMap::Response& res);
   // ROS service callback to connect or disconnect from Tango Service.
   bool TangoConnectServiceCallback(
-          const tango_ros_messages::TangoConnect::Request &request,
+          const tango_ros_messages::TangoConnect::Request& request,
           tango_ros_messages::TangoConnect::Response& response);
 
   TangoConfig tango_config_;
@@ -219,6 +232,10 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool use_tf_static_ = true;
   bool enable_depth_ = true;
   bool enable_color_camera_ = true;
+  bool enable_3dr_mesh_ = true;
+  bool enable_3dr_occupancy_grid_ = true;
+  std::string start_of_service_frame_id_;
+  std::string area_description_frame_id_;
 
   tf::TransformBroadcaster tf_broadcaster_;
   ros::Publisher start_of_service_T_device_publisher_;
@@ -261,6 +278,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
 
   ros::Publisher mesh_marker_publisher_;
   ros::Publisher occupancy_grid_publisher_;
+  nav_msgs::OccupancyGrid occupancy_grid_;
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_ReconstructionContext t3dr_context_;
@@ -272,9 +290,12 @@ class TangoRosNode : public ::nodelet::Nodelet {
   double t3dr_resolution_;
   uint8_t t3dr_occupancy_grid_threshold_;
 
+  ros::Publisher static_occupancy_grid_publisher_;
+
   ros::ServiceServer get_map_name_service_;
   ros::ServiceServer get_map_uuids_service_;
   ros::ServiceServer save_map_service_;
+  ros::ServiceServer load_occupancy_grid_service_;
   ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native

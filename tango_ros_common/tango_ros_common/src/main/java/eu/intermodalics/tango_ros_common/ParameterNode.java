@@ -110,21 +110,21 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
             if (mConnectedNode.getParameterTree().has(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName))) {
                 try {
                     if (mParamNames.get(paramName) == "boolean") {
-                        Boolean booleanValue = mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+                        Boolean booleanValue = getBoolParam(paramName);
                         editor.putBoolean(paramName, booleanValue);
                     }
                     if (mParamNames.get(paramName) == "int_as_string") {
-                        Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                        Integer intValue = getIntParam(paramName);
                         editor.putString(paramName, intValue.toString());
                     }
                     if (mParamNames.get(paramName) == "string") {
-                        String stringValue = mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
+                        String stringValue = getStringParam(paramName);
                         editor.putString(paramName, stringValue);
                     }
                 } catch (ParameterClassCastException e) {
                     if (mParamNames.get(paramName) == "boolean") {
                         try {
-                            Integer intValue = mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+                            Integer intValue = getIntParam(paramName);
                             editor.putBoolean(paramName, !intValue.equals(0));
                         } catch (ParameterClassCastException e2) {
                             mLog.error("Preference " + paramName + " can not be set from parameter server.", e2);
@@ -146,5 +146,17 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         editor.putString(prefLocalizationMapUuidKey, mapUuid);
         editor.commit();
         uploadPreferencesToParameterServer();
+    }
+
+    public Boolean getBoolParam(String paramName) {
+        return mConnectedNode.getParameterTree().getBoolean(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), false);
+    }
+
+    public Integer getIntParam(String paramName) {
+        return mConnectedNode.getParameterTree().getInteger(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), 0);
+    }
+
+    public String getStringParam(String paramName) {
+        return mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
     }
 }

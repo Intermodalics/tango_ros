@@ -43,7 +43,7 @@ JNIEXPORT jint JNICALL
 Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
         JNIEnv* env, jobject /*obj*/, jstring master_uri_value,
         jstring host_ip_value, jstring node_name_value,
-        /* unused */ jobjectArray remapping_objects_value) {
+        jobjectArray remapping_objects_value) {
     const char* master_uri = env->GetStringUTFChars(master_uri_value, NULL);
     const char* host_ip = env->GetStringUTFChars(host_ip_value, NULL);
     const char* node_name = env->GetStringUTFChars(node_name_value, NULL);
@@ -57,9 +57,35 @@ Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
     env->ReleaseStringUTFChars(host_ip_value, host_ip);
     env->ReleaseStringUTFChars(node_name_value, node_name);
 
+    std::map<std::string, std::string> remappings;
+    if (remapping_objects_value == NULL || env->GetArrayLength(remapping_objects_value) == 0) {
+      LOG(INFO) << "No remapping to be done.";
+    } else {
+      int remappingStringCount = env->GetArrayLength(remapping_objects_value);
+      for (int i = 0; i < remappingStringCount; ++i) {
+        jstring remap_arg_value = (jstring) (env->GetObjectArrayElement(remapping_objects_value, i));
+        const char* remap_arg = env->GetStringUTFChars(remap_arg_value, NULL);
+        // Parse remapping argument to extract old and new names.
+        // According to ROS doc, the syntax for remapping arguments is: old_name:=new_name.
+        // See http://wiki.ros.org/Remapping%20Arguments.
+        std::string remap_arg_string = std::string(remap_arg);
+        std::string delimiter = ":=";
+        size_t delimiter_position = remap_arg_string.find(delimiter);
+        if (delimiter_position == std::string::npos) {
+          LOG(ERROR) << "Invalid remapping argument: " << remap_arg << ". The correct syntax is old_name:=new_name.";
+          return 1;
+        }
+        std::string remap_old_name = remap_arg_string.substr(0, delimiter_position);
+        remap_arg_string.erase(0, delimiter_position + delimiter.length());
+        std::string remap_new_name = remap_arg_string;
+        remappings.insert(std::pair<std::string, std::string>(remap_old_name, remap_new_name));
+        LOG(INFO) << "Remapping " << remap_old_name << " to " << remap_new_name;
+        env->ReleaseStringUTFChars(remap_arg_value, remap_arg);
+      }
+    }
+
     ros::init(argc, argv, node_name_string.c_str());
     nodelet::Loader loader;
-    std::map<std::string, std::string> remappings;
     std::vector<std::string> nodelet_argv;
 
     LOG(INFO) << "Start loading nodelets.";

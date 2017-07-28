@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "tango_ros_native/occupancy_grid_file_io.h"
 #include "tango_ros_native/tango_3d_reconstruction_helper.h"
 #include "tango_ros_native/tango_ros_conversions_helper.h"
 #include "tango_ros_native/tango_ros_node.h"
@@ -25,9 +26,11 @@
 
 #include <dynamic_reconfigure/config_tools.h>
 #include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Int8.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
 
@@ -42,7 +45,6 @@ std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_sepa
   }
   return output;
 }
-
 // This function routes onPoseAvailable callback to the application object for
 // handling.
 // @param context, context will be a pointer to a TangoRosNode
@@ -132,6 +134,8 @@ void ComputeWarpMapsToRectifyFisheyeImage(
     }
   }
 }
+// Returns a string corresponding to current date and time.
+// The format is as follow: year-month-day_hour-min-sec.
 std::string GetCurrentDateAndTime() {
   std::time_t currentTime;
   struct tm* currentDateTime;
@@ -147,11 +151,75 @@ std::string GetCurrentDateAndTime() {
   oss << year << "-" << month << "-" << day << "_" << hour << "-" << min << "-" << sec;
   return oss.str();
 }
+// Returns device boottime in second.
 double GetBootTimeInSecond() {
   struct timespec res_boot;
   clock_gettime(CLOCK_BOOTTIME, &res_boot);
   return res_boot.tv_sec + (double) res_boot.tv_nsec / 1e9;
 }
+// Save an Area Description File (ADF) and set its name.
+// @param map_name Name of the ADF
+// @param[out] map_uuid Uuid of the ADF.
+// @param[out] message Contains an error message in case of failure.
+// Returns true if the ADF was successfully saved and named, false otherwise.
+bool SaveTangoAreaDescription(const std::string& map_name,
+                              std::string& map_uuid, std::string& message) {
+  TangoErrorType result;
+  TangoUUID map_tango_uuid;
+  result = TangoService_saveAreaDescription(&map_tango_uuid);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving area description, error: " << result;
+    message =  "Could not save the map. "
+        "Did you allow the app to use area learning?";
+    return false;
+  }
+  TangoAreaDescriptionMetadata metadata;
+  result = TangoService_getAreaDescriptionMetadata(map_tango_uuid, &metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
+    message =  "Could not access map metadata";
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
+    message =  "Could not set the name of the map";
+    return false;
+  }
+  result = TangoService_saveAreaDescriptionMetadata(map_tango_uuid, metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
+    message =  "Could not save map metadata";
+    return false;
+  }
+  result = TangoAreaDescriptionMetadata_free(metadata);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
+    message =  "Could not free map metadata";
+    return false;
+  }
+  map_uuid = static_cast<std::string>(map_tango_uuid);
+  return true;
+}
+// Get the uuid of the ADF currently used by Tango.
+// @param tango_config Current configuration of Tango.
+// @param[out] adf_uuid Uuid of the current ADF, empty if Tango
+// is not using an ADF for localization.
+bool GetCurrentADFUuid(const TangoConfig& tango_config, std::string& adf_uuid) {
+  char current_adf_uuid[TANGO_UUID_LEN];
+  const char* config_load_area_description_UUID = "config_load_area_description_UUID";
+  TangoErrorType result = TangoConfig_getString(
+      tango_config, config_load_area_description_UUID, current_adf_uuid,
+      TANGO_UUID_LEN);
+  if (result != TANGO_SUCCESS) {
+    LOG(ERROR) << "TangoConfig_getString "
+        << config_load_area_description_UUID << " error: " << result;
+    return false;
+  }
+  adf_uuid = std::string(current_adf_uuid);
+  return true;
+}
+
 template<typename T>
 void SetDefaultValueIfParamDoesNotExist(
     const ros::NodeHandle& node_handle, const std::string& param_name,
@@ -170,6 +238,19 @@ void GetParamValueAndSetDefaultValueIfParamDoesNotExist(
     param_value = default_value;
     node_handle.setParam(param_name, default_value);
   }
+}
+
+void InvertTransformStamped(const geometry_msgs::TransformStamped& a_T_b,
+                            geometry_msgs::TransformStamped* b_T_a) {
+  geometry_msgs::Transform a_T_b_msg = a_T_b.transform;
+  tf2::Transform a_T_b_tf;
+  tf2::fromMsg(a_T_b_msg, a_T_b_tf);
+  tf2::Transform b_T_a_tf = a_T_b_tf.inverse();
+  geometry_msgs::Transform b_T_a_msg = tf2::toMsg(b_T_a_tf);
+  b_T_a->transform = b_T_a_msg;
+  b_T_a->header = a_T_b.header;
+  b_T_a->header.frame_id = a_T_b.child_frame_id;
+  b_T_a->child_frame_id = a_T_b.header.frame_id;
 }
 }  // namespace
 
@@ -203,6 +284,8 @@ void TangoRosNode::onInit() {
   } catch (const image_transport::Exception& e) {
     LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
   }
+  static_occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
+      STATIC_OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
@@ -215,6 +298,9 @@ void TangoRosNode::onInit() {
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
                                              boost::bind(&TangoRosNode::SaveMapServiceCallback, this, _1, _2));
+  load_occupancy_grid_service_ = node_handle_.advertiseService<tango_ros_messages::LoadOccupancyGrid::Request,
+        tango_ros_messages::LoadOccupancyGrid::Response>(LOAD_OCCUPANCY_GRID_SERVICE_NAME,
+                                               boost::bind(&TangoRosNode::LoadOccupancyGridServiceCallback, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
@@ -230,7 +316,10 @@ void TangoRosNode::onInit() {
   SetDefaultValueIfParamDoesNotExist(
       node_handle_, LOCALIZATION_MAP_UUID_PARAM_NAME, "");
   SetDefaultValueIfParamDoesNotExist(
-      node_handle_, DATASET_PATH_PARAM_NAME, "");
+       node_handle_, OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+       OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+  SetDefaultValueIfParamDoesNotExist(
+      node_handle_, DATASET_DIRECTORY_PARAM_NAME, DATASET_DEFAULT_DIRECTORY);
   SetDefaultValueIfParamDoesNotExist(
       node_handle_, DATASET_UUID_PARAM_NAME, "");
   SetDefaultValueIfParamDoesNotExist(node_handle_,
@@ -259,6 +348,10 @@ void TangoRosNode::onInit() {
       node_handle_, ENABLE_DEPTH_PARAM_NAME, true, enable_depth_);
   GetParamValueAndSetDefaultValueIfParamDoesNotExist(
       node_handle_, ENABLE_COLOR_CAMERA_PARAM_NAME, true, enable_color_camera_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_3DR_MESH_PARAM_NAME, true, enable_3dr_mesh_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, ENABLE_3DR_OCCUPANCY_GRID_PARAM_NAME, true, enable_3dr_occupancy_grid_);
   int t3dr_occupancy_grid_threshold =
       tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD;
   GetParamValueAndSetDefaultValueIfParamDoesNotExist(node_handle_,
@@ -267,6 +360,14 @@ void TangoRosNode::onInit() {
           tango_3d_reconstruction_helper::TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD),
       t3dr_occupancy_grid_threshold);
   t3dr_occupancy_grid_threshold_ = t3dr_occupancy_grid_threshold;
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, START_OF_SERVICE_FRAME_ID_PARAM_NAME,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_START_OF_SERVICE),
+      start_of_service_frame_id_);
+  GetParamValueAndSetDefaultValueIfParamDoesNotExist(
+      node_handle_, AREA_DESCRIPTION_FRAME_ID_PARAM_NAME,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_AREA_DESCRIPTION),
+      area_description_frame_id_);
 }
 
 TangoRosNode::~TangoRosNode() {
@@ -303,14 +404,19 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
     color_camera_publisher_.shutdown();
     color_rectified_image_publisher_.shutdown();
   }
-  if (enable_depth_ && enable_color_camera_) {
+  node_handle_.param<bool>(ENABLE_3DR_MESH_PARAM_NAME, enable_3dr_mesh_, true);
+  if (enable_depth_ && enable_color_camera_ && enable_3dr_mesh_) {
     mesh_marker_publisher_ =
         node_handle_.advertise<visualization_msgs::MarkerArray>(
             COLOR_MESH_TOPIC_NAME, queue_size, latching);
+  } else {
+    mesh_marker_publisher_.shutdown();
+  }
+  node_handle_.param<bool>(ENABLE_3DR_OCCUPANCY_GRID_PARAM_NAME, enable_3dr_occupancy_grid_, true);
+  if (enable_depth_ && enable_color_camera_ && enable_3dr_occupancy_grid_){
     occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
         OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
   } else {
-    mesh_marker_publisher_.shutdown();
     occupancy_grid_publisher_.shutdown();
   }
 
@@ -352,10 +458,12 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   // Cache camera model for more efficiency.
   color_camera_model_.fromCameraInfo(color_camera_info_);
 
-  tango_ros_conversions_helper::toTango3DR_CameraCalibration(
-      tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
-  tango_3d_reconstruction_helper::TangoSetup3DRConfig(
-      node_handle_, &t3dr_resolution_, &t3dr_context_, &t3dr_color_camera_intrinsics_);
+  if (enable_3dr_mesh_ || enable_3dr_occupancy_grid_) {
+    tango_ros_conversions_helper::toTango3DR_CameraCalibration(
+        tango_camera_intrinsics, &t3dr_color_camera_intrinsics_);
+    tango_3d_reconstruction_helper::TangoSetup3DRConfig(
+        node_handle_, &t3dr_resolution_, &t3dr_context_, &t3dr_color_camera_intrinsics_);
+  }
   return TANGO_SUCCESS;
 }
 
@@ -443,7 +551,7 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
     return result;
   }
   std::string datasets_path;
-  node_handle_.param(DATASET_PATH_PARAM_NAME, datasets_path, DATASETS_PATH);
+  node_handle_.param(DATASET_DIRECTORY_PARAM_NAME, datasets_path, DATASET_DEFAULT_DIRECTORY);
   const char* config_datasets_path = "config_datasets_path";
   result = TangoConfig_setString(tango_config_, config_datasets_path, datasets_path.c_str());
   if (result != TANGO_SUCCESS) {
@@ -481,12 +589,13 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
 TangoErrorType TangoRosNode::TangoConnect() {
   const char* function_name = "TangoRosNode::TangoConnect()";
 
-  TangoCoordinateFramePair pair;
-  pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-  pair.target = TANGO_COORDINATE_FRAME_DEVICE;
-
-  TangoErrorType result;
-  result = TangoService_connectOnPoseAvailable(1, &pair, OnPoseAvailableRouter);
+  TangoCoordinateFramePair pairs[2] = {
+         {TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+          TANGO_COORDINATE_FRAME_DEVICE},
+         {TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+          TANGO_COORDINATE_FRAME_START_OF_SERVICE}};
+  TangoErrorType result =
+      TangoService_connectOnPoseAvailable(2, pairs, OnPoseAvailableRouter);
   if (result != TANGO_SUCCESS) {
     LOG(ERROR) << function_name
         << ", TangoService_connectOnPoseAvailable error: " << result;
@@ -564,13 +673,13 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
     UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return success;
   }
+  area_description_T_start_of_service_.child_frame_id = "";
+  tango_data_available_ = true;
   // Create publishing threads.
   StartPublishing();
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_CONNECTED);
-  tango_data_available_ = true;
   return success;
 }
-
 
 void TangoRosNode::TangoDisconnect() {
   StopPublishing();
@@ -605,13 +714,21 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.target = TANGO_COORDINATE_FRAME_IMU;
   TangoService_getPoseAtTime(0.0, pair, &pose);
   geometry_msgs::TransformStamped device_T_imu;
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_imu);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_IMU),
+      &device_T_imu);
   tf_transforms.push_back(device_T_imu);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_, &device_T_camera_depth_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_DEPTH),
+      &device_T_camera_depth_);
   tf_transforms.push_back(device_T_camera_depth_);
 
   // According to the ROS documentation, laser scan angles are measured around
@@ -629,15 +746,21 @@ void TangoRosNode::PublishStaticTransforms() {
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_FISHEYE;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
-                                           &device_T_camera_fisheye_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_FISHEYE),
+      &device_T_camera_fisheye_);
   tf_transforms.push_back(device_T_camera_fisheye_);
 
   pair.base = TANGO_COORDINATE_FRAME_DEVICE;
   pair.target = TANGO_COORDINATE_FRAME_CAMERA_COLOR;
   TangoService_getPoseAtTime(0.0, pair, &pose);
-  tango_ros_conversions_helper::toTransformStamped(pose, time_offset_,
-                                           &device_T_camera_color_);
+  tango_ros_conversions_helper::toTransformStamped(
+      pose, time_offset_,
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+      tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_CAMERA_COLOR),
+      &device_T_camera_color_);
   tf_transforms.push_back(device_T_camera_color_);
 
   if (use_tf_static_) {
@@ -648,27 +771,26 @@ void TangoRosNode::PublishStaticTransforms() {
 }
 
 void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
-  if (publish_pose_on_tf_ ||
-      start_of_service_T_device_publisher_.getNumSubscribers() > 0 ||
-      area_description_T_start_of_service_publisher_.getNumSubscribers() > 0) {
-    if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
-        pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
-      if (pose->status_code == TANGO_POSE_VALID &&
-          device_pose_thread_.data_available_mutex.try_lock()) {
-        tango_ros_conversions_helper::toTransformStamped(*pose, time_offset_,
-                                                 &start_of_service_T_device_);
-        TangoCoordinateFramePair pair;
-        pair.base = TANGO_COORDINATE_FRAME_AREA_DESCRIPTION;
-        pair.target = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
-        TangoPoseData area_description_T_start_of_service;
-        TangoService_getPoseAtTime(0.0, pair, &area_description_T_start_of_service);
-        if (area_description_T_start_of_service.status_code == TANGO_POSE_VALID) {
-          tango_ros_conversions_helper::toTransformStamped(area_description_T_start_of_service,
-                             time_offset_, &area_description_T_start_of_service_);
-        }
-        device_pose_thread_.data_available_mutex.unlock();
-        device_pose_thread_.data_available.notify_all();
-      }
+  if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
+      pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
+    if (pose->status_code == TANGO_POSE_VALID &&
+        device_pose_thread_.data_available_mutex.try_lock()) {
+      tango_ros_conversions_helper::toTransformStamped(
+          *pose, time_offset_, start_of_service_frame_id_,
+          tango_ros_conversions_helper::toFrameId(TANGO_COORDINATE_FRAME_DEVICE),
+          &start_of_service_T_device_);
+      device_pose_thread_.data_available_mutex.unlock();
+      device_pose_thread_.data_available.notify_all();
+    }
+  } else if (pose->frame.base == TANGO_COORDINATE_FRAME_AREA_DESCRIPTION &&
+      pose->frame.target == TANGO_COORDINATE_FRAME_START_OF_SERVICE) {
+    if (pose->status_code == TANGO_POSE_VALID &&
+        device_pose_thread_.data_available_mutex.try_lock()) {
+      tango_ros_conversions_helper::toTransformStamped(
+          *pose, time_offset_, area_description_frame_id_,
+          start_of_service_frame_id_, &area_description_T_start_of_service_);
+      device_pose_thread_.data_available_mutex.unlock();
+      device_pose_thread_.data_available.notify_all();
     }
   }
 }
@@ -706,8 +828,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
       laser_scan_thread_.data_available.notify_all();
     }
 
-    if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
-        occupancy_grid_publisher_.getNumSubscribers() > 0) {
+    if (enable_3dr_mesh_ || enable_3dr_occupancy_grid_) {
       TangoCoordinateFramePair pair;
       pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
       pair.target = TANGO_COORDINATE_FRAME_CAMERA_DEPTH;
@@ -752,8 +873,7 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
     color_image_thread_.data_available.notify_all();
   }
 
-  if ((mesh_marker_publisher_.getNumSubscribers() > 0 ||
-      occupancy_grid_publisher_.getNumSubscribers() > 0) &&
+  if ((enable_3dr_mesh_ || enable_3dr_occupancy_grid_) &&
       camera_id == TangoCameraId::TANGO_CAMERA_COLOR &&
       new_point_cloud_available_for_t3dr_ &&
       mesh_thread_.data_available_mutex.try_lock()) {
@@ -805,9 +925,7 @@ void TangoRosNode::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ || (!publish_pose_on_tf_ &&
-          start_of_service_T_device_publisher_.getNumSubscribers() <= 0 &&
-          area_description_T_start_of_service_publisher_.getNumSubscribers() <= 0)) {
+      if (!tango_data_available_) {
         device_pose_thread_.data_available.notify_all();
       }
       device_pose_thread_.publish_thread.join();
@@ -842,8 +960,7 @@ void TangoRosNode::StopPublishing() {
     }
     if (mesh_thread_.publish_thread.joinable()) {
       if (!tango_data_available_ || !enable_depth_ || !enable_color_camera_ ||
-          (mesh_marker_publisher_.getNumSubscribers() <= 0 &&
-              occupancy_grid_publisher_.getNumSubscribers() <= 0)) {
+          (!enable_3dr_mesh_ && !enable_3dr_occupancy_grid_)) {
         mesh_thread_.data_available.notify_all();
       }
       mesh_thread_.publish_thread.join();
@@ -990,8 +1107,7 @@ void TangoRosNode::PublishMesh() {
     if (!run_threads_) {
       break;
     }
-    if (mesh_marker_publisher_.getNumSubscribers() > 0 ||
-        occupancy_grid_publisher_.getNumSubscribers() > 0) {
+    if (enable_3dr_mesh_ || enable_3dr_occupancy_grid_) {
       Tango3DR_GridIndexArray t3dr_updated_indices;
       // Update Tango mesh with latest point cloud and color image.
       {
@@ -1003,11 +1119,11 @@ void TangoRosNode::PublishMesh() {
             &t3dr_updated_indices);
       }
       // Publish Tango mesh as visualization marker.
-      if (mesh_marker_publisher_.getNumSubscribers() > 0) {
+      if (enable_3dr_mesh_ && mesh_marker_publisher_.getNumSubscribers() > 0) {
         visualization_msgs::MarkerArray mesh_marker_array;
         tango_3d_reconstruction_helper::ExtractMeshAndConvertToMarkerArray(
             t3dr_context_, t3dr_updated_indices, time_offset_,
-            &mesh_marker_array);
+            start_of_service_frame_id_, &mesh_marker_array);
         mesh_marker_publisher_.publish(mesh_marker_array);
         Tango3DR_Status result = Tango3DR_GridIndexArray_destroy(
             &t3dr_updated_indices);
@@ -1020,12 +1136,16 @@ void TangoRosNode::PublishMesh() {
         }
       }
       // Publish Tango mesh as occupancy grid.
-      if (occupancy_grid_publisher_.getNumSubscribers() > 0) {
-        nav_msgs::OccupancyGrid occupancy_grid;
+      if (enable_3dr_occupancy_grid_) {
+        occupancy_grid_.data.clear();
+        // We extract the floor plan and convert it to occupancy grid even if
+        // there is no subscriber for the occupancy grid topic. That way we
+        // avoid saving an empty occupancy grid.
         if (tango_3d_reconstruction_helper::ExtractFloorPlanImageAndConvertToOccupancyGrid(
-            t3dr_context_, time_offset_, t3dr_resolution_,
-            t3dr_occupancy_grid_threshold_, &occupancy_grid))
-          occupancy_grid_publisher_.publish(occupancy_grid);
+            t3dr_context_, time_offset_, start_of_service_frame_id_,
+            t3dr_resolution_, t3dr_occupancy_grid_threshold_, &occupancy_grid_) &&
+            occupancy_grid_publisher_.getNumSubscribers() > 0)
+          occupancy_grid_publisher_.publish(occupancy_grid_);
       }
     }
   }
@@ -1077,7 +1197,8 @@ bool TangoRosNode::TangoConnectServiceCallback(
                  << ", RECONNECT: "
                  << tango_ros_messages::TangoConnect::Request::RECONNECT
                  << ")";
-      return false;
+      response.message = "Did not understand request.";
+      return true;
     }
     return true;
 }
@@ -1089,8 +1210,8 @@ bool TangoRosNode::GetMapNameServiceCallback(
 }
 
 bool TangoRosNode::GetMapUuidsServiceCallback(
-    const tango_ros_messages::GetMapUuids::Request &req,
-    tango_ros_messages::GetMapUuids::Response &res) {
+    const tango_ros_messages::GetMapUuids::Request& req,
+    tango_ros_messages::GetMapUuids::Response& res) {
   if (!GetAvailableMapUuidsList(res.map_uuids) ) return false;
 
   res.map_names.resize(res.map_uuids.size());
@@ -1103,56 +1224,119 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
   return true;
 }
 
-bool TangoRosNode::SaveMapServiceCallback(tango_ros_messages::SaveMap::Request &req,
-                           tango_ros_messages::SaveMap::Response &res) {
-  TangoErrorType result;
-  TangoUUID map_uuid;
-  result = TangoService_saveAreaDescription(&map_uuid);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving area description, error: " << result;
-    res.message =  "Could not save the map. Did you turn on create_new_map? "
-        "Did you allow the app to use area learning?";
+bool TangoRosNode::SaveMapServiceCallback(
+    const tango_ros_messages::SaveMap::Request& req,
+    tango_ros_messages::SaveMap::Response& res) {
+  bool save_localization_map = req.request & tango_ros_messages::SaveMap::Request::SAVE_LOCALIZATION_MAP;
+  bool save_occupancy_grid = req.request & tango_ros_messages::SaveMap::Request::SAVE_OCCUPANCY_GRID;
+  res.message = "";
+  if (save_localization_map) {
+    res.localization_map_name = req.map_name;
+    if (!SaveTangoAreaDescription(res.localization_map_name, res.localization_map_uuid, res.message)) {
+      res.success = false;
+      return true;
+    }
+    tango_data_available_ = false;
+    res.message += "\nLocalization map " + res.localization_map_uuid +
+        " successfully saved with name " + res.localization_map_name;
+  } else if (save_occupancy_grid) {
+    if (!GetCurrentADFUuid(tango_config_, res.localization_map_uuid)) {
+      res.message += "\nCould not get current localization map uuid.";
+      res.success = false;
+      return true;
+    }
+  }
+  if (save_occupancy_grid) {
+    std::string occupancy_grid_directory;
+    node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+                       occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+    res.occupancy_grid_name = req.map_name;
+    if (!res.localization_map_uuid.empty()) {
+      // Save the occupancy grid wrt the area description frame.
+      geometry_msgs::TransformStamped start_of_service_T_area_description;
+      InvertTransformStamped(area_description_T_start_of_service_, &start_of_service_T_area_description);
+      geometry_msgs::PoseStamped stamped_origin;
+      stamped_origin.header = occupancy_grid_.header;
+      stamped_origin.pose = occupancy_grid_.info.origin;
+      geometry_msgs::PoseStamped stamped_origin_in_area_description;
+      tf2::doTransform(stamped_origin, stamped_origin_in_area_description,
+                       start_of_service_T_area_description);
+      occupancy_grid_.info.origin = stamped_origin_in_area_description.pose;
+      occupancy_grid_.info.origin.position.z = 0.;
+      occupancy_grid_.header.frame_id = area_description_frame_id_;
+    }
+    if (!occupancy_grid_file_io::SaveOccupancyGridToFiles(
+        res.occupancy_grid_name, res.localization_map_uuid, occupancy_grid_directory, occupancy_grid_)) {
+      res.message += "\nCould not save occupancy grid " + res.occupancy_grid_name
+          + " in directory " + occupancy_grid_directory;
+      res.success = false;
+      return true;
+    }
+    res.message += "\nOccupancy grid successfully saved with name "
+        + res.occupancy_grid_name + " in  directory " + occupancy_grid_directory;
+    if (res.localization_map_uuid.empty()) {
+      res.message += "\nThe occupancy grid has been saved without localization map uuid. "
+          "This means it will not be aligned when loaded later.";
+    }
+  }
+  res.success = true;
+  return true;
+}
+
+bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
+                           tango_ros_messages::LoadOccupancyGrid::Response& res) {
+  nav_msgs::OccupancyGrid occupancy_grid;
+  std::string occupancy_grid_directory;
+  node_handle_.param(OCCUPANCY_GRID_DIRECTORY_PARAM_NAME,
+                     occupancy_grid_directory, OCCUPANCY_GRID_DEFAULT_DIRECTORY);
+
+  std::string map_uuid;
+  res.aligned = true;
+  if(!occupancy_grid_file_io::LoadOccupancyGridFromFiles(
+      req.name, occupancy_grid_directory, &occupancy_grid, &map_uuid)) {
+    LOG(ERROR) << "Error while loading occupancy grid from file.";
+    res.message =  "Could not load occupancy grid from file " + req.name
+              + " in directory " + occupancy_grid_directory;
+    res.aligned = false;
+    res.success = false;
+    res.localization_map_uuid = "";
+    return true;
+  }
+  res.localization_map_uuid = map_uuid;
+  res.message = "Occupancy grid " + req.name + " successfully loaded from " + occupancy_grid_directory;
+
+  std::string current_map_uuid;
+  if (!GetCurrentADFUuid(tango_config_, current_map_uuid)) {
+    res.message += "\nCould not get current localization map uuid.";
+    res.aligned = false;
     res.success = false;
     return true;
   }
-  TangoAreaDescriptionMetadata metadata;
-  result = TangoService_getAreaDescriptionMetadata(map_uuid, &metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to access area description metadata, error: " << result;
-    res.message =  "Could not access map metadata";
-    res.success = false;
-    return true;
+  if (current_map_uuid.empty()) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "no localization map is currently used.";
+    res.aligned = false;
   }
-  // Prepend name with date and time.
-  std::string map_name = GetCurrentDateAndTime() + " " + req.map_name;
-  result = TangoAreaDescriptionMetadata_set(metadata, "name", map_name.capacity(), map_name.c_str());
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to change area description metadata, error: " << result;
-    res.message =  "Could not set the name of the map";
-    res.success = false;
-    return true;
+  if (map_uuid.empty()) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "its localization map uuid is empty.";
+    res.aligned = false;
   }
-  result = TangoService_saveAreaDescriptionMetadata(map_uuid, metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while saving new area description metadata, error: " << result;
-    res.message =  "Could not save map metadata";
-    res.success = false;
-    return true;
-  }
-  result = TangoAreaDescriptionMetadata_free(metadata);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << "Error while trying to free area description metadata, error: " << result;
-    res.message =  "Could not free map metadata";
-    res.success = false;
-    return true;
+  if (map_uuid.compare(current_map_uuid) != 0) {
+    res.message += "\nThe occupancy grid is not aligned because "
+        "it does not correspond to the localization map currently used.";
+    res.aligned = false;
   }
 
-  std::string map_uuid_string = static_cast<std::string>(map_uuid);
-  res.message =  "Map " + map_uuid_string + " successfully saved with the following name: " + map_name;
-  res.map_name = map_name;
-  res.map_uuid = map_uuid_string;
   res.success = true;
-  tango_data_available_ = false;
+  if (map_uuid.empty()) {
+    occupancy_grid.header.frame_id = start_of_service_frame_id_;
+  } else {
+    occupancy_grid.header.frame_id = area_description_frame_id_;
+  }
+  occupancy_grid.header.stamp = ros::Time::now();
+  occupancy_grid.info.map_load_time = occupancy_grid.header.stamp;
+  static_occupancy_grid_publisher_.publish(occupancy_grid);
   return true;
 }
 

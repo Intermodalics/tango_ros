@@ -46,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.io.FilenameUtils;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.NodeMainExecutorService;
 import org.ros.android.NodeMainExecutorServiceListener;
@@ -56,6 +57,7 @@ import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeListener;
 import org.ros.node.NodeMainExecutor;
 
+import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,6 +71,7 @@ import eu.intermodalics.nodelet_manager.TangoInitializationHelper.DefaultTangoSe
 import eu.intermodalics.tango_ros_common.Logger;
 import eu.intermodalics.tango_ros_common.MasterConnectionChecker;
 import eu.intermodalics.tango_ros_common.TangoServiceClientNode;
+import eu.intermodalics.tango_ros_streamer.android.LoadOccupancyGridDialog;
 import eu.intermodalics.tango_ros_streamer.nodes.ImuNode;
 import eu.intermodalics.tango_ros_common.ParameterNode;
 import eu.intermodalics.tango_ros_streamer.R;
@@ -77,7 +80,8 @@ import tango_ros_messages.TangoConnectRequest;
 import tango_ros_messages.TangoConnectResponse;
 
 public class RunningActivity extends AppCompatRosActivity implements
-        SaveMapDialog.CallbackListener, TangoServiceClientNode.CallbackListener {
+        SaveMapDialog.CallbackListener, LoadOccupancyGridDialog.CallbackListener,
+        TangoServiceClientNode.CallbackListener {
     private static final String TAG = RunningActivity.class.getSimpleName();
     private static final String TAGS_TO_LOG = TAG + ", " + "tango_client_api, " + "Registrar, "
             + "DefaultPublisher, " + "native, " + "DefaultPublisher" ;
@@ -129,6 +133,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mAdfPermissionHasBeenAnswered = false;
     // True after the user answered the dataset permission popup (the permission has not been necessarily granted).
     private boolean mDatasetPermissionHasBeenAnswered = false;
+    private ArrayList<String> mOccupancyGridNameList = new ArrayList<String>();
 
     // UI objects.
     private Menu mToolbarMenu;
@@ -139,6 +144,7 @@ public class RunningActivity extends AppCompatRosActivity implements
     private boolean mDisplayLog = false;
     private TextView mLogTextView;
     private Button mSaveMapButton;
+    private Button mLoadOccupancyGridButton;
     private Snackbar mSnackbarLoadNewMap;
     private Snackbar mSnackbarRosReconnection;
 
@@ -256,7 +262,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         });
     }
 
-    private void updateSaveMapButton() {
+    private void updateLoadAndSaveMapButtons() {
         mCreateNewMap = mSharedPref.getBoolean(getString(R.string.pref_create_new_map_key), false);
         runOnUiThread(new Runnable() {
             @Override
@@ -264,8 +270,10 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mSaveMapButton.setEnabled(!mMapSaved);
                 if (mCreateNewMap) {
                     mSaveMapButton.setVisibility(View.VISIBLE);
+                    mLoadOccupancyGridButton.setVisibility(View.GONE);
                 } else {
                     mSaveMapButton.setVisibility(View.GONE);
+                    mLoadOccupancyGridButton.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -288,7 +296,19 @@ public class RunningActivity extends AppCompatRosActivity implements
         FragmentManager manager = getFragmentManager();
         SaveMapDialog saveMapDialog = new SaveMapDialog();
         saveMapDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
-        saveMapDialog.show(manager, "MapNameDialog");
+        saveMapDialog.show(manager, "SaveMapDialog");
+    }
+
+    private void showLoadOccupancyGridDialog(boolean firstTry, java.util.ArrayList<java.lang.String> nameList) {
+        FragmentManager manager = getFragmentManager();
+        LoadOccupancyGridDialog loadOccupancyGridDialog = new LoadOccupancyGridDialog();
+        Bundle bundle = new Bundle();
+        bundle.putBoolean(getString(R.string.show_load_occupancy_grid_empty_key), nameList.isEmpty());
+        bundle.putBoolean(getString(R.string.show_load_occupancy_grid_error_key), !firstTry);
+        bundle.putStringArrayList(getString(R.string.list_names_occupancy_grid_key), nameList);
+        loadOccupancyGridDialog.setArguments(bundle);
+        loadOccupancyGridDialog.setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
+        loadOccupancyGridDialog.show(manager, "LoadOccupancyGridDialog");
     }
 
     private void setupUI() {
@@ -316,15 +336,30 @@ public class RunningActivity extends AppCompatRosActivity implements
                 showSaveMapDialog();
             }
         });
-        updateSaveMapButton();
+        mLoadOccupancyGridButton = (Button) findViewById(R.id.load_occupancy_grid_button);
+        mLoadOccupancyGridButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mOccupancyGridNameList = new ArrayList<String>();
+                String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
+                File occupancyGridDirectory = new File(directory);
+                if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
+                    File[] files = occupancyGridDirectory.listFiles();
+                    for (File file : files) {
+                        if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
+                            mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                        }
+                    }
+                }
+                showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
+            }
+        });
+        updateLoadAndSaveMapButtons();
     }
 
     public void onClickOkSaveMapDialog(final String mapName) {
-        if (mapName == null || mapName.isEmpty()) {
-            Log.e(TAG, "Map name is null or empty, unable to save the map");
-            displayToastMessage(R.string.map_name_error);
-            return;
-        }
+        assert(mapName !=null && !mapName.isEmpty());
+        mSaveMapButton.setEnabled(false);
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -366,6 +401,41 @@ public class RunningActivity extends AppCompatRosActivity implements
             Log.e(TAG, "Error while saving map: " + message);
             displayToastMessage(R.string.save_map_error);
         }
+    }
+
+    public void onClickItemLoadOccupancyGridDialog(final String occupancyGridName) {
+        assert(occupancyGridName !=null && !occupancyGridName.isEmpty());
+        mLoadOccupancyGridButton.setEnabled(false);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                mTangoServiceClientNode.callLoadOccupancyGridService(occupancyGridName);
+                return null;
+            }
+        }.execute();
+    }
+
+    @Override
+    public void onLoadOccupancyGridServiceCallFinish(boolean success, final String message,
+                                                     boolean aligned, String mapUuid) {
+        if (success) {
+            if (aligned) {
+                displayToastMessage(R.string.load_occupancy_grid_success);
+            } else {
+                displayToastMessage(R.string.load_occupancy_grid_not_aligned);
+            }
+            Log.i(TAG, message);
+        } else {
+            Log.e(TAG, "Error while loading occupancy grid: " + message);
+            displayToastMessage(R.string.load_occupancy_grid_error);
+            showLoadOccupancyGridDialog(/* firstTry */ false, mOccupancyGridNameList);
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mLoadOccupancyGridButton.setEnabled(true);
+            }
+        });
     }
 
     @Override
@@ -437,7 +507,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mSnackbarLoadNewMap.dismiss();
             }
         }
-        updateSaveMapButton();
+        updateLoadAndSaveMapButtons();
         updateTangoStatus(TangoStatus.values()[status]);
     }
 
@@ -573,7 +643,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 mLogger.start();
                 getTangoPermission(EXTRA_VALUE_ADF, REQUEST_CODE_ADF_PERMISSION);
                 getTangoPermission(EXTRA_VALUE_DATASET, REQUEST_CODE_DATASET_PERMISSION);
-                updateSaveMapButton();
+                updateLoadAndSaveMapButtons();
             } else if (requestCode == StartSettingsActivityRequest.STANDARD_RUN) {
                 // It is ok to change the log file name at runtime.
                 String logFileName = mSharedPref.getString(getString(R.string.pref_log_file_key),
@@ -645,7 +715,6 @@ public class RunningActivity extends AppCompatRosActivity implements
                 e.printStackTrace();
             }
         }
-        updateSaveMapButton();
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 

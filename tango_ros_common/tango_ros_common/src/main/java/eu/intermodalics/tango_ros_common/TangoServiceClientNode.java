@@ -33,6 +33,9 @@ import java.util.concurrent.Callable;
 import tango_ros_messages.GetMapUuids;
 import tango_ros_messages.GetMapUuidsRequest;
 import tango_ros_messages.GetMapUuidsResponse;
+import tango_ros_messages.LoadOccupancyGrid;
+import tango_ros_messages.LoadOccupancyGridRequest;
+import tango_ros_messages.LoadOccupancyGridResponse;
 import tango_ros_messages.SaveMap;
 import tango_ros_messages.SaveMapRequest;
 import tango_ros_messages.SaveMapResponse;
@@ -49,6 +52,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String TAG = TangoServiceClientNode.class.getSimpleName();
     private static final String NODE_NAME = "tango_service_client_node";
     private static final String SAVE_MAP_SRV_NAME = "save_map";
+    private static final String LOAD_OCCUPANCY_GRID_SRV_NAME = "load_occupancy_grid";
     private static final String GET_MAP_UUIDS_SRV_NAME = "get_map_uuids";
     private static final String TANGO_CONNECT_SRV_NAME = "connect";
     private static final String TANGO_STATUS_TOPIC_NAME = "status";
@@ -58,12 +62,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     public interface CallbackListener {
-        void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid);
+        void onSaveMapServiceCallFinish(boolean success, String message, String mapName,
+                                        String mapUuid);
         void onTangoConnectServiceFinish(int response, String message);
         void onTangoDisconnectServiceFinish(int response, String message);
         void onTangoReconnectServiceFinish(int response, String message);
         void onGetMapUuidsFinish(List<String> mapUuids, List<String> mapNames);
         void onTangoStatus(int status);
+        void onLoadOccupancyGridServiceCallFinish(boolean success, String message, boolean aligned,
+                                                  String mapUuid);
     }
 
     public class DefaultCallbackListener implements CallbackListener {
@@ -71,7 +78,8 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         public DefaultCallbackListener() {}
 
         @Override
-        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName, String mapUuid) {}
+        public void onSaveMapServiceCallFinish(boolean success, String message, String mapName,
+                                               String mapUuid) {}
 
         @Override
         public void onTangoConnectServiceFinish(int response, String message) {}
@@ -87,6 +95,10 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
         @Override
         public void onTangoStatus(int status) {}
+
+        @Override
+        public void onLoadOccupancyGridServiceCallFinish(boolean success, String message,
+                                                         boolean aligned, String mapUuid) {}
     }
 
     public TangoServiceClientNode() {}
@@ -183,16 +195,42 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                         SaveMap._TYPE);
 
         SaveMapRequest saveMapRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(SaveMap._TYPE);
+        saveMapRequest.setRequest((byte)(saveMapRequest.SAVE_LOCALIZATION_MAP | saveMapRequest.SAVE_OCCUPANCY_GRID));
         saveMapRequest.setMapName(mapName);
         saveMapService.call(saveMapRequest, new ServiceResponseListener<SaveMapResponse>() {
             @Override
             public void onSuccess(SaveMapResponse saveMapResponse) {
                 mCallbackListener.onSaveMapServiceCallFinish(saveMapResponse.getSuccess(),
-                        saveMapResponse.getMessage(), saveMapResponse.getMapName(), saveMapResponse.getMapUuid());
+                        saveMapResponse.getMessage(), saveMapResponse.getLocalizationMapName(),
+                        saveMapResponse.getLocalizationMapUuid());
             }
             @Override
             public void onFailure(RemoteException e) {
                 mCallbackListener.onSaveMapServiceCallFinish(false, e.getMessage(), null, null);
+            }
+        });
+
+        return true;
+    }
+
+    private Boolean loadOccupancyGrid(String name) throws ServiceNotFoundException {
+        ServiceClient<LoadOccupancyGridRequest, LoadOccupancyGridResponse> loadOccupancyGridService =
+                mConnectedNode.newServiceClient(
+                        NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(LOAD_OCCUPANCY_GRID_SRV_NAME),
+                        LoadOccupancyGrid._TYPE);
+
+        LoadOccupancyGridRequest loadOccupancyGridRequest = mConnectedNode.getServiceRequestMessageFactory().newFromType(LoadOccupancyGrid._TYPE);
+        loadOccupancyGridRequest.setName(name);
+        loadOccupancyGridService.call(loadOccupancyGridRequest, new ServiceResponseListener<LoadOccupancyGridResponse>() {
+            @Override
+            public void onSuccess(LoadOccupancyGridResponse loadOccupancyGridResponse) {
+                mCallbackListener.onLoadOccupancyGridServiceCallFinish(loadOccupancyGridResponse.getSuccess(),
+                        loadOccupancyGridResponse.getMessage(), loadOccupancyGridResponse.getAligned(),
+                        loadOccupancyGridResponse.getLocalizationMapUuid());
+            }
+            @Override
+            public void onFailure(RemoteException e) {
+                mCallbackListener.onLoadOccupancyGridServiceCallFinish(false, e.getMessage(), false, "");
             }
         });
 
@@ -235,6 +273,15 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         return wrapCallROSService(serviceName, new Callable<Boolean>() {
             public Boolean call() throws ServiceNotFoundException {
                 return saveMap(mapName);
+            }
+        });
+    }
+
+    public Boolean callLoadOccupancyGridService(final String mapName) {
+        final String serviceName = NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(LOAD_OCCUPANCY_GRID_SRV_NAME);
+        return wrapCallROSService(serviceName, new Callable<Boolean>() {
+            public Boolean call() throws ServiceNotFoundException {
+                return loadOccupancyGrid(mapName);
             }
         });
     }
