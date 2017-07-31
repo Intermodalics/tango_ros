@@ -156,7 +156,7 @@ void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
                         &t3dr_image, last_camera_color_pose,
                         t3dr_updated_indices);
     if (result != TANGO_3DR_SUCCESS) {
-      LOG(ERROR) << "Tango3DR_update failed with error code "
+      LOG(ERROR) << "Tango3DR_updateFromPointCloud failed with error code "
           << result;
     }
   }
