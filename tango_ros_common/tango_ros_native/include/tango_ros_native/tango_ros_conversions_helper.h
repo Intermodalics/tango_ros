@@ -15,7 +15,7 @@
 #define TANGO_ROS_CONVERSIONS_HELPER_H_
 #include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
 #include <tango_client_api/tango_client_api.h>
-#include <tango_support_api/tango_support_api.h>
+#include <tango_support/tango_support.h>
 
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/OccupancyGrid.h>

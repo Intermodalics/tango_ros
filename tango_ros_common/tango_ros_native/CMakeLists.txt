@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
    tango_3d_reconstruction
    tango_client_api
    tango_ros_messages
-   tango_support_api
+   tango_support
    tf
    tf2_geometry_msgs
    tf2_ros
@@ -34,7 +34,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry image_transport roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support_api tf tf2_geometry_msgs tf2_ros
+  CATKIN_DEPENDS dynamic_reconfigure glog_catkin image_geometry image_transport roscpp sensor_msgs tango_3d_reconstruction tango_client_api tango_ros_messages tango_support tf tf2_geometry_msgs tf2_ros
   LIBRARIES tango_ros_native
   DEPENDS OpenCV
   )

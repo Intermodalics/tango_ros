@@ -15,12 +15,12 @@
 
 #include <glog/logging.h>
 #include <tango_client_api/tango_client_api.h>
-#include <tango_support_api/tango_support_api.h>
+#include <tango_support/tango_support.h>
 
 namespace tango_helper {
 bool IsTangoVersionOk(JNIEnv* env, jobject activity) {
   int version;
-  TangoErrorType result = TangoSupport_GetTangoVersion(env, activity, &version);
+  TangoErrorType result = TangoSupport_getTangoVersion(env, activity, &version);
   if (result != TANGO_SUCCESS || version < TANGO_CORE_MINIMUM_VERSION) {
     LOG(ERROR) << "Tango Core version is out of "
         "date, minimum version required: " << TANGO_CORE_MINIMUM_VERSION <<

@@ -16,7 +16,7 @@
 #include <string>
 
 #include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
-#include <tango_support_api/tango_support_api.h>
+#include <tango_support/tango_support.h>
 
 #include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
@@ -45,11 +45,11 @@ Tango3DR_Status TangoSetup3DRConfig(
     Tango3DR_CameraCalibration* t3dr_color_camera_intrinsics);
 
 void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
-         TangoSupportPointCloudManager* point_cloud_manager,
-         TangoSupportImageBufferManager* image_buffer_manager,
-         Tango3DR_Pose* last_camera_depth_pose,
-         Tango3DR_Pose* last_camera_color_pose,
-         Tango3DR_GridIndexArray* t3dr_updated_indices);
+                TangoSupport_PointCloudManager* point_cloud_manager,
+                TangoSupport_ImageBufferManager* image_buffer_manager,
+                Tango3DR_Pose* last_camera_depth_pose,
+                Tango3DR_Pose* last_camera_color_pose,
+                Tango3DR_GridIndexArray* t3dr_updated_indices);
 
 void ExtractMeshAndConvertToMarkerArray(
     const Tango3DR_ReconstructionContext& t3dr_context,
