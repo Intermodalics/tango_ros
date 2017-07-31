@@ -40,6 +40,7 @@ set(file_names_to_copy
   GetMapUuids
   GetMapUuidsRequest
   GetMapUuidsResponse
+  RequestPermission
   RequestPermissionRequest
   RequestPermissionResponse
   SaveMap
