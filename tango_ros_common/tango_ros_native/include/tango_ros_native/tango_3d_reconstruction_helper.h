@@ -29,7 +29,7 @@ const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1; // Default value from Tang
 const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
 const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // Default value from TangoConfig
 const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
-const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
+const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 180;
 
 const std::string TANGO_3DR_RESOLUTION_PARAM_NAME = "reconstruction/resolution_3d";
 const std::string TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME = "reconstruction/use_space_clearing";
