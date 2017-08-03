@@ -27,20 +27,16 @@
 #include <yaml-cpp/yaml.h>
 
 namespace {
-void AddTrailingSlashToDirectoryPathIfNeeded(std::string& directory_path) {
-  if (!directory_path.empty() && directory_path.back() != '/') {
-    directory_path += '/';
+void AddTrailingSlashToDirectoryPathIfNeeded(std::string* directory_path) {
+  if (!directory_path->empty() && directory_path->back() != '/') {
+    (*directory_path) += '/';
   }
 }
 bool DirectoryPathExists(const std::string& path) {
   struct stat st;
-  if (stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFDIR)) {
-    return true;
-  } else {
-    return false;
-  }
+  return (stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFDIR));
 }
-int MakeDirectoryPath(const std::string& input_path, mode_t mode) {
+bool MakeDirectoryPath(const std::string& input_path, mode_t mode) {
   if (input_path.empty()) {
     // Path is empty, there is nothing to create so we return success.
     return 0;
@@ -52,23 +48,20 @@ int MakeDirectoryPath(const std::string& input_path, mode_t mode) {
   int make_dir_status = 0;
 
   std::string path = input_path;
-  CHECK(!path.empty());
-  AddTrailingSlashToDirectoryPathIfNeeded(path);
+  AddTrailingSlashToDirectoryPathIfNeeded(&path);
 
   while ((current_slash_pos = path.find_first_of('/', previous_slash_pos)) !=
          std::string::npos) {
     dir = path.substr(0, current_slash_pos++);
     previous_slash_pos = current_slash_pos;
-    if (dir.empty())
+    if (dir.empty() || dir == ".")
       continue;  // If leading / first time is 0 length.
-    if (dir == ".")
-      continue;
 
     if ((make_dir_status = mkdir(dir.c_str(), mode)) && errno != EEXIST) {
-      return make_dir_status;
+      return false;
     }
   }
-  return 0;
+  return true;
 }
 } // namespace
 
@@ -84,10 +77,10 @@ bool SaveOccupancyGridDataToPgmFile(
     const std::string& map_name, const std::string& map_directory,
     const nav_msgs::OccupancyGrid& occupancy_grid) {
   std::string map_directory_with_trailing_slash = map_directory;
-  AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+  AddTrailingSlashToDirectoryPathIfNeeded(&map_directory_with_trailing_slash);
   if (!DirectoryPathExists(map_directory_with_trailing_slash)) {
     LOG(INFO) << "Directory " << map_directory_with_trailing_slash << " does not exist, creating it now.";
-    if (MakeDirectoryPath(map_directory_with_trailing_slash, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+    if (!MakeDirectoryPath(map_directory_with_trailing_slash, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
       LOG(ERROR) << "Could not create directory: " << map_directory_with_trailing_slash;
       return false;
     }
@@ -126,10 +119,10 @@ bool SaveOccupancyGridMetadataToYamlFile(
     const std::string& map_name, const std::string& map_uuid,
     const std::string& map_directory, const nav_msgs::MapMetaData& map_metadata) {
   std::string map_directory_with_trailing_slash = map_directory;
-  AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+  AddTrailingSlashToDirectoryPathIfNeeded(&map_directory_with_trailing_slash);
   if (!DirectoryPathExists(map_directory_with_trailing_slash)) {
     LOG(INFO) << "Directory " << map_directory_with_trailing_slash << " does not exist, creating it now.";
-    if (MakeDirectoryPath(map_directory_with_trailing_slash, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+    if (!MakeDirectoryPath(map_directory_with_trailing_slash, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
       LOG(ERROR) << "Could not create directory: " << map_directory_with_trailing_slash;
       return false;
     }
@@ -187,7 +180,7 @@ bool LoadOccupancyGridDataFromPgmFile(
     bool negate, double occupied_threshold, double free_threshold,
     nav_msgs::OccupancyGrid* occupancy_grid) {
   std::string map_directory_with_trailing_slash = map_directory;
-  AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+  AddTrailingSlashToDirectoryPathIfNeeded(&map_directory_with_trailing_slash);
 
   std::string map_pgm_file_path = map_directory_with_trailing_slash + map_name + ".pgm";
   std::ifstream pgm_file(map_pgm_file_path, std::ios::binary);
@@ -255,7 +248,7 @@ bool LoadOccupancyGridMetadataFromYamlFile(
     nav_msgs::MapMetaData* map_metadata, int* negate,
     double* occupied_threshold, double* free_threshold, std::string* map_uuid) {
   std::string map_directory_with_trailing_slash = map_directory;
-  AddTrailingSlashToDirectoryPathIfNeeded(map_directory_with_trailing_slash);
+  AddTrailingSlashToDirectoryPathIfNeeded(&map_directory_with_trailing_slash);
 
   std::string map_yam_file_path = map_directory_with_trailing_slash + map_name + ".yaml";
   std::ifstream yaml_file(map_yam_file_path.c_str());
