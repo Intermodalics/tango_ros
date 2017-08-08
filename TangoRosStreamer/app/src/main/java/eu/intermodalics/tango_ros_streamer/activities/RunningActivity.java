@@ -341,17 +341,21 @@ public class RunningActivity extends AppCompatRosActivity implements
             @Override
             public void onClick(View view) {
                 mOccupancyGridNameList = new ArrayList<String>();
-                String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
-                File occupancyGridDirectory = new File(directory);
-                if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
-                    File[] files = occupancyGridDirectory.listFiles();
-                    for (File file : files) {
-                        if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
-                            mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                try {
+                    String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
+                    File occupancyGridDirectory = new File(directory);
+                    if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
+                        File[] files = occupancyGridDirectory.listFiles();
+                        for (File file : files) {
+                            if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
+                                mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                            }
                         }
                     }
+                    showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
                 }
-                showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -385,9 +389,13 @@ public class RunningActivity extends AppCompatRosActivity implements
                     mSnackbarLoadNewMap.setAction(getString(R.string.snackbar_action_text_load_new_map), new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
-                                    getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
-                            restartTango();
+                            try {
+                                mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
+                                        getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
+                                restartTango();
+                            } catch (RuntimeException e) {
+                                e.printStackTrace();
+                            }
                         }
                     });
                     mSnackbarLoadNewMap.show();
@@ -473,7 +481,13 @@ public class RunningActivity extends AppCompatRosActivity implements
         for (int i = 0; i < mapUuids.size(); ++i) {
             mUuidsNamesHashMap.put(mapUuids.get(i), mapNames.get(i));
         }
-        if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if(mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
         Intent settingsActivityIntent = new Intent(SettingsActivity.NEW_UUIDS_NAMES_MAP_ALERT);
         settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
         this.sendBroadcast(settingsActivityIntent);
@@ -487,7 +501,11 @@ public class RunningActivity extends AppCompatRosActivity implements
         }
         if (status == TangoStatus.SERVICE_CONNECTED.ordinal() && mTangoStatus != TangoStatus.SERVICE_CONNECTED) {
             saveUuidsNamestoHashMap();
-            mParameterNode.setPreferencesFromParameterServer();
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
             mMapSaved = false;
             if (mSnackbarLoadNewMap != null && mSnackbarLoadNewMap.isShown()) {
                 mSnackbarLoadNewMap.dismiss();
@@ -511,6 +529,12 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                Log.e(TAG, "Uncaught exception of type " + e.getClass());
+                e.printStackTrace();
+            }
+        });
         // The following piece of code allows networking in main thread.
         // e.g. Restart Tango button calls a ROS service in UI thread.
         if (android.os.Build.VERSION.SDK_INT > 9) {
@@ -550,7 +574,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                if(mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+                if(mParameterNode != null) {
+                    try {
+                        mParameterNode.setPreferencesFromParameterServer();
+                    } catch (RuntimeException e) {
+                        e.printStackTrace();
+                    }
+                }
                 Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
                 settingsActivityIntent.putExtra(getString(R.string.uuids_names_map), mUuidsNamesHashMap);
                 startActivityForResult(settingsActivityIntent, StartSettingsActivityRequest.STANDARD_RUN);
@@ -578,7 +608,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if (mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
         this.nodeMainExecutorService.forceShutdown();
     }
 
@@ -589,7 +625,11 @@ public class RunningActivity extends AppCompatRosActivity implements
             if ((requestCode == StartSettingsActivityRequest.STANDARD_RUN ||
                     requestCode == StartSettingsActivityRequest.FIRST_RUN) &&
                     mParameterNode != null) {
-                mParameterNode.uploadPreferencesToParameterServer();
+                try {
+                    mParameterNode.uploadPreferencesToParameterServer();
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
             }
 
             if (data != null && data.getBooleanExtra(RESTART_TANGO, false)) {
@@ -672,7 +712,13 @@ public class RunningActivity extends AppCompatRosActivity implements
     }
 
     private void restartTango() {
-        if (mParameterNode != null) mParameterNode.setPreferencesFromParameterServer();
+        if (mParameterNode != null) {
+            try {
+                mParameterNode.setPreferencesFromParameterServer();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
         mTangoServiceClientNode.callTangoConnectService(TangoConnectRequest.RECONNECT);
     }
 
@@ -683,6 +729,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
         } catch (RosRuntimeException e) {
+            e.printStackTrace();
             Log.e(TAG, getString(R.string.network_error));
             displayToastMessage(R.string.network_error);
             return;
@@ -785,16 +832,23 @@ public class RunningActivity extends AppCompatRosActivity implements
             }
         });
         if (mRunLocalMaster) {
-            this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
-            mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
-            // The URI returned by getMasterUri is correct but looks 'weird',
-            // e.g. 'http://android-c90553518bc67cf5:1131'.
-            // Instead of showing this to the user, we show the IP address of the device,
-            // which is also correct and less confusing.
-            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
-            mUriTextView = (TextView) findViewById(R.id.master_uri);
-            mUriTextView.setText("http://" + deviceIP + ":11311");
+            try {
+                this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
+                mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
+                // The URI returned by getMasterUri is correct but looks 'weird',
+                // e.g. 'http://android-c90553518bc67cf5:1131'.
+                // Instead of showing this to the user, we show the IP address of the device,
+                // which is also correct and less confusing.
+                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+                String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
+                mUriTextView = (TextView) findViewById(R.id.master_uri);
+                mUriTextView.setText("http://" + deviceIP + ":11311");
+            } catch (RosRuntimeException e) {
+                e.printStackTrace();
+                Log.e(TAG, getString(R.string.local_master_error));
+                displayToastMessage(R.string.local_master_error);
+                return;
+            }
         }
         if (mMasterUri != null) {
             URI masterUri;
