@@ -341,17 +341,21 @@ public class RunningActivity extends AppCompatRosActivity implements
             @Override
             public void onClick(View view) {
                 mOccupancyGridNameList = new ArrayList<String>();
-                String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
-                File occupancyGridDirectory = new File(directory);
-                if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
-                    File[] files = occupancyGridDirectory.listFiles();
-                    for (File file : files) {
-                        if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
-                            mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                try {
+                    String directory = mParameterNode.getStringParam(getString(R.string.occupancy_grid_directory_key));
+                    File occupancyGridDirectory = new File(directory);
+                    if (occupancyGridDirectory != null && occupancyGridDirectory.isDirectory()) {
+                        File[] files = occupancyGridDirectory.listFiles();
+                        for (File file : files) {
+                            if (FilenameUtils.getExtension(file.getName()).equals("yaml")) {
+                                mOccupancyGridNameList.add(FilenameUtils.removeExtension(file.getName()));
+                            }
                         }
                     }
+                    showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
                 }
-                showLoadOccupancyGridDialog(/* firstTry */ true, mOccupancyGridNameList);
             }
         });
         updateLoadAndSaveMapButtons();
@@ -389,7 +393,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                                 mParameterNode.changeSettingsToLocalizeInMap(mapUuid, getString(R.string.pref_create_new_map_key),
                                         getString(R.string.pref_localization_mode_key), getString(R.string.pref_localization_map_uuid_key));
                                 restartTango();
-                            } catch (Exception e) {
+                            } catch (RuntimeException e) {
                                 e.printStackTrace();
                             }
                         }
@@ -480,7 +484,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         if(mParameterNode != null) {
             try {
                 mParameterNode.setPreferencesFromParameterServer();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 e.printStackTrace();
             }
         }
@@ -499,7 +503,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             saveUuidsNamestoHashMap();
             try {
                 mParameterNode.setPreferencesFromParameterServer();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 e.printStackTrace();
             }
             mMapSaved = false;
@@ -573,10 +577,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                 if(mParameterNode != null) {
                     try {
                         mParameterNode.setPreferencesFromParameterServer();
-                    } catch (Exception e) {
-                        // java.lang.RuntimeException: java.net.ConnectException:
-                        // failed to connect to /192.168.42.129 (port 11311):
-                        // connect failed: ENETUNREACH (Network is unreachable)
+                    } catch (RuntimeException e) {
                         e.printStackTrace();
                     }
                 }
@@ -610,7 +611,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         if (mParameterNode != null) {
             try {
                 mParameterNode.setPreferencesFromParameterServer();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 e.printStackTrace();
             }
         }
@@ -626,10 +627,7 @@ public class RunningActivity extends AppCompatRosActivity implements
                     mParameterNode != null) {
                 try {
                     mParameterNode.uploadPreferencesToParameterServer();
-                } catch (Exception e) {
-                    // java.lang.RuntimeException: java.net.ConnectException:
-                    // failed to connect to /192.168.42.129 (port 11311):
-                    // connect failed: ENETUNREACH (Network is unreachable) .
+                } catch (RuntimeException e) {
                     e.printStackTrace();
                 }
             }
@@ -717,7 +715,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         if (mParameterNode != null) {
             try {
                 mParameterNode.setPreferencesFromParameterServer();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 e.printStackTrace();
             }
         }
