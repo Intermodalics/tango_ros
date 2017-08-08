@@ -525,6 +525,12 @@ public class RunningActivity extends AppCompatRosActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                Log.e(TAG, "Uncaught exception of type " + e.getClass());
+                e.printStackTrace();
+            }
+        });
         // The following piece of code allows networking in main thread.
         // e.g. Restart Tango button calls a ROS service in UI thread.
         if (android.os.Build.VERSION.SDK_INT > 9) {
@@ -725,6 +731,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             nodeConfiguration = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration.setMasterUri(this.nodeMainExecutorService.getMasterUri());
         } catch (RosRuntimeException e) {
+            e.printStackTrace();
             Log.e(TAG, getString(R.string.network_error));
             displayToastMessage(R.string.network_error);
             return;
@@ -827,7 +834,7 @@ public class RunningActivity extends AppCompatRosActivity implements
             }
         });
         if (mRunLocalMaster) {
-            if (this.nodeMainExecutorService.getMasterUri() != null) {
+            try {
                 this.nodeMainExecutorService.startMaster(/*isPrivate*/ false);
                 mMasterUri = this.nodeMainExecutorService.getMasterUri().toString();
                 // The URI returned by getMasterUri is correct but looks 'weird',
@@ -838,8 +845,11 @@ public class RunningActivity extends AppCompatRosActivity implements
                 String deviceIP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
                 mUriTextView = (TextView) findViewById(R.id.master_uri);
                 mUriTextView.setText("http://" + deviceIP + ":11311");
-            } else {
-                switchRosLight(mRosStatus);
+            } catch (RosRuntimeException e) {
+                e.printStackTrace();
+                Log.e(TAG, getString(R.string.local_master_error));
+                displayToastMessage(R.string.local_master_error);
+                return;
             }
         }
         if (mMasterUri != null) {

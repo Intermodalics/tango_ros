@@ -39,6 +39,7 @@
 
     <string name="network_error">No network found! Please check your network configuration and restart the application.</string>
     <string name="ros_init_error">Unable to connect to ROS master.</string>
+    <string name="local_master_error">Unable to start local master. Please check your network configuration and restart the application.</string>
     <string name="tango_lib_error">Unable to load Tango library</string>
     <string name="tango_bind_error">Unable to bind to Tango Service</string>
     <string name="tango_version_error">Your version of Tango is out of date</string>
