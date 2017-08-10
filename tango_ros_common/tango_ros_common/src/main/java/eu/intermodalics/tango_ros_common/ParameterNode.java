@@ -159,4 +159,16 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public String getStringParam(String paramName) {
         return mConnectedNode.getParameterTree().getString(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), "");
     }
+
+    public void setBoolParam(String paramName, Boolean value) {
+         mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), value);
+    }
+
+    public void setIntParam(String paramName, Integer value) {
+        mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), value);
+    }
+
+    public void setStringParam(String paramName, String value) {
+        mConnectedNode.getParameterTree().set(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(paramName), value);
+    }
 }

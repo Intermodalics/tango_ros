@@ -27,6 +27,7 @@ import android.net.Uri;
 import android.content.res.Configuration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
@@ -60,9 +61,14 @@ import org.ros.node.NodeMainExecutor;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import eu.intermodalics.nodelet_manager.TangoNodeletManager;
 import eu.intermodalics.nodelet_manager.TangoInitializationHelper;
@@ -747,7 +753,35 @@ public class RunningActivity extends AppCompatRosActivity implements
         tangoConfigurationParameters.put(getString(R.string.pref_localization_map_uuid_key), "string");
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
-        nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
+        nodeMainExecutor.execute(mParameterNode, nodeConfiguration, new ArrayList<NodeListener>(){{
+            add(new DefaultNodeListener() {
+                @Override
+                public void onStart(final ConnectedNode connectedNode) {
+                    class SetParameterAndroidApiLevelTask implements Callable<Boolean> {
+                        @Override
+                        public Boolean call() throws Exception{
+                            while (connectedNode.getParameterTree() == null) {
+                                try {
+                                    Thread.sleep(200);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                    return false;
+                                }
+                            }
+                            mParameterNode.setIntParam("android_api_level", Build.VERSION.SDK_INT);
+                            return true;
+                        }
+                    };
+                    ExecutorService executor = Executors.newSingleThreadExecutor();
+                    try {
+                        executor.invokeAll(Arrays.asList(new SetParameterAndroidApiLevelTask()), 5, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    executor.shutdown();
+                }
+            });
+        }});
         // ServiceClient node which is responsible for calling ros services.
         mTangoServiceClientNode = new TangoServiceClientNode();
         mTangoServiceClientNode.setCallbackListener(this);
