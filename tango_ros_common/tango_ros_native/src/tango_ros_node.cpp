@@ -274,16 +274,7 @@ void TangoRosNode::onInit() {
           AREA_DESCRIPTION_T_START_OF_SERVICE_TOPIC_NAME, queue_size, latching);
 
   image_transport_.reset(new image_transport::ImageTransport(node_handle_));
-  try {
-    fisheye_camera_publisher_ =
-        image_transport_->advertiseCamera(FISHEYE_IMAGE_TOPIC_NAME,
-                                          queue_size, latching);
-    fisheye_rectified_image_publisher_ =
-        image_transport_->advertise(FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME,
-                                   queue_size, latching);
-  } catch (const image_transport::Exception& e) {
-    LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
-  }
+
   static_occupancy_grid_publisher_ = node_handle_.advertise<nav_msgs::OccupancyGrid>(
       STATIC_OCCUPANCY_GRID_TOPIC_NAME, queue_size, latching);
 
@@ -399,6 +390,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
                                       queue_size, latching);
       } catch (const image_transport::Exception& e) {
         LOG(ERROR) << "Error while creating color image transport publishers" << e.what();
+        return TANGO_ERROR;
       }
   } else {
     color_camera_publisher_.shutdown();
@@ -419,6 +411,22 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   } else {
     occupancy_grid_publisher_.shutdown();
   }
+  if (fisheye_camera_available_) {
+    try {
+        fisheye_camera_publisher_ =
+            image_transport_->advertiseCamera(FISHEYE_IMAGE_TOPIC_NAME,
+                                              queue_size, latching);
+        fisheye_rectified_image_publisher_ =
+            image_transport_->advertise(FISHEYE_RECTIFIED_IMAGE_TOPIC_NAME,
+                                       queue_size, latching);
+      } catch (const image_transport::Exception& e) {
+        LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
+        return TANGO_ERROR;
+      }
+  } else {
+    fisheye_camera_publisher_.shutdown();
+    fisheye_rectified_image_publisher_.shutdown();
+  }
 
   TangoCoordinateFramePair pair;
   pair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
@@ -436,6 +444,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   }
   if (pose.status_code != TANGO_POSE_VALID) {
     LOG(ERROR) << "Error, could not get a first valid pose.";
+    UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return TANGO_INVALID;
   }
   time_offset_ = ros::Time::now().toSec() - GetBootTimeInSecond();
@@ -609,12 +618,19 @@ TangoErrorType TangoRosNode::TangoConnect() {
     return result;
   }
 
-  result = TangoService_connectOnFrameAvailable(
-      TANGO_CAMERA_FISHEYE, this, OnFrameAvailableRouter);
-  if (result != TANGO_SUCCESS) {
-    LOG(ERROR) << function_name
-        << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
-    return result;
+  int android_api_level;
+  node_handle_.param("android_api_level", android_api_level, 0);
+  if (android_api_level < 24) {
+    result = TangoService_connectOnFrameAvailable(
+        TANGO_CAMERA_FISHEYE, this, OnFrameAvailableRouter);
+    if (result != TANGO_SUCCESS) {
+      LOG(ERROR) << function_name
+          << ", TangoService_connectOnFrameAvailable TANGO_CAMERA_FISHEYE error: " << result;
+      return result;
+    }
+  } else {
+    LOG(WARNING) << "Android API Level is 24 or more, Fisheye camera data is not available";
+    fisheye_camera_available_ = false;
   }
 
   result = TangoService_connectOnFrameAvailable(
@@ -670,7 +686,6 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   PublishStaticTransforms();
   success = OnTangoServiceConnected();
   if (success != TANGO_SUCCESS) {
-    UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return success;
   }
   area_description_T_start_of_service_.child_frame_id = "";
@@ -945,7 +960,7 @@ void TangoRosNode::StopPublishing() {
       laser_scan_thread_.publish_thread.join();
     }
     if (fisheye_image_thread_.publish_thread.joinable()) {
-      if (!tango_data_available_ ||
+      if (!tango_data_available_ || !fisheye_camera_available_ ||
           fisheye_camera_publisher_.getNumSubscribers() <= 0) {
         fisheye_image_thread_.data_available.notify_all();
       }
