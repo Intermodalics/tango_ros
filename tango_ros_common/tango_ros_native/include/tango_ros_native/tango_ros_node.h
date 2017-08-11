@@ -234,6 +234,7 @@ class TangoRosNode : public ::nodelet::Nodelet {
   bool enable_color_camera_ = true;
   bool enable_3dr_mesh_ = true;
   bool enable_3dr_occupancy_grid_ = true;
+  bool fisheye_camera_available_ = true;
   std::string start_of_service_frame_id_;
   std::string area_description_frame_id_;
 

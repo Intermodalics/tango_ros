@@ -29,7 +29,12 @@ const int32_t TANGO_3DR_DEFAULT_MIN_NUM_VERTICES = 1; // Default value from Tang
 const int32_t TANGO_3DR_DEFAULT_UPDATE_METHOD = 0; // TRAVERSAL_UPDATE
 const int32_t TANGO_3DR_DEFAULT_MAX_VOXEL_WEIGHT = 16383; // Default value from TangoConfig
 const double TANGO_3DR_DEFAULT_FLOORPLAN_MAX_ERROR = 0.; // meter
-const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 128;
+// Default threshold to decide if a pixel value should correspond to a free or
+// occupied cell when converting the image of Tango 3D reconstruction to an
+// occupancy grid. Should be between 0 and 255:
+// pixel value <= threshold --> cell is free,
+// pixel value > threshold --> cell is occupied.
+const uint8_t TANGO_3DR_OCCUPANCY_GRID_DEFAULT_THRESHOLD = 180;
 
 const std::string TANGO_3DR_RESOLUTION_PARAM_NAME = "reconstruction/resolution_3d";
 const std::string TANGO_3DR_USE_SPACE_CLEARING_PARAM_NAME = "reconstruction/use_space_clearing";
