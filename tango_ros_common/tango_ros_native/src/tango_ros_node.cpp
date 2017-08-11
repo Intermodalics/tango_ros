@@ -390,6 +390,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
                                       queue_size, latching);
       } catch (const image_transport::Exception& e) {
         LOG(ERROR) << "Error while creating color image transport publishers" << e.what();
+        return TANGO_ERROR;
       }
   } else {
     color_camera_publisher_.shutdown();
@@ -420,6 +421,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
                                        queue_size, latching);
       } catch (const image_transport::Exception& e) {
         LOG(ERROR) << "Error while creating fisheye image transport publishers" << e.what();
+        return TANGO_ERROR;
       }
   } else {
     fisheye_camera_publisher_.shutdown();
@@ -442,6 +444,7 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   }
   if (pose.status_code != TANGO_POSE_VALID) {
     LOG(ERROR) << "Error, could not get a first valid pose.";
+    UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return TANGO_INVALID;
   }
   time_offset_ = ros::Time::now().toSec() - GetBootTimeInSecond();
@@ -683,7 +686,6 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   PublishStaticTransforms();
   success = OnTangoServiceConnected();
   if (success != TANGO_SUCCESS) {
-    UpdateAndPublishTangoStatus(TangoStatus::NO_FIRST_VALID_POSE);
     return success;
   }
   area_description_T_start_of_service_.child_frame_id = "";
