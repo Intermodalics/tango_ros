@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>tango_support_api</name>
+  <name>tango_support</name>
   <version>0.0.0</version>
-  <description>Single-header tango_support_api library.</description>
+  <description>Single-header tango_support library.</description>
   <license>Apache</license>
   
   <maintainer email="tango-help@google.com"> </maintainer>

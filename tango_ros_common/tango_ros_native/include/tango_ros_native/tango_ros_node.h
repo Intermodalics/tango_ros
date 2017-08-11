@@ -23,7 +23,7 @@
 
 #include <tango_3d_reconstruction/tango_3d_reconstruction_api.h>
 #include <tango_client_api/tango_client_api.h>
-#include <tango_support_api/tango_support_api.h>
+#include <tango_support/tango_support.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -283,9 +283,9 @@ class TangoRosNode : public ::nodelet::Nodelet {
   // Context for a 3D Reconstruction. Maintains the state of a single
   // mesh being reconstructed.
   Tango3DR_ReconstructionContext t3dr_context_;
-  TangoSupportPointCloudManager* point_cloud_manager_;
+  TangoSupport_PointCloudManager* point_cloud_manager_;
   Tango3DR_Pose last_camera_depth_pose_;
-  TangoSupportImageBufferManager* image_buffer_manager_;
+  TangoSupport_ImageBufferManager* image_buffer_manager_;
   Tango3DR_Pose last_camera_color_pose_;
   Tango3DR_CameraCalibration t3dr_color_camera_intrinsics_;
   double t3dr_resolution_;

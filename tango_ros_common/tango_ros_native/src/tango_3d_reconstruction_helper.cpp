@@ -124,11 +124,11 @@ Tango3DR_Status TangoSetup3DRConfig(
 }
 
 void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
-         TangoSupportPointCloudManager* const point_cloud_manager,
-         TangoSupportImageBufferManager* const image_buffer_manager,
-         Tango3DR_Pose* last_camera_depth_pose,
-         Tango3DR_Pose* last_camera_color_pose,
-         Tango3DR_GridIndexArray* t3dr_updated_indices)  {
+                TangoSupport_PointCloudManager* point_cloud_manager,
+                TangoSupport_ImageBufferManager* image_buffer_manager,
+                Tango3DR_Pose* last_camera_depth_pose,
+                Tango3DR_Pose* last_camera_color_pose,
+                Tango3DR_GridIndexArray* t3dr_updated_indices)  {
   // Get latest point cloud.
   TangoPointCloud* last_point_cloud;
   TangoSupport_getLatestPointCloud(point_cloud_manager, &last_point_cloud);
@@ -152,11 +152,11 @@ void UpdateMesh(const Tango3DR_ReconstructionContext& t3dr_context,
     t3dr_image.data = last_color_image_buffer->data;
     // Get updated mesh segment indices.
     Tango3DR_Status result =
-        Tango3DR_update(t3dr_context, &t3dr_depth, last_camera_depth_pose,
+        Tango3DR_updateFromPointCloud(t3dr_context, &t3dr_depth, last_camera_depth_pose,
                         &t3dr_image, last_camera_color_pose,
                         t3dr_updated_indices);
     if (result != TANGO_3DR_SUCCESS) {
-      LOG(ERROR) << "Tango3DR_update failed with error code "
+      LOG(ERROR) << "Tango3DR_updateFromPointCloud failed with error code "
           << result;
     }
   }
