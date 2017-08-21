@@ -64,6 +64,31 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
         syncLocalPreferencesWithParameterServer();
     }
 
+    // When using simulated time, direct or indirect calls to "connectedNode.getCurrentTime()" such
+    // as connectedNode.getLog().error(e) throw NullPointerExeption.
+    // See rosjava issue reported here: https://github.com/rosjava/rosjava_core/issues/148
+    // As a workaround, this function waits until "connectedNode.getCurrentTime()" stops trowing
+    // this exception, which is the case when:
+    // * simulated time is not used or
+    // * simulated time is used AND /clock is being published
+    // If simulated is used AND /clock is NOT published, it keeps on waiting and logging a warning.
+    public void waitForClock() {
+        while (true) {
+            try {
+                mConnectedNode.getCurrentTime();
+                android.util.Log.i("waitForClock", "Successfully get current time.");
+                break; // no exception, so let's stop waiting
+            } catch (NullPointerException e) {
+                android.util.Log.w("waitForClock", "Could not get current time. If simulated time is active, /clock needs to be published.");
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+    }
+
     /**
      * First download ROS parameters from parameter server, then upload local settings to parameter
      * server.
@@ -75,7 +100,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
-        mLog.info("Upload preferences to parameter server.");
         for (String paramName : mParamNames.keySet()) {
             uploadPreferenceToParameterServer(paramName);
         }
