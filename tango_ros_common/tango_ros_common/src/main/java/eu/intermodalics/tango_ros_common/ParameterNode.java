@@ -21,7 +21,6 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
-import org.apache.commons.logging.Log;
 import org.ros.exception.ParameterClassCastException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -34,12 +33,14 @@ import java.util.HashMap;
  * RosJava node that handles interactions with the ros parameter server.
  */
 public class ParameterNode extends AbstractNodeMain implements NodeMain {
+    private static final String TAG = ParameterNode.class.getSimpleName();
     private static final String NODE_NAME = "parameter_node";
 
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
-    private Log mLog;
+
+    private ConnectedNodeLogger mLog;
     private final HashMap<String, String> mParamNames;
 
     /**
@@ -59,34 +60,9 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public void onStart(ConnectedNode connectedNode) {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
-        mLog = connectedNode.getLog();
+        mLog = new ConnectedNodeLogger(connectedNode);
         setIntParam("android_api_level", Build.VERSION.SDK_INT);
         syncLocalPreferencesWithParameterServer();
-    }
-
-    // When using simulated time, direct or indirect calls to "connectedNode.getCurrentTime()" such
-    // as connectedNode.getLog().error(e) throw NullPointerExeption.
-    // See rosjava issue reported here: https://github.com/rosjava/rosjava_core/issues/148
-    // As a workaround, this function waits until "connectedNode.getCurrentTime()" stops trowing
-    // this exception, which is the case when:
-    // * simulated time is not used or
-    // * simulated time is used AND /clock is being published
-    // If simulated is used AND /clock is NOT published, it keeps on waiting and logging a warning.
-    public void waitForClock() {
-        while (true) {
-            try {
-                mConnectedNode.getCurrentTime();
-                android.util.Log.i("waitForClock", "Successfully get current time.");
-                break; // no exception, so let's stop waiting
-            } catch (NullPointerException e) {
-                android.util.Log.w("waitForClock", "Could not get current time. If simulated time is active, /clock needs to be published.");
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
     }
 
     /**
@@ -153,10 +129,10 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                             Integer intValue = getIntParam(paramName);
                             editor.putBoolean(paramName, !intValue.equals(0));
                         } catch (ParameterClassCastException e2) {
-                            mLog.error("Preference " + paramName + " can not be set from parameter server.", e2);
+                            mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e);
                         }
                     } else {
-                        mLog.error("Preference " + paramName + " can not be set from parameter server.", e);
+                        mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e);
                     }
                 }
             }

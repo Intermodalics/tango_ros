@@ -748,7 +748,6 @@ public class RunningActivity extends AppCompatRosActivity implements
         mParameterNode = new ParameterNode(this, tangoConfigurationParameters);
         nodeConfiguration.setNodeName(mParameterNode.getDefaultNodeName());
         nodeMainExecutor.execute(mParameterNode, nodeConfiguration);
-        mParameterNode.waitForClock();
         // ServiceClient node which is responsible for calling ros services.
         mTangoServiceClientNode = new TangoServiceClientNode();
         mTangoServiceClientNode.setCallbackListener(this);

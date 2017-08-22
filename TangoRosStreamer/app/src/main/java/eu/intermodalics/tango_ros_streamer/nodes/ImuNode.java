@@ -23,25 +23,26 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-import org.apache.commons.logging.Log;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Publisher;
 
+import eu.intermodalics.tango_ros_common.ConnectedNodeLogger;
 import sensor_msgs.Imu;
 
 /**
  *
  */
 public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventListener {
+    private static final String TAG = ImuNode.class.getSimpleName();
     private static final String NODE_NAME = "android";
 
     private ConnectedNode mConnectedNode;
     private Publisher<Imu> mImuPublisher;
     private Imu mImuMessage;
-    private Log mLog;
+    private ConnectedNodeLogger mLog;
 
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
@@ -62,7 +63,7 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
 
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
-        mLog = connectedNode.getLog();
+        mLog = new ConnectedNodeLogger(connectedNode);
         mImuPublisher = connectedNode.newPublisher("android/imu", Imu._TYPE);
         mImuMessage = mConnectedNode.getTopicMessageFactory().newFromType(Imu._TYPE);
 
@@ -107,7 +108,13 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
                 break;
         }
         if (mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
-            mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
+            try {
+                mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
+            } catch (NullPointerException e) {
+                mLog.error(TAG, "Could not get current time. If you are using simulated time, " +
+                        "/clock might not be published yet.");
+                e.printStackTrace();
+            }
             mImuMessage.getHeader().setFrameId("imu");
             mImuPublisher.publish(mImuMessage);
             mNewRotationData = false;
