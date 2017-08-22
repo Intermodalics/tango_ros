@@ -86,9 +86,9 @@ classes_available_map getStaticClassesAvailable(void) {
                     "")));
   pluginClasses.insert(
         plugin_pair(
-          "tango_ros_native/TangoRosNode",
-          ClassDesc("tango_ros_native/TangoRosNode",
-                    "tango_ros_native::TangoRosNode",
+          "tango_ros_native/TangoRosNodelet",
+          ClassDesc("tango_ros_native/TangoRosNodelet",
+                    "tango_ros_native::TangoRosNodelet",
                     "nodelet::Nodelet",
                     "tango_ros_native",
                     "lib/libtango_ros_native",
