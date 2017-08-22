@@ -110,13 +110,13 @@ public class ImuNode extends AbstractNodeMain implements NodeMain, SensorEventLi
         if (mNewRotationData && mNewGyroscopeData && mNewAccelerometerData) {
             try {
                 mImuMessage.getHeader().setStamp(mConnectedNode.getCurrentTime());
+                mImuMessage.getHeader().setFrameId("imu");
+                mImuPublisher.publish(mImuMessage);
             } catch (NullPointerException e) {
                 mLog.error(TAG, "Could not get current time. If you are using simulated time, " +
                         "/clock might not be published yet.");
                 e.printStackTrace();
             }
-            mImuMessage.getHeader().setFrameId("imu");
-            mImuPublisher.publish(mImuMessage);
             mNewRotationData = false;
             mNewGyroscopeData = false;
             mNewAccelerometerData = false;
