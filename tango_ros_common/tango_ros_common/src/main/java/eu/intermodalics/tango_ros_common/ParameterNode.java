@@ -39,7 +39,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
-
     private ConnectedNodeLogger mLog;
     private final HashMap<String, String> mParamNames;
 
@@ -129,7 +128,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                             Integer intValue = getIntParam(paramName);
                             editor.putBoolean(paramName, !intValue.equals(0));
                         } catch (ParameterClassCastException e2) {
-                            mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e);
+                            mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e2);
                         }
                     } else {
                         mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e);
