@@ -38,7 +38,7 @@ TEST_F(TangoRosTest, TestPublishingForFixedTime) {
   std::map<std::string, std::string> remappings;
   std::vector<std::string> nodelet_argv;
   LOG(INFO) << "Start loading nodelets.";
-  const bool result = loader.load("/tango", "tango_ros_native/TangoRosNode", remappings, nodelet_argv);
+  const bool result = loader.load("/tango", "tango_ros_native/TangoRosNodelet", remappings, nodelet_argv);
   ASSERT_TRUE(result) << "Problem loading Tango ROS nodelet!";
   LOG(INFO) << "Finished loading nodelets.";
 

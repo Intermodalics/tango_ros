@@ -10,3 +10,4 @@
 [submodule "third_party/tango_api/tango-examples-c"]
 	path = third_party/tango_api/tango-examples-c
 	url = https://github.com/Intermodalics/tango-examples-c
+	branch = release-m20-fix_include_for_catkin

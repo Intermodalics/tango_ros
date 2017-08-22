@@ -14,7 +14,7 @@
 #include "tango_ros_native/occupancy_grid_file_io.h"
 #include "tango_ros_native/tango_3d_reconstruction_helper.h"
 #include "tango_ros_native/tango_ros_conversions_helper.h"
-#include "tango_ros_native/tango_ros_node.h"
+#include "tango_ros_native/tango_ros_nodelet.h"
 
 #include <cmath>
 #include <ctime>
@@ -32,7 +32,7 @@
 #include <std_msgs/Int8.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNode, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(tango_ros_native::TangoRosNodelet, nodelet::Nodelet)
 
 namespace {
 std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_separated_string) {
@@ -47,37 +47,37 @@ std::vector<std::string> SplitCommaSeparatedString(const std::string& comma_sepa
 }
 // This function routes onPoseAvailable callback to the application object for
 // handling.
-// @param context, context will be a pointer to a TangoRosNode
+// @param context, context will be a pointer to a TangoRosNodelet
 //        instance on which to call the callback.
 // @param pose, pose data to route to onPoseAvailable function.
 void OnPoseAvailableRouter(void* context, const TangoPoseData* pose) {
-  tango_ros_native::TangoRosNode* app =
-      static_cast<tango_ros_native::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNodelet* app =
+      static_cast<tango_ros_native::TangoRosNodelet*>(context);
   app->OnPoseAvailable(pose);
 }
 // This function routes onPointCloudAvailable callback to the application
 // object for handling.
-// @param context, context will be a pointer to a TangoRosNode
+// @param context, context will be a pointer to a TangoRosNodelet
 //        instance on which to call the callback.
 // @param point_cloud, point cloud data to route to OnPointCloudAvailable
 //        function.
 void OnPointCloudAvailableRouter(void* context,
                                  const TangoPointCloud* point_cloud) {
-  tango_ros_native::TangoRosNode* app =
-      static_cast<tango_ros_native::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNodelet* app =
+      static_cast<tango_ros_native::TangoRosNodelet*>(context);
   app->OnPointCloudAvailable(point_cloud);
 }
 // This function routes OnFrameAvailable callback to the application
 // object for handling.
-// @param context, context will be a pointer to a TangoRosNode
+// @param context, context will be a pointer to a TangoRosNodelet
 //        instance on which to call the callback.
 // @param camera_id, the ID of the camera. Only TANGO_CAMERA_COLOR and
 //        TANGO_CAMERA_FISHEYE are supported.
 // @param buffer, image data to route to OnFrameAvailable function.
 void OnFrameAvailableRouter(void* context, TangoCameraId camera_id,
                             const TangoImageBuffer* buffer) {
-  tango_ros_native::TangoRosNode* app =
-      static_cast<tango_ros_native::TangoRosNode*>(context);
+  tango_ros_native::TangoRosNodelet* app =
+      static_cast<tango_ros_native::TangoRosNodelet*>(context);
   app->OnFrameAvailable(camera_id, buffer);
 }
 
@@ -255,11 +255,11 @@ void InvertTransformStamped(const geometry_msgs::TransformStamped& a_T_b,
 }  // namespace
 
 namespace tango_ros_native {
-TangoRosNode::TangoRosNode() : run_threads_(false), tango_config_(nullptr),
+TangoRosNodelet::TangoRosNodelet() : run_threads_(false), tango_config_(nullptr),
     t3dr_context_(nullptr), point_cloud_manager_(nullptr),
     image_buffer_manager_(nullptr), new_point_cloud_available_for_t3dr_(false) {}
 
-void TangoRosNode::onInit() {
+void TangoRosNodelet::onInit() {
   node_handle_ = getMTPrivateNodeHandle();
   const  uint32_t queue_size = 1;
   const bool latching = true;
@@ -280,23 +280,23 @@ void TangoRosNode::onInit() {
 
   get_map_name_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapName::Request,
       tango_ros_messages::GetMapName::Response>(GET_MAP_NAME_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapNameServiceCallback, this, _1, _2));
+                                             boost::bind(&TangoRosNodelet::GetMapNameServiceCallback, this, _1, _2));
 
   get_map_uuids_service_ = node_handle_.advertiseService<tango_ros_messages::GetMapUuids::Request,
       tango_ros_messages::GetMapUuids::Response>(GET_MAP_UUIDS_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::GetMapUuidsServiceCallback, this, _1, _2));
+                                             boost::bind(&TangoRosNodelet::GetMapUuidsServiceCallback, this, _1, _2));
 
   save_map_service_ = node_handle_.advertiseService<tango_ros_messages::SaveMap::Request,
       tango_ros_messages::SaveMap::Response>(SAVE_MAP_SERVICE_NAME,
-                                             boost::bind(&TangoRosNode::SaveMapServiceCallback, this, _1, _2));
+                                             boost::bind(&TangoRosNodelet::SaveMapServiceCallback, this, _1, _2));
   load_occupancy_grid_service_ = node_handle_.advertiseService<tango_ros_messages::LoadOccupancyGrid::Request,
         tango_ros_messages::LoadOccupancyGrid::Response>(LOAD_OCCUPANCY_GRID_SERVICE_NAME,
-                                               boost::bind(&TangoRosNode::LoadOccupancyGridServiceCallback, this, _1, _2));
+                                               boost::bind(&TangoRosNodelet::LoadOccupancyGridServiceCallback, this, _1, _2));
 
   tango_connect_service_ = node_handle_.advertiseService<tango_ros_messages::TangoConnect::Request,
           tango_ros_messages::TangoConnect::Response>(
               CONNECT_SERVICE_NAME, boost::bind(
-                  &TangoRosNode::TangoConnectServiceCallback, this, _1, _2));
+                  &TangoRosNodelet::TangoConnectServiceCallback, this, _1, _2));
 
   tango_status_ = TangoStatus::UNKNOWN;
 
@@ -361,11 +361,11 @@ void TangoRosNode::onInit() {
       area_description_frame_id_);
 }
 
-TangoRosNode::~TangoRosNode() {
+TangoRosNodelet::~TangoRosNodelet() {
   TangoDisconnect();
 }
 
-TangoErrorType TangoRosNode::OnTangoServiceConnected() {
+TangoErrorType TangoRosNodelet::OnTangoServiceConnected() {
   const  uint32_t queue_size = 1;
   const bool latching = true;
   // Advertise topics that need depth camera and/or color camera only if cameras are enable.
@@ -476,8 +476,8 @@ TangoErrorType TangoRosNode::OnTangoServiceConnected() {
   return TANGO_SUCCESS;
 }
 
-TangoErrorType TangoRosNode::TangoSetupConfig() {
-  const char* function_name = "TangoRosNode::TangoSetupConfig()";
+TangoErrorType TangoRosNodelet::TangoSetupConfig() {
+  const char* function_name = "TangoRosNodelet::TangoSetupConfig()";
 
   tango_config_ = TangoService_getConfig(TANGO_CONFIG_DEFAULT);
   if (tango_config_ == nullptr) {
@@ -595,8 +595,8 @@ TangoErrorType TangoRosNode::TangoSetupConfig() {
   return TANGO_SUCCESS;
 }
 
-TangoErrorType TangoRosNode::TangoConnect() {
-  const char* function_name = "TangoRosNode::TangoConnect()";
+TangoErrorType TangoRosNodelet::TangoConnect() {
+  const char* function_name = "TangoRosNodelet::TangoConnect()";
 
   TangoCoordinateFramePair pairs[2] = {
          {TANGO_COORDINATE_FRAME_START_OF_SERVICE,
@@ -649,14 +649,14 @@ TangoErrorType TangoRosNode::TangoConnect() {
   return TANGO_SUCCESS;
 }
 
-void TangoRosNode::UpdateAndPublishTangoStatus(const TangoStatus& status) {
+void TangoRosNodelet::UpdateAndPublishTangoStatus(const TangoStatus& status) {
   tango_status_ = status;
   std_msgs::Int8 tango_status_msg;
   tango_status_msg.data = static_cast<int>(tango_status_);
   tango_status_publisher_.publish(tango_status_msg);
 }
 
-TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
+TangoErrorType TangoRosNodelet::ConnectToTangoAndSetUpNode() {
   if (tango_status_ == TangoStatus::SERVICE_CONNECTED) {
     // Connecting twice to Tango results in TANGO_ERROR. Early return to avoid
     // this.
@@ -696,7 +696,7 @@ TangoErrorType TangoRosNode::ConnectToTangoAndSetUpNode() {
   return success;
 }
 
-void TangoRosNode::TangoDisconnect() {
+void TangoRosNodelet::TangoDisconnect() {
   StopPublishing();
   if (tango_config_ != nullptr) {
     TangoConfig_free(tango_config_);
@@ -719,7 +719,7 @@ void TangoRosNode::TangoDisconnect() {
   UpdateAndPublishTangoStatus(TangoStatus::SERVICE_NOT_CONNECTED);
 }
 
-void TangoRosNode::PublishStaticTransforms() {
+void TangoRosNodelet::PublishStaticTransforms() {
   std::vector<geometry_msgs::TransformStamped> tf_transforms;
   tf_transforms.reserve(NUMBER_OF_STATIC_TRANSFORMS);
   TangoCoordinateFramePair pair;
@@ -785,7 +785,7 @@ void TangoRosNode::PublishStaticTransforms() {
   }
 }
 
-void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
+void TangoRosNodelet::OnPoseAvailable(const TangoPoseData* pose) {
   if (pose->frame.base == TANGO_COORDINATE_FRAME_START_OF_SERVICE &&
       pose->frame.target == TANGO_COORDINATE_FRAME_DEVICE) {
     if (pose->status_code == TANGO_POSE_VALID &&
@@ -810,7 +810,7 @@ void TangoRosNode::OnPoseAvailable(const TangoPoseData* pose) {
   }
 }
 
-void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
+void TangoRosNodelet::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
   if (point_cloud->num_points > 0) {
     if (point_cloud_publisher_.getNumSubscribers() > 0 &&
         point_cloud_thread_.data_available_mutex.try_lock()) {
@@ -862,7 +862,7 @@ void TangoRosNode::OnPointCloudAvailable(const TangoPointCloud* point_cloud) {
   }
 }
 
-void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
+void TangoRosNodelet::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuffer* buffer) {
   if (fisheye_camera_publisher_.getNumSubscribers() > 0 &&
        camera_id == TangoCameraId::TANGO_CAMERA_FISHEYE &&
        fisheye_image_thread_.data_available_mutex.try_lock()) {
@@ -919,24 +919,24 @@ void TangoRosNode::OnFrameAvailable(TangoCameraId camera_id, const TangoImageBuf
   }
 }
 
-void TangoRosNode::StartPublishing() {
+void TangoRosNodelet::StartPublishing() {
   run_threads_ = true;
   device_pose_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishDevicePose, this);
+      std::thread(&TangoRosNodelet::PublishDevicePose, this);
   point_cloud_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishPointCloud, this);
+      std::thread(&TangoRosNodelet::PublishPointCloud, this);
   laser_scan_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishLaserScan, this);
+      std::thread(&TangoRosNodelet::PublishLaserScan, this);
   fisheye_image_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishFisheyeImage, this);
+      std::thread(&TangoRosNodelet::PublishFisheyeImage, this);
   color_image_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishColorImage, this);
+      std::thread(&TangoRosNodelet::PublishColorImage, this);
   mesh_thread_.publish_thread =
-      std::thread(&TangoRosNode::PublishMesh, this);
-  ros_spin_thread_ = std::thread(&TangoRosNode::RunRosSpin, this);
+      std::thread(&TangoRosNodelet::PublishMesh, this);
+  ros_spin_thread_ = std::thread(&TangoRosNodelet::RunRosSpin, this);
 }
 
-void TangoRosNode::StopPublishing() {
+void TangoRosNodelet::StopPublishing() {
   if (run_threads_) {
     run_threads_ = false;
     if (device_pose_thread_.publish_thread.joinable()) {
@@ -984,7 +984,7 @@ void TangoRosNode::StopPublishing() {
   }
 }
 
-void TangoRosNode::PublishDevicePose() {
+void TangoRosNodelet::PublishDevicePose() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1014,7 +1014,7 @@ void TangoRosNode::PublishDevicePose() {
   }
 }
 
-void TangoRosNode::PublishPointCloud() {
+void TangoRosNodelet::PublishPointCloud() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1029,7 +1029,7 @@ void TangoRosNode::PublishPointCloud() {
   }
 }
 
-void TangoRosNode::PublishLaserScan() {
+void TangoRosNodelet::PublishLaserScan() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1044,7 +1044,7 @@ void TangoRosNode::PublishLaserScan() {
   }
 }
 
-void TangoRosNode::PublishFisheyeImage() {
+void TangoRosNodelet::PublishFisheyeImage() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1081,7 +1081,7 @@ void TangoRosNode::PublishFisheyeImage() {
   }
 }
 
-void TangoRosNode::PublishColorImage() {
+void TangoRosNodelet::PublishColorImage() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1117,7 +1117,7 @@ void TangoRosNode::PublishColorImage() {
   }
 }
 
-void TangoRosNode::PublishMesh() {
+void TangoRosNodelet::PublishMesh() {
   while(ros::ok()) {
     if (!run_threads_) {
       break;
@@ -1166,15 +1166,15 @@ void TangoRosNode::PublishMesh() {
   }
 }
 
-void TangoRosNode::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
+void TangoRosNodelet::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   laser_scan_max_height_ = config.laser_scan_max_height;
   laser_scan_min_height_ = config.laser_scan_min_height;
 }
 
-void TangoRosNode::RunRosSpin() {
+void TangoRosNodelet::RunRosSpin() {
   dynamic_reconfigure::Server<tango_ros_native::PublisherConfig> server;
   dynamic_reconfigure::Server<tango_ros_native::PublisherConfig>::CallbackType callback =
-      boost::bind(&TangoRosNode::DynamicReconfigureCallback, this, _1, _2);
+      boost::bind(&TangoRosNodelet::DynamicReconfigureCallback, this, _1, _2);
   server.setCallback(callback);
   while(ros::ok()) {
     if (!run_threads_) {
@@ -1185,7 +1185,7 @@ void TangoRosNode::RunRosSpin() {
   }
 }
 
-bool TangoRosNode::TangoConnectServiceCallback(
+bool TangoRosNodelet::TangoConnectServiceCallback(
     const tango_ros_messages::TangoConnect::Request& request,
     tango_ros_messages::TangoConnect::Response& response) {
   switch (request.request) {
@@ -1218,13 +1218,13 @@ bool TangoRosNode::TangoConnectServiceCallback(
     return true;
 }
 
-bool TangoRosNode::GetMapNameServiceCallback(
+bool TangoRosNodelet::GetMapNameServiceCallback(
     const tango_ros_messages::GetMapName::Request &req,
     tango_ros_messages::GetMapName::Response &res) {
   return GetMapNameFromUuid(req.map_uuid, res.map_name);
 }
 
-bool TangoRosNode::GetMapUuidsServiceCallback(
+bool TangoRosNodelet::GetMapUuidsServiceCallback(
     const tango_ros_messages::GetMapUuids::Request& req,
     tango_ros_messages::GetMapUuids::Response& res) {
   if (!GetAvailableMapUuidsList(res.map_uuids) ) return false;
@@ -1239,7 +1239,7 @@ bool TangoRosNode::GetMapUuidsServiceCallback(
   return true;
 }
 
-bool TangoRosNode::SaveMapServiceCallback(
+bool TangoRosNodelet::SaveMapServiceCallback(
     const tango_ros_messages::SaveMap::Request& req,
     tango_ros_messages::SaveMap::Response& res) {
   bool save_localization_map = req.request & tango_ros_messages::SaveMap::Request::SAVE_LOCALIZATION_MAP;
@@ -1298,7 +1298,7 @@ bool TangoRosNode::SaveMapServiceCallback(
   return true;
 }
 
-bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
+bool TangoRosNodelet::LoadOccupancyGridServiceCallback(const tango_ros_messages::LoadOccupancyGrid::Request& req,
                            tango_ros_messages::LoadOccupancyGrid::Response& res) {
   nav_msgs::OccupancyGrid occupancy_grid;
   std::string occupancy_grid_directory;
@@ -1355,7 +1355,7 @@ bool TangoRosNode::LoadOccupancyGridServiceCallback(const tango_ros_messages::Lo
   return true;
 }
 
-bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list) {
+bool TangoRosNodelet::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list) {
   char* c_uuid_list;
   TangoErrorType result = TangoService_getAreaDescriptionUUIDList(&c_uuid_list);
   if (result != TANGO_SUCCESS) {
@@ -1371,7 +1371,7 @@ bool TangoRosNode::GetAvailableMapUuidsList(std::vector<std::string>& uuid_list)
   return true;
 }
 
-bool TangoRosNode::GetMapNameFromUuid(const std::string& map_uuid, std::string& map_name) {
+bool TangoRosNodelet::GetMapNameFromUuid(const std::string& map_uuid, std::string& map_name) {
   size_t size = 0;
   char* value;
   TangoAreaDescriptionMetadata metadata;

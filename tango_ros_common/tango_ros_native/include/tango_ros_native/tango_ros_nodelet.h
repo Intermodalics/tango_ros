@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef TANGO_ROS_NODE_H_
-#define TANGO_ROS_NODE_H_
+#ifndef TANGO_ROS_NODELET_H_
+#define TANGO_ROS_NODELET_H_
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -127,10 +127,10 @@ struct PublishThread {
 };
 
 // Node collecting tango data and publishing it on ros topics.
-class TangoRosNode : public ::nodelet::Nodelet {
+class TangoRosNodelet : public ::nodelet::Nodelet {
  public:
-  TangoRosNode();
-  ~TangoRosNode();
+  TangoRosNodelet();
+  ~TangoRosNodelet();
   // Initialization function called when plugin is loaded.
   void onInit();
   // Gets the full list of map Uuids (Universally Unique IDentifier)
@@ -300,4 +300,4 @@ class TangoRosNode : public ::nodelet::Nodelet {
   ros::ServiceServer tango_connect_service_;
 };
 }  // namespace tango_ros_native
-#endif  // TANGO_ROS_NODE_H_
+#endif  // TANGO_ROS_NODELET_H_
