@@ -21,7 +21,7 @@
 #include <tf/transform_listener.h>
 #include <tf2_msgs/TFMessage.h>
 
-#include <tango_ros_native/tango_ros_node.h>
+#include <tango_ros_native/tango_ros_nodelet.h>
 
 constexpr double TF_RATE = 150.; // in Hz.
 constexpr double POINT_CLOUD_RATE = 4.; // in Hz.

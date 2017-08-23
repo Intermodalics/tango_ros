@@ -21,7 +21,7 @@ Tango3DR_Status TangoSetup3DRConfig(
     const ros::NodeHandle& node_handle, double* t3dr_resolution,
     Tango3DR_ReconstructionContext* t3dr_context,
     Tango3DR_CameraCalibration* t3dr_color_camera_intrinsics) {
-  const char* function_name = "TangoRosNode::TangoSetup3DRConfig()";
+  const char* function_name = "TangoRosNodelet::TangoSetup3DRConfig()";
 
   Tango3DR_Config t3dr_config =
       Tango3DR_Config_create(TANGO_3DR_CONFIG_RECONSTRUCTION);
