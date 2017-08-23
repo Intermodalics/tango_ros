@@ -51,13 +51,13 @@ add_library(tango_ros_native SHARED
   src/occupancy_grid_file_io.cpp
   src/tango_3d_reconstruction_helper.cpp
   src/tango_ros_conversions_helper.cpp
-  src/tango_ros_node.cpp
-  )
+  src/tango_ros_nodelet.cpp
+)
 
 target_link_libraries(tango_ros_native
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  )
+)
 
 add_dependencies(tango_ros_native ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 

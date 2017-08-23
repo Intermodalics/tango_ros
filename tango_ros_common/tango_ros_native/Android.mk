@@ -4,7 +4,7 @@ PROJECT_ROOT:= $(call my-dir)/..
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := tango_ros_native
-LOCAL_SRC_FILES := $(LOCAL_PATH)/src/tango_ros_node.cpp $(LOCAL_PATH)/src/tango_ros_conversions_helper.cpp $(LOCAL_PATH)/src/occupancy_grid_file_io.cpp $(LOCAL_PATH)/src/tango_3d_reconstruction_helper.cpp
+LOCAL_SRC_FILES := $(LOCAL_PATH)/src/tango_ros_nodelet.cpp $(LOCAL_PATH)/src/tango_ros_conversions_helper.cpp $(LOCAL_PATH)/src/occupancy_grid_file_io.cpp $(LOCAL_PATH)/src/tango_3d_reconstruction_helper.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include ${LOCAL_PATH}/../tango_ros_messages/include
 LOCAL_CFLAGS  += -O2 --std=c++11 -pthread -fPIC -fexceptions -frtti -Wunused-parameter -Wunused-variable
 LOCAL_LDLIBS += -landroid -lm -llog -lz

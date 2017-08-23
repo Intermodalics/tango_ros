@@ -107,7 +107,7 @@ public class RunningActivity extends AppCompatRosActivity implements
         MASTER_CONNECTED
     }
 
-    // Symmetric implementation to tango_ros_node.h.
+    // Symmetric implementation to tango_ros_nodelet.h.
     enum TangoStatus {
         UNKNOWN,
         SERVICE_NOT_CONNECTED,
