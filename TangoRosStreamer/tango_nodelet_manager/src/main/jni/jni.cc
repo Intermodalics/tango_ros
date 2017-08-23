@@ -89,7 +89,7 @@ Java_eu_intermodalics_nodelet_1manager_TangoNodeletManager_execute(
     std::vector<std::string> nodelet_argv;
 
     LOG(INFO) << "Start loading nodelets.";
-    const bool result = loader.load("/tango", "tango_ros_native/TangoRosNode", remappings, nodelet_argv);
+    const bool result = loader.load("/tango", "tango_ros_native/TangoRosNodelet", remappings, nodelet_argv);
     if (!result) {
         LOG(ERROR) << "Problem loading Tango ROS nodelet!";
         return 1;
