@@ -21,7 +21,6 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
-import org.apache.commons.logging.Log;
 import org.ros.exception.ParameterClassCastException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -34,12 +33,13 @@ import java.util.HashMap;
  * RosJava node that handles interactions with the ros parameter server.
  */
 public class ParameterNode extends AbstractNodeMain implements NodeMain {
+    private static final String TAG = ParameterNode.class.getSimpleName();
     private static final String NODE_NAME = "parameter_node";
 
     private Activity mCreatorActivity;
     private SharedPreferences mSharedPreferences;
     private ConnectedNode mConnectedNode;
-    private Log mLog;
+    private ConnectedNodeLogger mLog;
     private final HashMap<String, String> mParamNames;
 
     /**
@@ -59,7 +59,7 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
     public void onStart(ConnectedNode connectedNode) {
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mCreatorActivity);
         mConnectedNode = connectedNode;
-        mLog = connectedNode.getLog();
+        mLog = new ConnectedNodeLogger(connectedNode);
         setIntParam("android_api_level", Build.VERSION.SDK_INT);
         syncLocalPreferencesWithParameterServer();
     }
@@ -75,7 +75,6 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
 
     // Set ROS params according to preferences.
     public void uploadPreferencesToParameterServer() {
-        mLog.info("Upload preferences to parameter server.");
         for (String paramName : mParamNames.keySet()) {
             uploadPreferenceToParameterServer(paramName);
         }
@@ -129,10 +128,10 @@ public class ParameterNode extends AbstractNodeMain implements NodeMain {
                             Integer intValue = getIntParam(paramName);
                             editor.putBoolean(paramName, !intValue.equals(0));
                         } catch (ParameterClassCastException e2) {
-                            mLog.error("Preference " + paramName + " can not be set from parameter server.", e2);
+                            mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e2);
                         }
                     } else {
-                        mLog.error("Preference " + paramName + " can not be set from parameter server.", e);
+                        mLog.error(TAG, "Preference " + paramName + " can not be set from parameter server.", e);
                     }
                 }
             }

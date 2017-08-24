@@ -16,7 +16,6 @@
 
 package eu.intermodalics.tango_ros_common;
 
-import org.apache.commons.logging.Log;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageListener;
@@ -58,7 +57,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
     private static final String TANGO_STATUS_TOPIC_NAME = "status";
 
     ConnectedNode mConnectedNode;
-    private Log mLog;
+    private ConnectedNodeLogger mLog;
     CallbackListener mCallbackListener = new DefaultCallbackListener();
 
     public interface CallbackListener {
@@ -114,7 +113,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
 
     public void onStart(ConnectedNode connectedNode) {
         mConnectedNode = connectedNode;
-        mLog = connectedNode.getLog();
+        mLog = new ConnectedNodeLogger(connectedNode);
 
         Subscriber<Int8> subscriber = mConnectedNode.newSubscriber(NodeNamespaceHelper.BuildTangoRosNodeNamespaceName(TANGO_STATUS_TOPIC_NAME), Int8._TYPE);
         subscriber.addMessageListener(new MessageListener<Int8>() {
@@ -141,10 +140,10 @@ public class TangoServiceClientNode extends AbstractNodeMain {
         try {
             callable.call();
         } catch (ServiceNotFoundException e) {
-            mLog.error("Service '" + serviceName + "' not found!");
+            mLog.error(TAG, "Service '" + serviceName + "' not found!");
             return false;
         } catch (Exception e) {
-            mLog.error("Error while calling: " + serviceName + ", message: " + e.getMessage());
+            mLog.error(TAG, "Error while calling: " + serviceName + ", message: " + e.getMessage());
             return false;
         }
 
@@ -167,7 +166,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                 } else if (connectRequest == TangoConnectRequest.RECONNECT) {
                     mCallbackListener.onTangoReconnectServiceFinish(tangoConnectResponse.getResponse(), tangoConnectResponse.getMessage());
                 } else {
-                    mLog.error("Request not recognized: " + connectRequest);
+                    mLog.error(TAG, "Request not recognized: " + connectRequest);
                 }
             }
 
@@ -180,7 +179,7 @@ public class TangoServiceClientNode extends AbstractNodeMain {
                 } else if (connectRequest == TangoConnectRequest.RECONNECT) {
                     mCallbackListener.onTangoReconnectServiceFinish(TangoConnectResponse.TANGO_ERROR, e.getMessage());
                 } else {
-                    mLog.error("Request not recognized: " + connectRequest);
+                    mLog.error(TAG, "Request not recognized: " + connectRequest);
                 }
             }
         });
