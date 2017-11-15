@@ -64,7 +64,8 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
 // included in laser scan.
 // @param laser_scan, the output LaserScan containing the range data.
 void toLaserScanRange(double x, double y, double z, double min_height,
-                      double max_height, sensor_msgs::LaserScan* laser_scan);
+                      double max_height, double min_range, double max_range,
+                      sensor_msgs::LaserScan* laser_scan);
 
 // Converts a TangoPointCloud to a sensor_msgs::LaserScan.
 // @param tango_point_cloud, TangoPointCloud to convert.
@@ -81,6 +82,8 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
                  double time_offset,
                  double min_height,
                  double max_height,
+                 double min_range,
+                 double max_range,
                  const tf::Transform& point_cloud_T_laser,
                  sensor_msgs::LaserScan* laser_scan);
 

@@ -71,9 +71,14 @@ void toPointCloud2(const TangoPointCloud& tango_point_cloud,
 }
 
 void toLaserScanRange(double x, double y, double z, double min_height,
-                      double max_height, sensor_msgs::LaserScan* laser_scan) {
+                      double max_height, double min_range, double max_range,
+                      sensor_msgs::LaserScan* laser_scan) {
   if (std::isnan(x) || std::isnan(y) || std::isnan(z)) {
     // NAN point.
+    return;
+  }
+  double distance = sqrt(x * x  + y * y + z * z);
+  if (distance < min_range || distance > max_range) {
     return;
   }
   if (z > max_height || z < min_height) {
@@ -105,6 +110,8 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
                  double time_offset,
                  double min_height,
                  double max_height,
+                 double min_range,
+                 double max_range,
                  const tf::Transform& point_cloud_T_laser,
                  sensor_msgs::LaserScan* laser_scan) {
   for (size_t i = 0; i < tango_point_cloud.num_points; ++i) {
@@ -112,8 +119,15 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
                                     tango_point_cloud.points[i][1],
                                     tango_point_cloud.points[i][2]);
     tf::Vector3 laser_scan_p  = point_cloud_T_laser.inverse() * point_cloud_p;
-    toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
-                     min_height, max_height, laser_scan);
+    toLaserScanRange(
+        laser_scan_p.getX(),
+        laser_scan_p.getY(),
+        laser_scan_p.getZ(),
+        min_height,
+        max_height,
+        min_range,
+        max_range,
+        laser_scan);
   }
   laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }

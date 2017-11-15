@@ -58,8 +58,8 @@ const float LASER_SCAN_ANGLE_MAX = 3.1415;
 const float LASER_SCAN_ANGLE_INCREMENT = 3.1415 / 360;
 const float LASER_SCAN_TIME_INCREMENT = 0.0;
 const float LASER_SCAN_SCAN_TIME= 0.3333;
-const float LASER_SCAN_RANGE_MIN = 0.15;
-const float LASER_SCAN_RANGE_MAX = 4.0;
+const float LASER_SCAN_MIN_RANGE = 0.3;
+const float LASER_SCAN_MAX_RANGE = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
 const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";
@@ -256,6 +256,8 @@ class TangoRosNodelet : public ::nodelet::Nodelet {
   sensor_msgs::LaserScan laser_scan_;
   double laser_scan_max_height_ = 1.0;
   double laser_scan_min_height_ = -1.0;
+  double laser_scan_max_range_ = 4.0;
+  double laser_scan_min_range_ = 0.3;
 
   std::shared_ptr<image_transport::ImageTransport> image_transport_;
   image_transport::CameraPublisher fisheye_camera_publisher_;
