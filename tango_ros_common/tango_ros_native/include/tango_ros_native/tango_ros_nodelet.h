@@ -58,8 +58,6 @@ const float LASER_SCAN_ANGLE_MAX = 3.1415;
 const float LASER_SCAN_ANGLE_INCREMENT = 3.1415 / 360;
 const float LASER_SCAN_TIME_INCREMENT = 0.0;
 const float LASER_SCAN_SCAN_TIME= 0.3333;
-const float LASER_SCAN_MIN_RANGE = 0.3;
-const float LASER_SCAN_MAX_RANGE = 4.0;
 const std::string LASER_SCAN_FRAME_ID = "laser";
 
 const std::string DATASET_DEFAULT_DIRECTORY = "/sdcard/tango_ros_streamer/datasets/";

@@ -835,14 +835,9 @@ void TangoRosNodelet::OnPointCloudAvailable(const TangoPointCloud* point_cloud) 
                                        / laser_scan_.angle_increment);
       // Laser scan rays with no obstacle data will evaluate to infinity.
       laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
-      tango_ros_conversions_helper::toLaserScan(
-        *point_cloud, time_offset_,
-        laser_scan_min_height_,
-        laser_scan_max_height_,
-        laser_scan_min_range_,
-        laser_scan_max_range_,
-        camera_depth_T_laser_,
-        &laser_scan_);
+      tango_ros_conversions_helper::toLaserScan(*point_cloud, time_offset_, 
+        laser_scan_min_height_, laser_scan_max_height_, laser_scan_min_range_,
+        laser_scan_max_range_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
       laser_scan_thread_.data_available_mutex.unlock();
       laser_scan_thread_.data_available.notify_all();

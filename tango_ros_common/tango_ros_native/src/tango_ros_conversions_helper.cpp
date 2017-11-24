@@ -119,15 +119,8 @@ void toLaserScan(const TangoPointCloud& tango_point_cloud,
                                     tango_point_cloud.points[i][1],
                                     tango_point_cloud.points[i][2]);
     tf::Vector3 laser_scan_p  = point_cloud_T_laser.inverse() * point_cloud_p;
-    toLaserScanRange(
-        laser_scan_p.getX(),
-        laser_scan_p.getY(),
-        laser_scan_p.getZ(),
-        min_height,
-        max_height,
-        min_range,
-        max_range,
-        laser_scan);
+    toLaserScanRange(laser_scan_p.getX(), laser_scan_p.getY(), laser_scan_p.getZ(),
+        min_height, max_height, min_range, max_range, laser_scan);
   }
   laser_scan->header.stamp.fromSec(tango_point_cloud.timestamp + time_offset);
 }
