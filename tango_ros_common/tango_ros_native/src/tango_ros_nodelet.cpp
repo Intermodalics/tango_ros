@@ -828,16 +828,16 @@ void TangoRosNodelet::OnPointCloudAvailable(const TangoPointCloud* point_cloud) 
       laser_scan_.angle_increment = LASER_SCAN_ANGLE_INCREMENT;
       laser_scan_.time_increment = LASER_SCAN_TIME_INCREMENT;
       laser_scan_.scan_time = LASER_SCAN_SCAN_TIME;
-      laser_scan_.range_min = LASER_SCAN_RANGE_MIN;
-      laser_scan_.range_max = LASER_SCAN_RANGE_MAX;
+      laser_scan_.range_min = laser_scan_min_range_;
+      laser_scan_.range_max = laser_scan_max_range_;
       // Determine amount of rays to create.
       uint32_t ranges_size = std::ceil((laser_scan_.angle_max - laser_scan_.angle_min)
                                        / laser_scan_.angle_increment);
       // Laser scan rays with no obstacle data will evaluate to infinity.
       laser_scan_.ranges.assign(ranges_size, std::numeric_limits<double>::infinity());
-      tango_ros_conversions_helper::toLaserScan(
-          *point_cloud, time_offset_, laser_scan_min_height_,
-                  laser_scan_max_height_, camera_depth_T_laser_, &laser_scan_);
+      tango_ros_conversions_helper::toLaserScan(*point_cloud, time_offset_, 
+        laser_scan_min_height_, laser_scan_max_height_, laser_scan_min_range_,
+        laser_scan_max_range_, camera_depth_T_laser_, &laser_scan_);
       laser_scan_.header.frame_id = LASER_SCAN_FRAME_ID;
       laser_scan_thread_.data_available_mutex.unlock();
       laser_scan_thread_.data_available.notify_all();
@@ -1169,6 +1169,12 @@ void TangoRosNodelet::PublishMesh() {
 void TangoRosNodelet::DynamicReconfigureCallback(PublisherConfig &config, uint32_t level) {
   laser_scan_max_height_ = config.laser_scan_max_height;
   laser_scan_min_height_ = config.laser_scan_min_height;
+  laser_scan_min_range_ = config.laser_scan_min_range;
+  laser_scan_max_range_ = config.laser_scan_max_range;
+  LOG(INFO) << "laser_scan_min_height [m]: " << laser_scan_min_height_ << std::endl;
+  LOG(INFO) << "laser_scan_max_height [m]: " << laser_scan_max_height_ << std::endl;
+  LOG(INFO) << "laser_scan_min_range [m]: " << laser_scan_min_range_ << std::endl;
+  LOG(INFO) << "laser_scan_max_range [m]: " << laser_scan_max_range_ << std::endl;
 }
 
 void TangoRosNodelet::RunRosSpin() {
